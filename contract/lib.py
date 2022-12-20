@@ -93,7 +93,7 @@ def negate(g: G1):
                 raw_bytes.load(),
                 Int(32),
                 BytesMinus(PrimeQ, BytesMod(Suffix(raw_bytes.load(), Int(32)), PrimeQ)),
-            )
+            ),
         ),
     )
 
@@ -129,17 +129,13 @@ def compute_linear_combination(
             # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(
                 lambda ics: ics[idx.load() + Int(1)].use(
-                    lambda vk_ic: scaled.decode(scale(vk_ic, pt)) 
+                    lambda vk_ic: scaled.decode(scale(vk_ic, pt))
                 )
             ),
             vk_x.decode(add(vk_x, scaled)),
         ),
         # vk_X += vk.IC[0]
-        vk.IC.use(
-            lambda ics: ics[Int(0)].use(
-                lambda ic: vk_x.decode(add(vk_x, ic))
-            )
-        ),
+        vk.IC.use(lambda ics: ics[Int(0)].use(lambda ic: vk_x.decode(add(vk_x, ic)))),
     )
 
 
@@ -149,20 +145,19 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
     g2_buff = ScratchVar()
     return Seq(
         # Construct G1 buffer
-        proof.A.use(lambda a: g1_buff.store(negate(a))), 
+        proof.A.use(lambda a: g1_buff.store(negate(a))),
         vk.alpha1.use(lambda a: g1_buff.store(Concat(g1_buff.load(), a.encode()))),
         g1_buff.store(Concat(g1_buff.load(), vk_x.encode())),
         proof.C.use(lambda c: g1_buff.store(Concat(g1_buff.load(), c.encode()))),
-
         # Construct G2 buffer
         proof.B.use(lambda b: g2_buff.store(b.encode())),
         vk.beta2.use(lambda b: g2_buff.store(Concat(g2_buff.load(), b.encode()))),
         vk.gamma2.use(lambda g: g2_buff.store(Concat(g2_buff.load(), g.encode()))),
         vk.delta2.use(lambda d: g2_buff.store(Concat(g2_buff.load(), d.encode()))),
-
         # Check if its a valid pairing
-        curve_pairing(g1_buff.load(), g2_buff.load())
+        curve_pairing(g1_buff.load(), g2_buff.load()),
     )
+
 
 ##
 # Curve Ops
