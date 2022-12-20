@@ -1,5 +1,8 @@
 from typing import Literal
 from pyteal import (
+    BytesMinus,
+    BytesMod,
+    Concat,
     Replace,
     Suffix,
     BytesEq,
@@ -40,6 +43,8 @@ SnarkScalar = Bytes(
 ##
 
 Uint256 = abi.StaticBytes[Literal[32]]
+Uint512 = abi.StaticBytes[Literal[64]]
+
 CircuitInputs = abi.DynamicArray[Uint256]
 
 G1 = abi.StaticArray[Uint256, Literal[2]]
@@ -67,32 +72,28 @@ class Proof(abi.NamedTuple):
 ##
 
 
-@ABIReturnSubroutine
-def add(a: G1, b: G1, *, output: G1):
-    return output.decode(curve_add(a.encode(), b.encode()))
+@Subroutine(TealType.bytes)
+def add(a: G1, b: G1):
+    return curve_add(a.encode(), b.encode())
 
 
-@ABIReturnSubroutine
-def scale(g: G1, factor: Uint256, *, output: G1):
-    return output.decode(
-        curve_scalar_mul(g.encode(), factor.encode())
-    )
+@Subroutine(TealType.bytes)
+def scale(g: G1, factor: Uint256):
+    return curve_scalar_mul(g.encode(), factor.encode())
 
 
-@ABIReturnSubroutine
-def negate(g: G1, *, output: G1):
+@Subroutine(TealType.bytes)
+def negate(g: G1):
     return Seq(
         (raw_bytes := ScratchVar()).store(g.encode()),
         If(
             BytesEq(raw_bytes.load(), Uint512Zero),
-            output.decode(g.encode()),
-            output.decode(
-                Replace(
-                    raw_bytes.load(),
-                    Int(32),
-                    PrimeQ - (Suffix(raw_bytes.load(), Int(32)) % PrimeQ),
-                )
-            ),
+            raw_bytes.load(),
+            Replace(
+                raw_bytes.load(),
+                Int(32),
+                BytesMinus(PrimeQ, BytesMod(Suffix(raw_bytes.load(), Int(32)), PrimeQ)),
+            )
         ),
     )
 
@@ -128,61 +129,40 @@ def compute_linear_combination(
             # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(
                 lambda ics: ics[idx.load() + Int(1)].use(
-                    lambda vk_ic: scaled._set_with_computed_type(scale(vk_ic, pt)) # type: ignore
-                )  
+                    lambda vk_ic: scaled.decode(scale(vk_ic, pt)) 
+                )
             ),
-            vk_x._set_with_computed_type(add(vk_x, scaled)) # type: ignore
+            vk_x.decode(add(vk_x, scaled)),
         ),
         # vk_X += vk.IC[0]
         vk.IC.use(
             lambda ics: ics[Int(0)].use(
-                lambda ic: vk_x._set_with_computed_type(add(vk_x, ic))  # type: ignore
+                lambda ic: vk_x.decode(add(vk_x, ic))
             )
         ),
     )
 
 
-#                      a1,      a2,       b1,       b2,    c1,       c2,      d1,        d2
-# Pairing.negate(proof.A), proof.B, vk.alfa1, vk.beta2, vk_x, vk.gamma2, proof.C, vk.delta2
-
-
 @Subroutine(TealType.uint64)
 def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
+    g1_buff = ScratchVar()
+    g2_buff = ScratchVar()
     return Seq(
-        (g1_buff := ScratchVar()).store(Bytes("")),
-        (g2_buff := ScratchVar()).store(Bytes("")),
-        # Combine all the G1 points
-        # Combine all the G2 points
-        Int(1)
+        # Construct G1 buffer
+        proof.A.use(lambda a: g1_buff.store(negate(a))), 
+        vk.alpha1.use(lambda a: g1_buff.store(Concat(g1_buff.load(), a.encode()))),
+        g1_buff.store(Concat(g1_buff.load(), vk_x.encode())),
+        proof.C.use(lambda c: g1_buff.store(Concat(g1_buff.load(), c.encode()))),
+
+        # Construct G2 buffer
+        proof.B.use(lambda b: g2_buff.store(b.encode())),
+        vk.beta2.use(lambda b: g2_buff.store(Concat(g2_buff.load(), b.encode()))),
+        vk.gamma2.use(lambda g: g2_buff.store(Concat(g2_buff.load(), g.encode()))),
+        vk.delta2.use(lambda d: g2_buff.store(Concat(g2_buff.load(), d.encode()))),
+
+        # Check if its a valid pairing
+        curve_pairing(g1_buff.load(), g2_buff.load())
     )
-
-
-#        G1Point[4] memory p1 = [a1, b1, c1, d1];
-#        G2Point[4] memory p2 = [a2, b2, c2, d2];
-
-#        uint256 inputSize = 24;
-
-#        uint256[] memory input = new uint256[](inputSize);
-
-#        for (uint256 i = 0; i < 4; i++) {
-#            uint256 j = i * 6;
-#            input[j + 0] = p1[i].X;
-#            input[j + 1] = p1[i].Y;
-#            input[j + 2] = p2[i].X[0];
-#            input[j + 3] = p2[i].X[1];
-#            input[j + 4] = p2[i].Y[0];
-#            input[j + 5] = p2[i].Y[1];
-#        }
-
-#        success := staticcall(
-#           sub(gas(), 2000),
-#           8,
-#           add(input, 0x20),
-#           mul(inputSize, 0x20),
-#           out,
-#           0x20
-#        )
-
 
 ##
 # Curve Ops
