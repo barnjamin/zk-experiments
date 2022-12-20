@@ -16,6 +16,8 @@ class Verifier(bkr.Application):
     _vk_box_name = "vk"
     vk_box_name = pt.Bytes(_vk_box_name)
 
+    opup = pt.OpUp(pt.OpUpMode.OnCall)
+
     @bkr.external(authorize=bkr.Authorize.only(pt.Global.creator_address()))
     def bootstrap(self, vk: VerificationKey):
         return pt.BoxPut(self.vk_box_name, vk.encode())
@@ -23,6 +25,7 @@ class Verifier(bkr.Application):
     @bkr.external
     def verify(self, inputs: CircuitInputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
+            self.opup.ensure_budget(pt.Int(160000)),
             # Make sure proof doesnt have any values > primeQ
             assert_proof_points_lt_prime_q(proof),
             self.get_vk(output=(vk := VerificationKey())),

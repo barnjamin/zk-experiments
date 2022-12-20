@@ -216,7 +216,7 @@ def curve_scalar_mul(a, b):
 # "ec_pairing":  proto("bb:i"), costly(8700)
 @Subroutine(TealType.uint64)
 def curve_pairing(a, b):
-    return InlineAssembly("ec_pairing_check BN254_G1", a, b, type=TealType.uint64)
+    return InlineAssembly("ec_pairing_check BN254", a, b, type=TealType.uint64)
 
 
 # {0xe0, "ec_add", opEcAdd, proto("bb:b"), pairingVersion,
