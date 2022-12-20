@@ -1,5 +1,41 @@
 {
     "name": "Verifier",
-    "methods": [],
+    "methods": [
+        {
+            "name": "bootstrap",
+            "args": [
+                {
+                    "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32],byte[32])[2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "verify",
+            "args": [
+                {
+                    "type": "byte[32][]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32],byte[32]))",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
+        },
+        {
+            "name": "get_vk",
+            "args": [],
+            "returns": {
+                "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32],byte[32])[2])"
+            }
+        }
+    ],
     "networks": {}
 }

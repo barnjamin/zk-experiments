@@ -1,7 +1,58 @@
 {
-    "hints": {},
+    "hints": {
+        "bootstrap": {
+            "structs": {
+                "vk": {
+                    "name": "VerificationKey",
+                    "elements": [
+                        [
+                            "alpha1",
+                            "(byte[32],byte[32])"
+                        ],
+                        [
+                            "beta2",
+                            "(byte[32][2],byte[32][2])"
+                        ],
+                        [
+                            "gamma2",
+                            "(byte[32][2],byte[32][2])"
+                        ],
+                        [
+                            "delta2",
+                            "(byte[32][2],byte[32][2])"
+                        ],
+                        [
+                            "IC",
+                            "(byte[32],byte[32])[2]"
+                        ]
+                    ]
+                }
+            }
+        },
+        "verify": {
+            "structs": {
+                "proof": {
+                    "name": "Proof",
+                    "elements": [
+                        [
+                            "A",
+                            "(byte[32],byte[32])"
+                        ],
+                        [
+                            "B",
+                            "(byte[32][2],byte[32][2])"
+                        ],
+                        [
+                            "C",
+                            "(byte[32],byte[32])"
+                        ]
+                    ]
+                }
+            }
+        }
+    },
     "source": {
-        "approval": "I3ByYWdtYSB2ZXJzaW9uIDgKaW50Y2Jsb2NrIDAgMQp0eG4gTnVtQXBwQXJncwppbnRjXzAgLy8gMAo9PQpibnogbWFpbl9sMgplcnIKbWFpbl9sMjoKdHhuIE9uQ29tcGxldGlvbgppbnRjXzAgLy8gTm9PcAo9PQpibnogbWFpbl9sNAplcnIKbWFpbl9sNDoKdHhuIEFwcGxpY2F0aW9uSUQKaW50Y18wIC8vIDAKPT0KYXNzZXJ0CmNhbGxzdWIgY3JlYXRlXzAKaW50Y18xIC8vIDEKcmV0dXJuCgovLyBjcmVhdGUKY3JlYXRlXzA6CmludGNfMSAvLyAxCnJldHVybg==",
+        "approval": "I3ByYWdtYSB2ZXJzaW9uIDgKaW50Y2Jsb2NrIDAgMzIgMSA2NCA0NDgKYnl0ZWNibG9jayAweDc2NmIgMHgxNTFmN2M3NQp0eG4gTnVtQXBwQXJncwppbnRjXzAgLy8gMAo9PQpibnogbWFpbl9sOAp0eG5hIEFwcGxpY2F0aW9uQXJncyAwCnB1c2hieXRlcyAweDAzYjY4ZTJmIC8vICJib290c3RyYXAoKChieXRlWzMyXSxieXRlWzMyXSksKGJ5dGVbMzJdWzJdLGJ5dGVbMzJdWzJdKSwoYnl0ZVszMl1bMl0sYnl0ZVszMl1bMl0pLChieXRlWzMyXVsyXSxieXRlWzMyXVsyXSksKGJ5dGVbMzJdLGJ5dGVbMzJdKVsyXSkpdm9pZCIKPT0KYm56IG1haW5fbDcKdHhuYSBBcHBsaWNhdGlvbkFyZ3MgMApwdXNoYnl0ZXMgMHg2ZDg5NWNjNCAvLyAidmVyaWZ5KGJ5dGVbMzJdW10sKChieXRlWzMyXSxieXRlWzMyXSksKGJ5dGVbMzJdWzJdLGJ5dGVbMzJdWzJdKSwoYnl0ZVszMl0sYnl0ZVszMl0pKSlib29sIgo9PQpibnogbWFpbl9sNgp0eG5hIEFwcGxpY2F0aW9uQXJncyAwCnB1c2hieXRlcyAweGNjZGI5NWUxIC8vICJnZXRfdmsoKSgoYnl0ZVszMl0sYnl0ZVszMl0pLChieXRlWzMyXVsyXSxieXRlWzMyXVsyXSksKGJ5dGVbMzJdWzJdLGJ5dGVbMzJdWzJdKSwoYnl0ZVszMl1bMl0sYnl0ZVszMl1bMl0pLChieXRlWzMyXSxieXRlWzMyXSlbMl0pIgo9PQpibnogbWFpbl9sNQplcnIKbWFpbl9sNToKdHhuIE9uQ29tcGxldGlvbgppbnRjXzAgLy8gTm9PcAo9PQp0eG4gQXBwbGljYXRpb25JRAppbnRjXzAgLy8gMAohPQomJgphc3NlcnQKY2FsbHN1YiBnZXR2a18xMQpzdG9yZSAzMQpieXRlY18xIC8vIDB4MTUxZjdjNzUKbG9hZCAzMQpjb25jYXQKbG9nCmludGNfMiAvLyAxCnJldHVybgptYWluX2w2Ogp0eG4gT25Db21wbGV0aW9uCmludGNfMCAvLyBOb09wCj09CnR4biBBcHBsaWNhdGlvbklECmludGNfMCAvLyAwCiE9CiYmCmFzc2VydAp0eG5hIEFwcGxpY2F0aW9uQXJncyAxCnN0b3JlIDAKdHhuYSBBcHBsaWNhdGlvbkFyZ3MgMgpzdG9yZSAxCmxvYWQgMApsb2FkIDEKY2FsbHN1YiB2ZXJpZnlfMTAKc3RvcmUgMgpieXRlY18xIC8vIDB4MTUxZjdjNzUKcHVzaGJ5dGVzIDB4MDAgLy8gMHgwMAppbnRjXzAgLy8gMApsb2FkIDIKc2V0Yml0CmNvbmNhdApsb2cKaW50Y18yIC8vIDEKcmV0dXJuCm1haW5fbDc6CnR4biBPbkNvbXBsZXRpb24KaW50Y18wIC8vIE5vT3AKPT0KdHhuIEFwcGxpY2F0aW9uSUQKaW50Y18wIC8vIDAKIT0KJiYKYXNzZXJ0CnR4bmEgQXBwbGljYXRpb25BcmdzIDEKY2FsbHN1YiBib290c3RyYXBfOQppbnRjXzIgLy8gMQpyZXR1cm4KbWFpbl9sODoKdHhuIE9uQ29tcGxldGlvbgppbnRjXzAgLy8gTm9PcAo9PQpibnogbWFpbl9sMTAKZXJyCm1haW5fbDEwOgp0eG4gQXBwbGljYXRpb25JRAppbnRjXzAgLy8gMAo9PQphc3NlcnQKY2FsbHN1YiBjcmVhdGVfMAppbnRjXzIgLy8gMQpyZXR1cm4KCi8vIGNyZWF0ZQpjcmVhdGVfMDoKaW50Y18yIC8vIDEKcmV0dXJuCgovLyBjaGVja19wcm9vZl92YWx1ZXMKY2hlY2twcm9vZnZhbHVlc18xOgpzdG9yZSAzNQppbnRjXzIgLy8gMQpyZXRzdWIKCi8vIGNvbXB1dGVfbGluZWFyX2NvbWJpbmF0aW9uCmNvbXB1dGVsaW5lYXJjb21iaW5hdGlvbl8yOgpzdG9yZSAxMApzdG9yZSA5CmludGNfMSAvLyAzMgpiemVybwpzdG9yZSAxNAppbnRjXzEgLy8gMzIKbG9hZCAxNApsZW4KPT0KYXNzZXJ0CmludGNfMSAvLyAzMgpiemVybwpzdG9yZSAxNQppbnRjXzEgLy8gMzIKbG9hZCAxNQpsZW4KPT0KYXNzZXJ0CmxvYWQgMTQKbG9hZCAxNQpjb25jYXQKc3RvcmUgMTEKaW50Y18wIC8vIDAKc3RvcmUgMTYKY29tcHV0ZWxpbmVhcmNvbWJpbmF0aW9uXzJfbDE6CmxvYWQgMTYKbG9hZCAxMAppbnRjXzAgLy8gMApleHRyYWN0X3VpbnQxNgo8CmJ6IGNvbXB1dGVsaW5lYXJjb21iaW5hdGlvbl8yX2wzCmxvYWQgMTAKaW50Y18xIC8vIDMyCmxvYWQgMTYKKgpwdXNoaW50IDIgLy8gMgorCmludGNfMSAvLyAzMgpleHRyYWN0MwpwdXNoYnl0ZXMgMHgzMDY0NGU3MmUxMzFhMDI5Yjg1MDQ1YjY4MTgxNTg1ZDI4MzNlODQ4NzliOTcwOTE0M2UxZjU5M2YwMDAwMDAxIC8vIDB4MzA2NDRlNzJlMTMxYTAyOWI4NTA0NWI2ODE4MTU4NWQyODMzZTg0ODc5Yjk3MDkxNDNlMWY1OTNmMDAwMDAwMQpiPAovLyB2ZXJpZmllciBndGUgc25hcmsgc2NhbGFyCmFzc2VydApsb2FkIDkKaW50YyA0IC8vIDQ0OApkaWcgMQpsZW4Kc3Vic3RyaW5nMwppbnRjXzMgLy8gNjQKbG9hZCAxNgppbnRjXzIgLy8gMQorCioKaW50Y18zIC8vIDY0CmV4dHJhY3QzCnN0b3JlIDE3CmxvYWQgMTAKaW50Y18xIC8vIDMyCmxvYWQgMTYKKgpwdXNoaW50IDIgLy8gMgorCmludGNfMSAvLyAzMgpleHRyYWN0MwpzdG9yZSAxOApsb2FkIDE3CmxvYWQgMTgKY2FsbHN1YiBzY2FsZV83CnN0b3JlIDEyCmxvYWQgMTEKbG9hZCAxMgpjYWxsc3ViIGFkZF82CnN0b3JlIDExCmxvYWQgMTYKaW50Y18yIC8vIDEKKwpzdG9yZSAxNgpiIGNvbXB1dGVsaW5lYXJjb21iaW5hdGlvbl8yX2wxCmNvbXB1dGVsaW5lYXJjb21iaW5hdGlvbl8yX2wzOgpsb2FkIDkKaW50YyA0IC8vIDQ0OApkaWcgMQpsZW4Kc3Vic3RyaW5nMwppbnRjXzMgLy8gNjQKaW50Y18wIC8vIDAKKgppbnRjXzMgLy8gNjQKZXh0cmFjdDMKc3RvcmUgMTMKbG9hZCAxMQpsb2FkIDEzCmNhbGxzdWIgYWRkXzYKc3RvcmUgMTEKbG9hZCAxMQpyZXRzdWIKCi8vIHZhbGlkX3BhaXJpbmcKdmFsaWRwYWlyaW5nXzM6CnN0b3JlIDM4CnN0b3JlIDM3CnN0b3JlIDM2CmludGNfMiAvLyAxCnJldHN1YgoKLy8gY3VydmVfYWRkCmN1cnZlYWRkXzQ6CmJuMjU2X2FkZApyZXRzdWIKCi8vIGN1cnZlX3NjYWxhcl9tdWwKY3VydmVzY2FsYXJtdWxfNToKYm4yNTZfc2NhbGFyX211bApyZXRzdWIKCi8vIGFkZAphZGRfNjoKc3RvcmUgMjQKc3RvcmUgMjMKbG9hZCAyMwpleHRyYWN0IDAgMzIKc3RvcmUgMjcKbG9hZCAyNApleHRyYWN0IDAgMzIKc3RvcmUgMjgKbG9hZCAyNwpsb2FkIDI4CmNhbGxzdWIgY3VydmVhZGRfNApzdG9yZSAyNQppbnRjXzEgLy8gMzIKbG9hZCAyNQpsZW4KPT0KYXNzZXJ0CmxvYWQgMjMKZXh0cmFjdCAzMiAwCnN0b3JlIDI5CmxvYWQgMjQKZXh0cmFjdCAzMiAwCnN0b3JlIDMwCmxvYWQgMjkKbG9hZCAzMApjYWxsc3ViIGN1cnZlYWRkXzQKc3RvcmUgMjYKaW50Y18xIC8vIDMyCmxvYWQgMjYKbGVuCj09CmFzc2VydApsb2FkIDI1CmxvYWQgMjYKY29uY2F0CnJldHN1YgoKLy8gc2NhbGUKc2NhbGVfNzoKc3RvcmUgMjAKc3RvcmUgMTkKbG9hZCAxOQpleHRyYWN0IDAgMzIKbG9hZCAyMApjYWxsc3ViIGN1cnZlc2NhbGFybXVsXzUKc3RvcmUgMjEKaW50Y18xIC8vIDMyCmxvYWQgMjEKbGVuCj09CmFzc2VydApsb2FkIDE5CmV4dHJhY3QgMzIgMApsb2FkIDIwCmNhbGxzdWIgY3VydmVzY2FsYXJtdWxfNQpzdG9yZSAyMgppbnRjXzEgLy8gMzIKbG9hZCAyMgpsZW4KPT0KYXNzZXJ0CmxvYWQgMjEKbG9hZCAyMgpjb25jYXQKcmV0c3ViCgovLyBhdXRoX29ubHkKYXV0aG9ubHlfODoKZ2xvYmFsIENyZWF0b3JBZGRyZXNzCj09CnJldHN1YgoKLy8gYm9vdHN0cmFwCmJvb3RzdHJhcF85OgpzdG9yZSAzNAp0eG4gU2VuZGVyCmNhbGxzdWIgYXV0aG9ubHlfOAovLyB1bmF1dGhvcml6ZWQKYXNzZXJ0CmJ5dGVjXzAgLy8gInZrIgpsb2FkIDM0CmJveF9wdXQKcmV0c3ViCgovLyB2ZXJpZnkKdmVyaWZ5XzEwOgpzdG9yZSA0CnN0b3JlIDMKbG9hZCA0CmNhbGxzdWIgY2hlY2twcm9vZnZhbHVlc18xCi8vIEEgdmFsdWUgaW4gdGhlIHByb29mIHdhcyA+IFByaW1lUQphc3NlcnQKYnl0ZWNfMCAvLyAidmsiCmJveF9nZXQKc3RvcmUgNwpzdG9yZSA2CmxvYWQgNwovLyBWZXJpZmljYXRpb24gS2V5IG5vdCBzZXQKYXNzZXJ0CmxvYWQgNgpzdG9yZSA1CmxvYWQgNQpsb2FkIDMKY2FsbHN1YiBjb21wdXRlbGluZWFyY29tYmluYXRpb25fMgpzdG9yZSA4CmxvYWQgNApsb2FkIDUKbG9hZCA4CmNhbGxzdWIgdmFsaWRwYWlyaW5nXzMKIQohCnJldHN1YgoKLy8gZ2V0X3ZrCmdldHZrXzExOgpieXRlY18wIC8vICJ2ayIKYm94X2dldApzdG9yZSAzMwpzdG9yZSAzMgpsb2FkIDMzCi8vIFZlcmlmaWNhdGlvbiBLZXkgbm90IHNldAphc3NlcnQKbG9hZCAzMgpyZXRzdWI=",
         "clear": "I3ByYWdtYSB2ZXJzaW9uIDgKcHVzaGludCAwIC8vIDAKcmV0dXJu"
     },
     "schema": {
@@ -16,7 +67,43 @@
     },
     "contract": {
         "name": "Verifier",
-        "methods": [],
+        "methods": [
+            {
+                "name": "bootstrap",
+                "args": [
+                    {
+                        "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32],byte[32])[2])",
+                        "name": "vk"
+                    }
+                ],
+                "returns": {
+                    "type": "void"
+                }
+            },
+            {
+                "name": "verify",
+                "args": [
+                    {
+                        "type": "byte[32][]",
+                        "name": "inputs"
+                    },
+                    {
+                        "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32],byte[32]))",
+                        "name": "proof"
+                    }
+                ],
+                "returns": {
+                    "type": "bool"
+                }
+            },
+            {
+                "name": "get_vk",
+                "args": [],
+                "returns": {
+                    "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32],byte[32])[2])"
+                }
+            }
+        ],
         "networks": {}
     }
 }
