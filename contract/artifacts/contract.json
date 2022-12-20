@@ -5,7 +5,7 @@
             "name": "bootstrap",
             "args": [
                 {
-                    "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32],byte[32])[2])",
+                    "type": "(byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2])",
                     "name": "vk"
                 }
             ],
@@ -21,7 +21,7 @@
                     "name": "inputs"
                 },
                 {
-                    "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32],byte[32]))",
+                    "type": "(byte[32][2],byte[32][2][2],byte[32][2])",
                     "name": "proof"
                 }
             ],
@@ -33,7 +33,7 @@
             "name": "get_vk",
             "args": [],
             "returns": {
-                "type": "((byte[32],byte[32]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32][2],byte[32][2]),(byte[32],byte[32])[2])"
+                "type": "(byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2])"
             }
         }
     ],

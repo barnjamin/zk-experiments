@@ -29,7 +29,7 @@ class Verifier(bkr.Application):
             ),
             self.get_vk(output=(vk := VerificationKey())),
             # Compute vk_x from inputs
-            (vk_x := G1())._set_with_computed_type(compute_linear_combination(vk, inputs)),  # type: ignore
+            (vk_x := pt.abi.make(G1)).set(compute_linear_combination(vk, inputs)),  # type: ignore
             # return result (normal programs should assert out if its invalid)
             output.set(valid_pairing(proof, vk, vk_x)),
         )

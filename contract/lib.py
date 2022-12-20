@@ -1,6 +1,7 @@
 from typing import Literal
 from pyteal import (
-    And,
+    Replace,
+    Suffix,
     BytesEq,
     If,
     Assert,
@@ -14,11 +15,14 @@ from pyteal import (
     ABIReturnSubroutine,
     Seq,
     Int,
-    BytesZero,
 )
 from beaker.lib.inline import InlineAssembly
 
-Zero = Bytes((0).to_bytes(32, "big"))
+##
+# Consts
+##
+Uint256Zero = Bytes((0).to_bytes(32, "big"))
+Uint512Zero = Bytes((0).to_bytes(64, "big"))
 
 PrimeQ = Bytes(
     (
@@ -31,19 +35,15 @@ SnarkScalar = Bytes(
     ).to_bytes(32, "big")
 )
 
-Uint256 = abi.StaticBytes[Literal[32]]
+##
+# Types
+##
 
+Uint256 = abi.StaticBytes[Literal[32]]
 CircuitInputs = abi.DynamicArray[Uint256]
 
-
-class G1(abi.NamedTuple):
-    x: abi.Field[Uint256]
-    y: abi.Field[Uint256]
-
-
-class G2(abi.NamedTuple):
-    x: abi.Field[abi.StaticArray[Uint256, Literal[2]]]
-    y: abi.Field[abi.StaticArray[Uint256, Literal[2]]]
+G1 = abi.StaticArray[Uint256, Literal[2]]
+G2 = abi.StaticArray[G1, Literal[2]]
 
 
 class VerificationKey(abi.NamedTuple):
@@ -51,6 +51,8 @@ class VerificationKey(abi.NamedTuple):
     beta2: abi.Field[G2]
     gamma2: abi.Field[G2]
     delta2: abi.Field[G2]
+
+    # Can change depending on length of circuit inputs
     IC: abi.Field[abi.StaticArray[G1, Literal[2]]]
 
 
@@ -60,26 +62,62 @@ class Proof(abi.NamedTuple):
     C: abi.Field[G1]
 
 
+##
+# G1 Ops
+##
+
+
+@ABIReturnSubroutine
+def add(a: G1, b: G1, *, output: G1):
+    return output.decode(curve_add(a.encode(), b.encode()))
+
+
+@ABIReturnSubroutine
+def scale(g: G1, factor: Uint256, *, output: G1):
+    return output.decode(
+        curve_scalar_mul(g.encode(), factor.encode())
+    )
+
+
+@ABIReturnSubroutine
+def negate(g: G1, *, output: G1):
+    return Seq(
+        (raw_bytes := ScratchVar()).store(g.encode()),
+        If(
+            BytesEq(raw_bytes.load(), Uint512Zero),
+            output.decode(g.encode()),
+            output.decode(
+                Replace(
+                    raw_bytes.load(),
+                    Int(32),
+                    PrimeQ - (Suffix(raw_bytes.load(), Int(32)) % PrimeQ),
+                )
+            ),
+        ),
+    )
+
+
+##
+# Lib provided functions
+##
 @Subroutine(TealType.uint64)
 def check_proof_values(proof: Proof):
-    ## TODO: rest of them
+    ## TODO:  actually implement this
     # proof.A.use(
     #    lambda g1: g1.x.use(lambda x: pt.Assert(pt.BytesLt(x.get(), PrimeQ)))
     # ),
-    return Seq(Int(1))
+    return Int(1)
 
 
 @ABIReturnSubroutine
 def compute_linear_combination(
     vk: VerificationKey, inputs: CircuitInputs, *, output: G1
 ):
-    scaled = G1()
-    ic0 = G1()
+    # alias output to vk_x
+    scaled = abi.make(G1)
     vk_x = output
     return Seq(
-        (x := abi.make(Uint256)).set(BytesZero(Int(32))),
-        (y := abi.make(Uint256)).set(BytesZero(Int(32))),
-        vk_x.set(x, y),
+        vk_x.decode(Uint512Zero),
         For(
             (idx := ScratchVar()).store(Int(0)),
             idx.load() < inputs.length(),
@@ -87,43 +125,37 @@ def compute_linear_combination(
         ).Do(
             inputs[idx.load()].store_into((pt := abi.make(Uint256))),
             Assert(BytesLt(pt.get(), SnarkScalar), comment="verifier gte snark scalar"),
-            # computes: scaled = VK.IC[idx+1] * inputs[idx]
+            # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(
                 lambda ics: ics[idx.load() + Int(1)].use(
-                    lambda ic: inputs[idx.load()].use(
-                        lambda i: scaled._set_with_computed_type(
-                            scale(ic, i)  # type: ignore
-                        )
-                    )
-                )
+                    lambda vk_ic: scaled._set_with_computed_type(scale(vk_ic, pt)) # type: ignore
+                )  
             ),
-            # new_vk_x = old_vkx + scaled
-            vk_x._set_with_computed_type(add(vk_x, scaled)),  # type: ignore
+            vk_x._set_with_computed_type(add(vk_x, scaled)) # type: ignore
         ),
-        # vk_X + vk.IC[0]
-        vk.IC.use(lambda ics: ics[Int(0)].store_into(ic0)),
-        vk_x._set_with_computed_type(add(vk_x, ic0)),  # type: ignore
+        # vk_X += vk.IC[0]
+        vk.IC.use(
+            lambda ics: ics[Int(0)].use(
+                lambda ic: vk_x._set_with_computed_type(add(vk_x, ic))  # type: ignore
+            )
+        ),
     )
+
+
+#                      a1,      a2,       b1,       b2,    c1,       c2,      d1,        d2
+# Pairing.negate(proof.A), proof.B, vk.alfa1, vk.beta2, vk_x, vk.gamma2, proof.C, vk.delta2
 
 
 @Subroutine(TealType.uint64)
 def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
-    a1 = G1()
     return Seq(
-        # a1._set_with_computed_type(proof.A.use(lambda a: negate(a, output=a1)), # type: ignore
+        (g1_buff := ScratchVar()).store(Bytes("")),
+        (g2_buff := ScratchVar()).store(Bytes("")),
+        # Combine all the G1 points
+        # Combine all the G2 points
         Int(1)
     )
 
-
-# Pairing.pairing( Pairing.negate(proof.A), proof.B, vk.alfa1, vk.beta2, vk_x, vk.gamma2, proof.C, vk.delta2 );
-#        G1Point memory a1,
-#        G2Point memory a2,
-#        G1Point memory b1,
-#        G2Point memory b2,
-#        G1Point memory c1,
-#        G2Point memory c2,
-#        G1Point memory d1,
-#        G2Point memory d2
 
 #        G1Point[4] memory p1 = [a1, b1, c1, d1];
 #        G2Point[4] memory p2 = [a2, b2, c2, d2];
@@ -151,59 +183,36 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
 #           0x20
 #        )
 
-# "bn256_add": proto("bb:b"), costly(70)
+
+##
+# Curve Ops
+##
+
+# "ec_add": proto("bb:b")
 @Subroutine(TealType.bytes)
 def curve_add(a, b):
-    return InlineAssembly("bn256_add", a, b, type=TealType.bytes)
+    return InlineAssembly("ec_add", a, b, type=TealType.bytes)
 
 
-# "bn256_scalar_mul":  proto("bb:b"), costly(970)
+# "ec_scalar_mul":  proto("bb:b"), costly(970)
 @Subroutine(TealType.bytes)
 def curve_scalar_mul(a, b):
-    return InlineAssembly("bn256_scalar_mul", a, b, type=TealType.bytes)
+    return InlineAssembly("ec_scalar_mul", a, b, type=TealType.bytes)
 
 
-# "bn256_pairing":  proto("bb:i"), costly(8700)
+# "ec_pairing":  proto("bb:i"), costly(8700)
 @Subroutine(TealType.uint64)
 def curve_pairing(a, b):
-    return InlineAssembly("bn256_pairing", a, b, type=TealType.uint64)
+    return InlineAssembly("ec_pairing", a, b, type=TealType.uint64)
 
 
-@ABIReturnSubroutine
-def add(a: G1, b: G1, *, output: G1):
-    x = abi.make(Uint256)
-    y = abi.make(Uint256)
-    return Seq(
-        a.x.use(lambda ax: b.x.use(lambda bx: x.set(curve_add(ax.get(), bx.get())))),
-        a.y.use(lambda ay: b.y.use(lambda by: y.set(curve_add(ay.get(), by.get())))),
-        output.set(x, y),
-    )
-
-
-@ABIReturnSubroutine
-def negate(g: G1, *, output: G1):
-    return Seq(
-        g.x.use(
-            lambda gx: g.y.use(
-                lambda gy: If(
-                    And(BytesEq(gx.get(), Zero), BytesEq(gy.get(), Zero)),
-                    output.decode(g.encode()),
-                    Seq(
-                        (newy := abi.make(Uint256)).set(PrimeQ - (gy.get() % PrimeQ)),
-                        output.set(gx, newy),
-                    ),
-                )
-            )
-        )
-    )
-
-
-@ABIReturnSubroutine
-def scale(g: G1, factor: Uint256, *, output: G1):
-    x = abi.make(Uint256)
-    y = abi.make(Uint256)
-    return Seq(
-        g.x.use(lambda gx: x.set(curve_scalar_mul(gx.get(), factor.get()))),
-        g.y.use(lambda gy: y.set(curve_scalar_mul(gy.get(), factor.get()))),
-        output.set(x, y),
-    )
+# {0xe0, "ec_add", opEcAdd, proto("bb:b"), pairingVersion,
+#     costByField("v", &EcCurves, []int{
+#         BN254_G1: 10, BN254_G2: 10,
+#         BLS12_381_G1: 20, BLS12_381_G2: 20})},
+# {0xe1, "ec_scalar_mul", opEcScalarMul, proto("bb:b"), pairingVersion,
+#     costByField("v", &EcCurves, []int{
+#         BN254_G1: 100, BN254_G2: 100,
+#         BLS12_381_G1: 200, BLS12_381_G2: 200})},
+# {0xe2, "ec_pairing", opEcPairingCheck, proto("bb:i"), pairingVersion,
+#     costByField("v", &EcCurves, []int{BN254: 1000, BLS12_381: 2000})},
