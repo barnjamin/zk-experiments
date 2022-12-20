@@ -8,7 +8,7 @@ from lib import (
     G1,
     compute_linear_combination,
     valid_pairing,
-    check_proof_values,
+    assert_proof_points_lt_prime_q,
 )
 
 
@@ -24,12 +24,10 @@ class Verifier(bkr.Application):
     def verify(self, inputs: CircuitInputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
             # Make sure proof doesnt have any values > primeQ
-            pt.Assert(
-                check_proof_values(proof), comment="A value in the proof was > PrimeQ"
-            ),
+            assert_proof_points_lt_prime_q(proof),
             self.get_vk(output=(vk := VerificationKey())),
             # Compute vk_x from inputs
-            (vk_x := pt.abi.make(G1)).set(compute_linear_combination(vk, inputs)),  # type: ignore
+            (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
             # return result (normal programs should assert out if its invalid)
             output.set(valid_pairing(proof, vk, vk_x)),
         )

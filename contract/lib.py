@@ -6,6 +6,7 @@ from pyteal import (
     Replace,
     Suffix,
     BytesEq,
+    Extract,
     If,
     Assert,
     Bytes,
@@ -72,6 +73,14 @@ class Proof(abi.NamedTuple):
 ##
 
 
+def x(a: G1):
+    return Extract(a.encode(), Int(0), Int(32))
+
+
+def y(a: G1):
+    return Suffix(a.encode(), Int(32))
+
+
 @Subroutine(TealType.bytes)
 def add(a: G1, b: G1):
     return curve_add(a.encode(), b.encode())
@@ -101,24 +110,52 @@ def negate(g: G1):
 ##
 # Lib provided functions
 ##
-@Subroutine(TealType.uint64)
-def check_proof_values(proof: Proof):
-    ## TODO:  actually implement this
-    # proof.A.use(
-    #    lambda g1: g1.x.use(lambda x: pt.Assert(pt.BytesLt(x.get(), PrimeQ)))
-    # ),
-    return Int(1)
 
 
-@ABIReturnSubroutine
-def compute_linear_combination(
-    vk: VerificationKey, inputs: CircuitInputs, *, output: G1
-):
-    # alias output to vk_x
-    scaled = abi.make(G1)
-    vk_x = output
+@Subroutine(TealType.none)
+def assert_proof_points_lt_prime_q(proof: Proof):
     return Seq(
-        vk_x.decode(Uint512Zero),
+        proof.A.use(
+            lambda a: Assert(
+                BytesLt(x(a), PrimeQ), BytesLt(y(a), PrimeQ), comment="a point > primeq"
+            )
+        ),
+        proof.B.use(
+            lambda b: Seq(
+                b[0].use(
+                    lambda b_0: Assert(
+                        BytesLt(x(b_0), PrimeQ),
+                        BytesLt(y(b_0), PrimeQ),
+                        comment="b0 point > primeq",
+                    )
+                ),
+                b[1].use(
+                    lambda b_1: Assert(
+                        BytesLt(x(b_1), PrimeQ),
+                        BytesLt(y(b_1), PrimeQ),
+                        comment="b1 point > primeq",
+                    )
+                ),
+            )
+        ),
+        proof.C.use(
+            lambda c: Assert(
+                BytesLt(x(c), PrimeQ), BytesLt(y(c), PrimeQ), comment="c point > primeq"
+            )
+        ),
+    )
+
+
+@Subroutine(TealType.bytes)
+def compute_linear_combination(
+    vk: VerificationKey,
+    inputs: CircuitInputs,
+):
+    # intermediate step
+    scaled = abi.make(G1)
+    # alias output to vk_x
+    return Seq(
+        (vk_x := abi.make(G1)).decode(Uint512Zero),
         For(
             (idx := ScratchVar()).store(Int(0)),
             idx.load() < inputs.length(),
@@ -136,6 +173,7 @@ def compute_linear_combination(
         ),
         # vk_X += vk.IC[0]
         vk.IC.use(lambda ics: ics[Int(0)].use(lambda ic: vk_x.decode(add(vk_x, ic)))),
+        vk_x.encode(),
     )
 
 
@@ -166,19 +204,19 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
 # "ec_add": proto("bb:b")
 @Subroutine(TealType.bytes)
 def curve_add(a, b):
-    return InlineAssembly("ec_add", a, b, type=TealType.bytes)
+    return InlineAssembly("ec_add BN254_G1", a, b, type=TealType.bytes)
 
 
 # "ec_scalar_mul":  proto("bb:b"), costly(970)
 @Subroutine(TealType.bytes)
 def curve_scalar_mul(a, b):
-    return InlineAssembly("ec_scalar_mul", a, b, type=TealType.bytes)
+    return InlineAssembly("ec_scalar_mul BN254_G1", a, b, type=TealType.bytes)
 
 
 # "ec_pairing":  proto("bb:i"), costly(8700)
 @Subroutine(TealType.uint64)
 def curve_pairing(a, b):
-    return InlineAssembly("ec_pairing", a, b, type=TealType.uint64)
+    return InlineAssembly("ec_pairing_check BN254_G1", a, b, type=TealType.uint64)
 
 
 # {0xe0, "ec_add", opEcAdd, proto("bb:b"), pairingVersion,

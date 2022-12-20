@@ -263,17 +263,17 @@ retsub
 
 // curve_add
 curveadd_7:
-ec_add
+ec_add BN254_G1
 retsub
 
 // curve_scalar_mul
 curvescalarmul_8:
-ec_scalar_mul
+ec_scalar_mul BN254_G1
 retsub
 
 // curve_pairing
 curvepairing_9:
-ec_pairing
+ec_pairing BN254_G1
 retsub
 
 // auth_only
