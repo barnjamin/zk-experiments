@@ -25,39 +25,16 @@ const (
 type RawWriter interface {
 	WriteRawTo(w io.Writer) (int64, error)
 }
-type u256 [32]byte
-type g1 [2]u256
-type g2 [2]g1
 
 func main() {
 	// createProof(3, uint64(math.Pow(3, 3)+3+5))
 	// Get proof for reproducibility
-	_, vk, _ := getProof()
-	t := vkAsABITuple(vk)
-	log.Printf("%+v", t)
-
+	proof, vk, inputs := getProof()
 	cc := NewClient(3, "contract/artifacts/contract.json")
-	cc.callBootstrap(t)
-
-	//log.Printf("%+v", proof)
-	//log.Printf("%+v", inputs)
-
-	//method, _ = abi.GetMethodByName(contract.Methods, "verify")
-	//// {Name:inputs Type:byte[32][1] typeObject:<nil> Desc:}
-	//// {Name:proof Type:(byte[32][2],byte[32][2][2],byte[32][2]) typeObject:<nil> Desc:}
-	//for _, arg := range method.Args {
-	//	log.Printf("%+v", arg)
-	//}
+	cc.Bootstrap(vkAsABITuple(vk))
+	cc.Verify(inputsAsAbiTuple(inputs), proofAsABITuple(proof))
 
 }
-
-/*
-a1 byte[32][2],
-b2 byte[32][2][2],
-g2 byte[32][2][2],
-d2 byte[32][2][2],
-ic byte[32][2][2]
-*/
 
 func asg1(pts []interface{}) [2][32]byte {
 	n_x, _ := new(big.Int).SetString(pts[0].(string), 10)
@@ -70,6 +47,39 @@ func asg1(pts []interface{}) [2][32]byte {
 
 	v := [2][32]byte{x, y}
 	return v
+}
+
+// // {Name:inputs Type:byte[32][1] typeObject:<nil> Desc:}
+func inputsAsAbiTuple(inputs [][]byte) interface{} {
+	return inputs
+}
+
+// // {Name:proof Type:(byte[32][2],byte[32][2][2],byte[32][2]) typeObject:<nil> Desc:}
+func proofAsABITuple(proof groth16.Proof) interface{} {
+	m := asMap(proof)
+	log.Printf("%+v", m)
+
+	tuple := []interface{}{}
+
+	// Add A
+	tuple = append(tuple, asg1([]interface{}{
+		m["Ar"]["X"], m["Ar"]["Y"],
+	}))
+
+	// Add B
+	bs_x := m["Bs"]["X"].(map[string]interface{})
+	bs_y := m["Bs"]["Y"].(map[string]interface{})
+	tuple = append(tuple, [2][2][32]byte{
+		asg1([]interface{}{bs_x["A0"], bs_x["A1"]}),
+		asg1([]interface{}{bs_y["A0"], bs_y["A1"]}),
+	})
+
+	// Add C
+	tuple = append(tuple, asg1([]interface{}{
+		m["Krs"]["X"], m["Krs"]["Y"],
+	}))
+
+	return tuple
 }
 
 func vkAsABITuple(vk groth16.VerifyingKey) interface{} {
@@ -190,7 +200,8 @@ func createProof(x, y uint64) {
 
 	// TODO: idk if this actually writes 32 bytes?
 	input := new(big.Int).SetUint64(x)
-	ioutil.WriteFile(INPUT_FILE, input.Bytes(), 0655)
+	buf := make([]byte, 32)
+	ioutil.WriteFile(INPUT_FILE, input.FillBytes(buf), 0655)
 }
 
 func setupKeys(r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, groth16.VerifyingKey) {
