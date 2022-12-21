@@ -25,8 +25,9 @@ class Verifier(bkr.Application):
     @bkr.external
     def verify(self, inputs: CircuitInputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
+            # Max our budget for now TODO: take out
             self.opup.ensure_budget(pt.Int(160000)),
-            # Make sure proof doesnt have any values > primeQ
+            # Make sure proof doesn't have any values > primeQ
             assert_proof_points_lt_prime_q(proof),
             self.get_vk(output=(vk := VerificationKey())),
             # Compute vk_x from inputs

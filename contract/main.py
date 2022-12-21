@@ -13,13 +13,14 @@ def main():
 
     v = Verifier(version=9)
     ac = client.ApplicationClient(algod_client, v, signer=acct.signer)
-    ac.create()
+    app_id, _, _ = ac.create()
+    print(f"App id: {app_id}")
     ac.fund(1000 * consts.algo)
 
-    ac.call(v.bootstrap, vk=b"")
-    result = ac.call(v.verify, inputs=b"", proof=b"")
+    #ac.call(v.bootstrap, vk=b"")
+    #result = ac.call(v.verify, inputs=b"", proof=b"")
 
-    print(result.return_value)
+    #print(result.return_value)
 
 
 if __name__ == "__main__":

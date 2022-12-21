@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/algorand/go-algorand-sdk/abi"
 	"github.com/barnjamin/zk-experiments/circuit"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/groth16"
@@ -33,23 +32,105 @@ type g2 [2]g1
 func main() {
 	// createProof(3, uint64(math.Pow(3, 3)+3+5))
 	// Get proof for reproducibility
-	proof, vk, inputs := getProof()
-	log.Printf("%+v", proof)
-	log.Printf("%+v", vk)
-	log.Printf("%+v", inputs)
+	_, vk, _ := getProof()
+	t := vkAsABITuple(vk)
+	log.Printf("%+v", t)
 
-	// TODO: Write abi arguments (vk, proof, inputs)  to file based on the type
-	contract := getContract()
-	method, _ := abi.GetMethodByName(contract.Methods, "bootstrap")
-	for _, arg := range method.Args {
-		log.Printf("%+v", arg)
+	cc := NewClient(3, "contract/artifacts/contract.json")
+	cc.callBootstrap(t)
+
+	//log.Printf("%+v", proof)
+	//log.Printf("%+v", inputs)
+
+	//method, _ = abi.GetMethodByName(contract.Methods, "verify")
+	//// {Name:inputs Type:byte[32][1] typeObject:<nil> Desc:}
+	//// {Name:proof Type:(byte[32][2],byte[32][2][2],byte[32][2]) typeObject:<nil> Desc:}
+	//for _, arg := range method.Args {
+	//	log.Printf("%+v", arg)
+	//}
+
+}
+
+/*
+a1 byte[32][2],
+b2 byte[32][2][2],
+g2 byte[32][2][2],
+d2 byte[32][2][2],
+ic byte[32][2][2]
+*/
+
+func asg1(pts []interface{}) [2][32]byte {
+	n_x, _ := new(big.Int).SetString(pts[0].(string), 10)
+	x := [32]byte{}
+	copy(x[:], n_x.Bytes())
+
+	n_y, _ := new(big.Int).SetString(pts[1].(string), 10)
+	y := [32]byte{}
+	copy(y[:], n_y.Bytes())
+
+	v := [2][32]byte{x, y}
+	return v
+}
+
+func vkAsABITuple(vk groth16.VerifyingKey) interface{} {
+	tuple := []interface{}{}
+
+	m := asMap(vk)
+
+	a1 := m["G1"]["Alpha"].(map[string]interface{})
+	tuple = append(tuple, asg1([]interface{}{
+		a1["X"], a1["Y"],
+	}))
+
+	b2 := m["G2"]["Beta"].(map[string]interface{})
+	b2_x := b2["X"].(map[string]interface{})
+	b2_y := b2["Y"].(map[string]interface{})
+	tuple = append(tuple, [2][2][32]byte{
+		asg1([]interface{}{b2_x["A0"], b2_x["A1"]}),
+		asg1([]interface{}{b2_y["A0"], b2_y["A1"]}),
+	})
+
+	d2 := m["G2"]["Delta"].(map[string]interface{})
+	d2_x := d2["X"].(map[string]interface{})
+	d2_y := d2["Y"].(map[string]interface{})
+	tuple = append(tuple, [2][2][32]byte{
+		asg1([]interface{}{d2_x["A0"], d2_x["A1"]}),
+		asg1([]interface{}{d2_y["A0"], d2_y["A1"]}),
+	})
+
+	g2 := m["G2"]["Gamma"].(map[string]interface{})
+	g2_x := g2["X"].(map[string]interface{})
+	g2_y := g2["Y"].(map[string]interface{})
+	tuple = append(tuple, [2][2][32]byte{
+		asg1([]interface{}{g2_x["A0"], g2_x["A1"]}),
+		asg1([]interface{}{g2_y["A0"], g2_y["A1"]}),
+	})
+
+	ic := m["G1"]["K"].([]interface{})
+	ic_arr := []interface{}{}
+	for _, i := range ic {
+		ig1 := i.(map[string]interface{})
+		ic_arr = append(ic_arr, asg1([]interface{}{
+			ig1["X"], ig1["Y"],
+		}))
+	}
+	tuple = append(tuple, ic_arr)
+
+	return tuple
+}
+
+// Hack because i cant access the `internal`
+// package of gnark, and too lazy to figure out
+// how the file is structured
+func asMap(x interface{}) map[string]map[string]interface{} {
+	b, err := json.Marshal(x)
+	if err != nil {
+		log.Fatalf("Failed to marshal to json: %+v", err)
 	}
 
-	method, _ = abi.GetMethodByName(contract.Methods, "verify")
-	for _, arg := range method.Args {
-		log.Printf("%+v", arg)
-	}
-
+	m := map[string]map[string]interface{}{}
+	json.Unmarshal(b, &m)
+	return m
 }
 
 func getProof() (groth16.Proof, groth16.VerifyingKey, [][]byte) {
@@ -110,18 +191,6 @@ func createProof(x, y uint64) {
 	// TODO: idk if this actually writes 32 bytes?
 	input := new(big.Int).SetUint64(x)
 	ioutil.WriteFile(INPUT_FILE, input.Bytes(), 0655)
-}
-
-func getContract() *abi.Contract {
-	b, err := ioutil.ReadFile("contract/artifacts/contract.json")
-	if err != nil {
-		log.Fatalf("Failed to open contract file: %+v", err)
-	}
-	contract := &abi.Contract{}
-	if err := json.Unmarshal(b, contract); err != nil {
-		log.Fatalf("Failed to marshal contract: %+v", err)
-	}
-	return contract
 }
 
 func setupKeys(r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, groth16.VerifyingKey) {
