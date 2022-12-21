@@ -9,6 +9,7 @@ import (
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254"
+	"github.com/consensys/gnark-crypto/ecc/bn254/fr/fft"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
@@ -190,6 +191,74 @@ func (p *Proof) ToABITuple() interface{} {
 	return tuple
 }
 
+type ProvingKey struct {
+	Domain fft.Domain
+	G1     struct {
+		Alpha, Beta, Delta bn254.G1Affine
+		A, B, Z            []bn254.G1Affine
+		K                  []bn254.G1Affine // the indexes correspond to the private wires
+	}
+
+	G2 struct {
+		Beta, Delta bn254.G2Affine
+		B           []bn254.G2Affine
+	}
+
+	InfinityA, InfinityB     []bool
+	NbInfinityA, NbInfinityB uint64
+}
+
+func NewProvingKeyFromFile(name string) *ProvingKey {
+
+	pk := &ProvingKey{}
+	f, err := os.Open(name)
+	if err != nil {
+		log.Fatalf("Failed to open file: %+v", err)
+	}
+	defer f.Close()
+
+	var domain fft.Domain
+	domain.ReadFrom(f)
+
+	var nbWires uint64
+
+	dec := bn254.NewDecoder(f)
+
+	toDecode := []interface{}{
+		&pk.G1.Alpha,
+		&pk.G1.Beta,
+		&pk.G1.Delta,
+		&pk.G1.A,
+		&pk.G1.B,
+		&pk.G1.Z,
+		&pk.G1.K,
+		&pk.G2.Beta,
+		&pk.G2.Delta,
+		&pk.G2.B,
+		&nbWires,
+		&pk.NbInfinityA,
+		&pk.NbInfinityB,
+	}
+
+	for _, v := range toDecode {
+		if err := dec.Decode(v); err != nil {
+			log.Fatalf("Failed to decode: %+v", err)
+		}
+	}
+	pk.InfinityA = make([]bool, nbWires)
+	pk.InfinityB = make([]bool, nbWires)
+
+	if err := dec.Decode(&pk.InfinityA); err != nil {
+		log.Fatalf("Failed to decode: %+v", err)
+	}
+	if err := dec.Decode(&pk.InfinityB); err != nil {
+		log.Fatalf("Failed to decode: %+v", err)
+	}
+
+	return pk
+
+}
+
 func Linearize(input []*big.Int, vk *VK) *bn254.G1Affine {
 	// Make sure that every input is less than the snark scalar field
 	vk_x := &bn254.G1Affine{}
@@ -217,9 +286,6 @@ func CheckValidPairing(proof *Proof, vk *VK, vk_x *bn254.G1Affine) (bool, error)
 		*vk.Gamma2,
 		*vk.Delta2,
 	}
-
-	log.Printf("%+v", P)
-	log.Printf("%+v", Q)
 
 	return bn254.PairingCheck(P, Q)
 }
@@ -256,8 +322,7 @@ func CreateProof(x, y uint64) {
 	if err != nil {
 		log.Fatalf("Failed to compile circuit")
 	}
-	// pk, _ := setupKeys(r1cs)
-	pk, _ := readKeys()
+	pk, vk := setupKeys(r1cs)
 
 	witness, err := frontend.NewWitness(&Circuit{X: x, Y: y}, ecc.BN254)
 	if err != nil {
@@ -270,8 +335,13 @@ func CreateProof(x, y uint64) {
 	}
 	writeToFile(PROOF_FILE, proof)
 
-	// TODO: idk if this actually writes 32 bytes?
-	input := new(big.Int).SetUint64(x)
+	pubWit, _ := witness.Public()
+	err = groth16.Verify(proof, vk, pubWit)
+	if err != nil {
+		log.Fatalf("INVALID: %+v", err)
+	}
+
+	input := new(big.Int).SetUint64(y)
 	buf := make([]byte, 32)
 	ioutil.WriteFile(INPUT_FILE, input.FillBytes(buf), 0655)
 }

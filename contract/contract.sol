@@ -79,6 +79,12 @@ library Pairing {
      *         For example,
      *         pairing([P1(), P1().negate()], [P2(), P2()]) should return true.
      */
+
+    //  return Pairing.pairing( Pairing.negate(proof.A), proof.B,
+    //        vk.alfa1, vk.beta2,
+    //        vk_x, vk.gamma2,
+    //        proof.C, vk.delta2
+    //    );
     function pairing(
         G1Point memory a1,
         G2Point memory a2,
@@ -156,9 +162,9 @@ contract Verifier {
      *          above and the public inputs
      */
     function verifyProof(
-        uint256[2] memory a,
-        uint256[2][2] memory b,
-        uint256[2] memory c,
+        uint256[2] memory a, // Ar
+        uint256[2][2] memory b, // Bs 
+        uint256[2] memory c, // Krs
         uint256[1] memory input
     ) public view returns (bool r) {
 
