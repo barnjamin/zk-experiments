@@ -1,7 +1,6 @@
 package circuit
 
 import (
-	"io"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254"
-	"github.com/consensys/gnark-crypto/ecc/bn254/fr/fft"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
@@ -22,245 +20,7 @@ const (
 	INPUT_FILE = "circuit.inputs"
 )
 
-type RawWriter interface {
-	WriteRawTo(w io.Writer) (int64, error)
-}
-
-type VK struct {
-	Alpha1 *bn254.G1Affine
-	Beta1  *bn254.G1Affine
-	Delta1 *bn254.G1Affine
-
-	Beta2  *bn254.G2Affine
-	Gamma2 *bn254.G2Affine
-	Delta2 *bn254.G2Affine
-
-	IC []bn254.G1Affine
-}
-
-func NewVKFromFile(path string) *VK {
-	f, err := os.Open(path)
-	if err != nil {
-		log.Fatalf("Failed to read file: %+v", err)
-	}
-	defer f.Close()
-
-	dec := bn254.NewDecoder(f)
-
-	a1 := &bn254.G1Affine{}
-	err = dec.Decode(a1)
-	if err != nil {
-		log.Fatalf("Failed to decode a1: %+v", err)
-	}
-
-	b1 := &bn254.G1Affine{}
-	err = dec.Decode(b1)
-	if err != nil {
-		log.Fatalf("Failed to decode b1: %+v", err)
-	}
-
-	b2 := &bn254.G2Affine{}
-	err = dec.Decode(b2)
-	if err != nil {
-		log.Fatalf("Failed to decode b2: %+v", err)
-	}
-
-	g2 := &bn254.G2Affine{}
-	err = dec.Decode(g2)
-	if err != nil {
-		log.Fatalf("Failed to decode g2: %+v", err)
-	}
-
-	d1 := &bn254.G1Affine{}
-	err = dec.Decode(d1)
-	if err != nil {
-		log.Fatalf("Failed to decode d1: %+v", err)
-	}
-
-	d2 := &bn254.G2Affine{}
-	err = dec.Decode(d2)
-	if err != nil {
-		log.Fatalf("Failed to decode d2: %+v", err)
-	}
-
-	ics := []bn254.G1Affine{}
-	err = dec.Decode(&ics)
-	if err != nil {
-		log.Fatalf("Failed to decode ics: %+v", err)
-	}
-
-	return &VK{
-		Alpha1: a1,
-		Beta2:  b2,
-		Gamma2: g2,
-		Delta2: d2,
-		IC:     ics,
-	}
-
-}
-
-func (v *VK) ToABITuple() interface{} {
-	tuple := []interface{}{}
-
-	// A
-	tuple = append(tuple, []interface{}{v.Alpha1.X.Bytes(), v.Alpha1.Y.Bytes()})
-
-	// B
-	tuple = append(tuple, [][]interface{}{
-		{v.Beta2.X.A0.Bytes(), v.Beta2.X.A1.Bytes()},
-		{v.Beta2.Y.A0.Bytes(), v.Beta2.Y.A1.Bytes()},
-	})
-
-	// G
-	tuple = append(tuple, [][]interface{}{
-		{v.Gamma2.X.A0.Bytes(), v.Gamma2.X.A1.Bytes()},
-		{v.Gamma2.Y.A0.Bytes(), v.Gamma2.Y.A1.Bytes()},
-	})
-
-	// D
-	tuple = append(tuple, [][]interface{}{
-		{v.Delta2.X.A0.Bytes(), v.Delta2.X.A1.Bytes()},
-		{v.Delta2.Y.A0.Bytes(), v.Delta2.Y.A1.Bytes()},
-	})
-
-	// IC
-	ics := []interface{}{}
-	for _, ic := range v.IC {
-		ics = append(ics, []interface{}{ic.X.Bytes(), ic.Y.Bytes()})
-	}
-	tuple = append(tuple, ics)
-
-	return tuple
-}
-
-type Proof struct {
-	Ar, Krs *bn254.G1Affine
-	Bs      *bn254.G2Affine
-}
-
-func NewProofFromFile(path string) *Proof {
-	f, err := os.Open(path)
-	if err != nil {
-		log.Fatalf("Failed to read file: %+v", err)
-	}
-	defer f.Close()
-
-	dec := bn254.NewDecoder(f)
-
-	ar := &bn254.G1Affine{}
-	err = dec.Decode(ar)
-	if err != nil {
-		log.Fatalf("Failed to decode ar: %+v", err)
-	}
-
-	bs := &bn254.G2Affine{}
-	err = dec.Decode(bs)
-	if err != nil {
-		log.Fatalf("Failed to decode bs: %+v", err)
-	}
-
-	kr := &bn254.G1Affine{}
-	err = dec.Decode(kr)
-	if err != nil {
-		log.Fatalf("Failed to decode Krs: %+v", err)
-	}
-
-	return &Proof{
-		Ar:  ar,
-		Krs: kr,
-		Bs:  bs,
-	}
-
-}
-
-func (p *Proof) ToABITuple() interface{} {
-	tuple := []interface{}{}
-
-	// A
-	tuple = append(tuple, []interface{}{p.Ar.X.Bytes(), p.Ar.Y.Bytes()})
-
-	// B
-	tuple = append(tuple, [][]interface{}{
-		{p.Bs.X.A0.Bytes(), p.Bs.X.A1.Bytes()},
-		{p.Bs.Y.A0.Bytes(), p.Bs.Y.A1.Bytes()},
-	})
-
-	// C
-	tuple = append(tuple, []interface{}{p.Krs.X.Bytes(), p.Krs.Y.Bytes()})
-
-	return tuple
-}
-
-type ProvingKey struct {
-	Domain fft.Domain
-	G1     struct {
-		Alpha, Beta, Delta bn254.G1Affine
-		A, B, Z            []bn254.G1Affine
-		K                  []bn254.G1Affine // the indexes correspond to the private wires
-	}
-
-	G2 struct {
-		Beta, Delta bn254.G2Affine
-		B           []bn254.G2Affine
-	}
-
-	InfinityA, InfinityB     []bool
-	NbInfinityA, NbInfinityB uint64
-}
-
-func NewProvingKeyFromFile(name string) *ProvingKey {
-
-	pk := &ProvingKey{}
-	f, err := os.Open(name)
-	if err != nil {
-		log.Fatalf("Failed to open file: %+v", err)
-	}
-	defer f.Close()
-
-	var domain fft.Domain
-	domain.ReadFrom(f)
-
-	var nbWires uint64
-
-	dec := bn254.NewDecoder(f)
-
-	toDecode := []interface{}{
-		&pk.G1.Alpha,
-		&pk.G1.Beta,
-		&pk.G1.Delta,
-		&pk.G1.A,
-		&pk.G1.B,
-		&pk.G1.Z,
-		&pk.G1.K,
-		&pk.G2.Beta,
-		&pk.G2.Delta,
-		&pk.G2.B,
-		&nbWires,
-		&pk.NbInfinityA,
-		&pk.NbInfinityB,
-	}
-
-	for _, v := range toDecode {
-		if err := dec.Decode(v); err != nil {
-			log.Fatalf("Failed to decode: %+v", err)
-		}
-	}
-	pk.InfinityA = make([]bool, nbWires)
-	pk.InfinityB = make([]bool, nbWires)
-
-	if err := dec.Decode(&pk.InfinityA); err != nil {
-		log.Fatalf("Failed to decode: %+v", err)
-	}
-	if err := dec.Decode(&pk.InfinityB); err != nil {
-		log.Fatalf("Failed to decode: %+v", err)
-	}
-
-	return pk
-
-}
-
-func Linearize(input []*big.Int, vk *VK) *bn254.G1Affine {
-	// Make sure that every input is less than the snark scalar field
+func SumInputs(input []*big.Int, vk *VK) *bn254.G1Affine {
 	vk_x := &bn254.G1Affine{}
 	for idx := 0; idx < len(input); idx++ {
 		ic := &vk.IC[idx+1]
@@ -272,33 +32,12 @@ func Linearize(input []*big.Int, vk *VK) *bn254.G1Affine {
 }
 
 func CheckValidPairing(proof *Proof, vk *VK, vk_x *bn254.G1Affine) (bool, error) {
-
-	P := []bn254.G1Affine{
-		*proof.Ar.Neg(proof.Ar),
-		*vk.Alpha1,
-		*vk_x,
-		*proof.Krs,
-	}
-
-	Q := []bn254.G2Affine{
-		*proof.Bs,
-		*vk.Beta2,
-		*vk.Gamma2,
-		*vk.Delta2,
-	}
-
+	P := []bn254.G1Affine{*proof.Ar.Neg(proof.Ar), *vk.Alpha1, *vk_x, *proof.Krs}
+	Q := []bn254.G2Affine{*proof.Bs, *vk.Beta2, *vk.Gamma2, *vk.Delta2}
 	return bn254.PairingCheck(P, Q)
 }
 
-func InputsAsAbiTuple(inputs []*big.Int) interface{} {
-	tuple := make([]interface{}, len(inputs))
-	for idx, i := range inputs {
-		tuple[idx] = i.FillBytes(make([]byte, 32))
-	}
-	return tuple
-}
-
-func GetProof() (*Proof, *VK, []*big.Int) {
+func GetLastProof() (*Proof, *VK, []*big.Int) {
 	proof := NewProofFromFile(PROOF_FILE)
 	vk := NewVKFromFile(VK_FILE)
 
@@ -322,7 +61,10 @@ func CreateProof(x, y uint64) {
 	if err != nil {
 		log.Fatalf("Failed to compile circuit")
 	}
-	pk, vk := setupKeys(r1cs)
+
+	// Uncomment for a new set of keys
+	//pk, vk := setupKeys(r1cs)
+	pk, vk := readLastKeys()
 
 	witness, err := frontend.NewWitness(&Circuit{X: x, Y: y}, ecc.BN254)
 	if err != nil {
@@ -335,10 +77,14 @@ func CreateProof(x, y uint64) {
 	}
 	writeToFile(PROOF_FILE, proof)
 
-	pubWit, _ := witness.Public()
+	pubWit, err := witness.Public()
+	if err != nil {
+		log.Fatalf("couldnt create public proof: %+v", err)
+	}
+
 	err = groth16.Verify(proof, vk, pubWit)
 	if err != nil {
-		log.Fatalf("INVALID: %+v", err)
+		log.Fatalf("Invalid Proof: %+v", err)
 	}
 
 	input := new(big.Int).SetUint64(y)
@@ -358,7 +104,7 @@ func setupKeys(r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, grot
 	return pk, vk
 }
 
-func readKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
+func readLastKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
 	// read proving and verifying keys
 	pk := groth16.NewProvingKey(ecc.BN254)
 	vk := groth16.NewVerifyingKey(ecc.BN254)
@@ -385,17 +131,4 @@ func readKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
 	f.Close()
 
 	return pk, vk
-}
-
-func writeToFile(name string, rw RawWriter) {
-	f, err := os.Create(name)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	_, err = rw.WriteRawTo(f)
-	if err != nil {
-		panic(err)
-	}
 }

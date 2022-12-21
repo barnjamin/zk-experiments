@@ -136,7 +136,7 @@ func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) bool {
 	return ret.MethodResults[0].ReturnValue.(bool)
 }
 
-func (cc *ContractClient) CheckLinearCombination(inputs interface{}) []*big.Int {
+func (cc *ContractClient) GetInputSum(inputs interface{}) []*big.Int {
 
 	sp, err := cc.client.SuggestedParams().Do(context.Background())
 	if err != nil {
@@ -146,9 +146,9 @@ func (cc *ContractClient) CheckLinearCombination(inputs interface{}) []*big.Int 
 	// Skipping error checks below during AddMethodCall and txn create
 	var atc = future.AtomicTransactionComposer{}
 
-	m, err := cc.contract.GetMethodByName("linear_combination")
+	m, err := cc.contract.GetMethodByName("sum_inputs")
 	if err != nil {
-		log.Fatalf("No method named linear_combination? %+v", err)
+		log.Fatalf("No method named sum_inputs? %+v", err)
 	}
 	mcp := future.AddMethodCallParams{
 		AppID:           cc.appId,
@@ -163,12 +163,12 @@ func (cc *ContractClient) CheckLinearCombination(inputs interface{}) []*big.Int 
 
 	err = atc.AddMethodCall(mcp)
 	if err != nil {
-		log.Fatalf("Failed to add method call for linear_combination: %+v", err)
+		log.Fatalf("Failed to add method call for sum_inputs: %+v", err)
 	}
 
 	ret, err := atc.Execute(cc.client, context.Background(), 4)
 	if err != nil {
-		log.Fatalf("Failed to execute call: %+v", err)
+		log.Fatalf("Failed to execute call sum_inputs: %+v", err)
 	}
 
 	vals := ret.MethodResults[0].ReturnValue.([]interface{})

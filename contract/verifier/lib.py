@@ -42,7 +42,6 @@ SnarkScalar = Bytes(
 ##
 
 Uint256 = abi.StaticBytes[Literal[32]]
-Uint512 = abi.StaticBytes[Literal[64]]
 
 G1 = abi.StaticArray[Uint256, Literal[2]]
 G2 = abi.StaticArray[G1, Literal[2]]
@@ -50,7 +49,7 @@ G2 = abi.StaticArray[G1, Literal[2]]
 InputNum = Literal[1]
 ICNum = Literal[2]  # input num + 1
 
-CircuitInputs = abi.StaticArray[Uint256, InputNum]
+Inputs = abi.StaticArray[Uint256, InputNum]
 
 
 class VerificationKey(abi.NamedTuple):
@@ -143,7 +142,7 @@ def assert_proof_points_lt_prime_q(proof: Proof):
 @Subroutine(TealType.bytes)
 def compute_linear_combination(
     vk: VerificationKey,
-    inputs: CircuitInputs,
+    inputs: Inputs,
 ):
     # intermediate step
     scaled = abi.make(G1)
@@ -156,7 +155,7 @@ def compute_linear_combination(
             idx.store(idx.load() + Int(1)),
         ).Do(
             inputs[idx.load()].store_into((pt := abi.make(Uint256))),
-            Assert(BytesLt(pt.get(), SnarkScalar), comment="verifier gte snark scalar"),
+            Assert(BytesLt(pt.get(), SnarkScalar), comment="input >= snark scalar"),
             # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(
                 lambda ics: ics[idx.load() + Int(1)].use(

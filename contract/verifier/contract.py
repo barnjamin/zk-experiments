@@ -1,8 +1,8 @@
 import pyteal as pt
 import beaker as bkr
 
-from lib import (
-    CircuitInputs,
+from .lib import (
+    Inputs,
     Proof,
     VerificationKey,
     G1,
@@ -27,9 +27,9 @@ class Verifier(bkr.Application):
         return pt.BoxPut(self.vk_box_name, vk.encode())
 
     @bkr.external
-    def linear_combination(self, inputs: CircuitInputs, *, output: G1):
+    def sum_inputs(self, inputs: Inputs, *, output: G1):
         return pt.Seq(
-            self.opup.ensure_budget(pt.Int(16000)),
+            self.opup.ensure_budget(pt.Int(1300)),
             self.get_vk(output=(vk := VerificationKey())),
             # Compute vk_x from inputs
             (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
@@ -37,10 +37,10 @@ class Verifier(bkr.Application):
         )
 
     @bkr.external
-    def verify(self, inputs: CircuitInputs, proof: Proof, *, output: pt.abi.Bool):
+    def verify(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
             # Max our budget for now
-            self.opup.ensure_budget(pt.Int(16000)),
+            self.opup.ensure_budget(pt.Int(1350)),
             # Make sure proof doesn't have any values > primeQ
             assert_proof_points_lt_prime_q(proof),
             self.get_vk(output=(vk := VerificationKey())),
@@ -61,4 +61,4 @@ class Verifier(bkr.Application):
 
 
 if __name__ == "__main__":
-    Verifier().dump("./artifacts")
+    Verifier().dump("../artifacts")

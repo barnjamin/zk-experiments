@@ -10,7 +10,7 @@ pushbytes 0x793ae44d // "bootstrap((byte[32][2],byte[32][2][2],byte[32][2][2],by
 ==
 bnz main_l9
 txna ApplicationArgs 0
-pushbytes 0x4e6bf797 // "linear_combination(byte[32][1])byte[32][2]"
+pushbytes 0xd45a05a9 // "sum_inputs(byte[32][1])byte[32][2]"
 ==
 bnz main_l8
 txna ApplicationArgs 0
@@ -75,7 +75,7 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-callsub linearcombination_14
+callsub suminputs_14
 store 0
 bytec_3 // 0x151f7c75
 load 0
@@ -410,18 +410,18 @@ load 18
 box_put
 retsub
 
-// linear_combination
-linearcombination_14:
+// sum_inputs
+suminputs_14:
 store 1
 intc 5 // 16000
 pushint 10 // 10
 +
 store 2
-linearcombination_14_l1:
+suminputs_14_l1:
 load 2
 global OpcodeBudget
 >
-bz linearcombination_14_l3
+bz suminputs_14_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
@@ -432,8 +432,8 @@ itxn_field ApprovalProgram
 bytec_2 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b linearcombination_14_l1
-linearcombination_14_l3:
+b suminputs_14_l1
+suminputs_14_l3:
 bytec_1 // "vk"
 box_get
 store 4

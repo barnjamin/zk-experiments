@@ -14,7 +14,7 @@
             }
         },
         {
-            "name": "linear_combination",
+            "name": "sum_inputs",
             "args": [
                 {
                     "type": "byte[32][1]",
