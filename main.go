@@ -23,6 +23,9 @@ func main() {
 	vk_x := circuit.Linearize(inputs, vk)
 	log.Printf("Local Linear combo returned: %+v", vk_x)
 
+	result := cc.Verify(circuit.InputsAsAbiTuple(inputs), proof.ToABITuple())
+	log.Printf("Contract valid? %+v", result)
+
 	ok, err := circuit.CheckValidPairing(proof, vk, vk_x)
 	if err != nil {
 		log.Fatalf("Failed to check pairing: %+v", err)

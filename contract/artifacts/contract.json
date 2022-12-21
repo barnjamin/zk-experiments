@@ -38,7 +38,7 @@
                 }
             ],
             "returns": {
-                "type": "byte[32][2]"
+                "type": "bool"
             }
         },
         {

@@ -178,14 +178,14 @@ func (p *Proof) ToABITuple() interface{} {
 	// A
 	tuple = append(tuple, []interface{}{p.Ar.X.Bytes(), p.Ar.Y.Bytes()})
 
-	// Kr
-	tuple = append(tuple, []interface{}{p.Krs.X.Bytes(), p.Krs.Y.Bytes()})
-
-	// Bs
+	// B
 	tuple = append(tuple, [][]interface{}{
 		{p.Bs.X.A0.Bytes(), p.Bs.X.A1.Bytes()},
 		{p.Bs.Y.A0.Bytes(), p.Bs.Y.A1.Bytes()},
 	})
+
+	// C
+	tuple = append(tuple, []interface{}{p.Krs.X.Bytes(), p.Krs.Y.Bytes()})
 
 	return tuple
 }

@@ -98,7 +98,7 @@ func (cc *ContractClient) Bootstrap(vk interface{}) {
 	}
 }
 
-func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) []*big.Int {
+func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) bool {
 
 	sp, err := cc.client.SuggestedParams().Do(context.Background())
 	if err != nil {
@@ -133,19 +133,7 @@ func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) []*big.I
 		log.Fatalf("Failed to execute call: %+v", err)
 	}
 
-	// log.Printf("%+v", ret)
-	vals := ret.MethodResults[0].ReturnValue.([]interface{})
-	out := []*big.Int{}
-	for _, val := range vals {
-		i := val.([]interface{})
-		buf := []byte{}
-		for _, b := range i {
-			buf = append(buf, b.(byte))
-		}
-		v := new(big.Int).SetBytes(buf)
-		out = append(out, v)
-	}
-	return out
+	return ret.MethodResults[0].ReturnValue.(bool)
 }
 
 func (cc *ContractClient) CheckLinearCombination(inputs interface{}) []*big.Int {
