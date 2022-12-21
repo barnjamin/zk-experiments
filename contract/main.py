@@ -1,7 +1,7 @@
 from beaker import *
 from beaker import client, sandbox
 
-from .verifier.contract import Verifier
+from verifier.contract import Verifier
 
 
 def main(app_id: int = 0):
