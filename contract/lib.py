@@ -3,7 +3,6 @@ from pyteal import (
     BytesMinus,
     BytesMod,
     Concat,
-    Replace,
     Suffix,
     BytesEq,
     Extract,
@@ -95,17 +94,10 @@ def scale(g: G1, factor: Uint256):
 
 @Subroutine(TealType.bytes)
 def negate(g: G1):
-    return Seq(
-        (raw_bytes := ScratchVar()).store(g.encode()),
-        If(
-            BytesEq(raw_bytes.load(), Uint512Zero),
-            raw_bytes.load(),
-            Replace(
-                raw_bytes.load(),
-                Int(32),
-                BytesMinus(PrimeQ, BytesMod(Suffix(raw_bytes.load(), Int(32)), PrimeQ)),
-            ),
-        ),
+    return (
+        If(BytesEq(g.encode(), Uint512Zero))
+        .Then(g.encode())
+        .Else(Concat(x(g), BytesMinus(PrimeQ, BytesMod(y(g), PrimeQ))))
     )
 
 
@@ -219,15 +211,3 @@ def curve_scalar_mul(a, b):
 @Subroutine(TealType.uint64)
 def curve_pairing(a, b):
     return InlineAssembly("ec_pairing_check BN254", a, b, type=TealType.uint64)
-
-
-# {0xe0, "ec_add", opEcAdd, proto("bb:b"), pairingVersion,
-#     costByField("v", &EcCurves, []int{
-#         BN254_G1: 10, BN254_G2: 10,
-#         BLS12_381_G1: 20, BLS12_381_G2: 20})},
-# {0xe1, "ec_scalar_mul", opEcScalarMul, proto("bb:b"), pairingVersion,
-#     costByField("v", &EcCurves, []int{
-#         BN254_G1: 100, BN254_G2: 100,
-#         BLS12_381_G1: 200, BLS12_381_G2: 200})},
-# {0xe2, "ec_pairing", opEcPairingCheck, proto("bb:i"), pairingVersion,
-#     costByField("v", &EcCurves, []int{BN254: 1000, BLS12_381: 2000})},

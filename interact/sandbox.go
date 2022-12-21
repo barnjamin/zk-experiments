@@ -1,4 +1,4 @@
-package sandbox
+package interact
 
 import (
 	"fmt"
