@@ -16,7 +16,9 @@ def main():
     ac.create()
     ac.fund(1000 * consts.algo)
 
-    result = ac.call(v.bootstrap, vk=b"")
+    ac.call(v.bootstrap, vk=b"")
+    result = ac.call(v.verify, inputs=b"", proof=b"")
+
     print(result.return_value)
 
 

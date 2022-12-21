@@ -4,7 +4,10 @@ go 1.19
 
 require github.com/consensys/gnark v0.7.1
 
+require github.com/algorand/avm-abi v0.1.1 // indirect
+
 require (
+	github.com/algorand/go-algorand-sdk v1.24.0
 	github.com/consensys/gnark-crypto v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.2.0 // indirect

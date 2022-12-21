@@ -46,10 +46,13 @@ SnarkScalar = Bytes(
 Uint256 = abi.StaticBytes[Literal[32]]
 Uint512 = abi.StaticBytes[Literal[64]]
 
-CircuitInputs = abi.DynamicArray[Uint256]
-
 G1 = abi.StaticArray[Uint256, Literal[2]]
 G2 = abi.StaticArray[G1, Literal[2]]
+
+InputNum = Literal[1]
+ICNum = Literal[2]  # input num + 1
+
+CircuitInputs = abi.StaticArray[Uint256, InputNum]
 
 
 class VerificationKey(abi.NamedTuple):
@@ -59,7 +62,7 @@ class VerificationKey(abi.NamedTuple):
     delta2: abi.Field[G2]
 
     # Can change depending on length of circuit inputs
-    IC: abi.Field[abi.StaticArray[G1, Literal[2]]]
+    IC: abi.Field[abi.StaticArray[G1, ICNum]]
 
 
 class Proof(abi.NamedTuple):
