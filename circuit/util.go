@@ -111,16 +111,16 @@ func (v *VK) ToABITuple() interface{} {
 		{v.Beta2.Y.A0.Bytes(), v.Beta2.Y.A1.Bytes()},
 	})
 
-	// D
-	tuple = append(tuple, [][]interface{}{
-		{v.Delta2.X.A0.Bytes(), v.Delta2.X.A1.Bytes()},
-		{v.Delta2.Y.A0.Bytes(), v.Delta2.Y.A1.Bytes()},
-	})
-
 	// G
 	tuple = append(tuple, [][]interface{}{
 		{v.Gamma2.X.A0.Bytes(), v.Gamma2.X.A1.Bytes()},
 		{v.Gamma2.Y.A0.Bytes(), v.Gamma2.Y.A1.Bytes()},
+	})
+
+	// D
+	tuple = append(tuple, [][]interface{}{
+		{v.Delta2.X.A0.Bytes(), v.Delta2.X.A1.Bytes()},
+		{v.Delta2.Y.A0.Bytes(), v.Delta2.Y.A1.Bytes()},
 	})
 
 	// IC

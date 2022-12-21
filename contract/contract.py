@@ -26,7 +26,6 @@ class Verifier(bkr.Application):
     def bootstrap(self, vk: VerificationKey):
         return pt.BoxPut(self.vk_box_name, vk.encode())
 
-
     @bkr.external
     def linear_combination(self, inputs: CircuitInputs, *, output: G1):
         return pt.Seq(
@@ -34,14 +33,13 @@ class Verifier(bkr.Application):
             self.get_vk(output=(vk := VerificationKey())),
             # Compute vk_x from inputs
             (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
-            output.set(vk_x)
+            output.set(vk_x),
         )
-
 
     @bkr.external
     def verify(self, inputs: CircuitInputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
-            # Max our budget for now 
+            # Max our budget for now
             self.opup.ensure_budget(pt.Int(16000)),
             # Make sure proof doesn't have any values > primeQ
             assert_proof_points_lt_prime_q(proof),

@@ -22,7 +22,6 @@ def main(app_id: int = 0):
 
     print(f"App id: {app_id}")
 
-
     # ac.call(v.bootstrap, vk=b"")
     # result = ac.call(v.verify, inputs=b"", proof=b"")
 
