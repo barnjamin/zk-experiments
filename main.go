@@ -12,10 +12,7 @@ const AppID = 1416
 func main() {
 	// Uncomment for new proof
 	// circuit.CreateProof(3, uint64(math.Pow(3, 3)+3+5))
-	_, _, inputs := circuit.GetProof()
-
-	vk := circuit.NewVKFromFile("circuit.vk")
-	log.Printf("%+v", vk)
+	proof, vk, inputs := circuit.GetProof()
 
 	cc := interact.NewClient(AppID, "contract/artifacts/contract.json")
 	// cc.Bootstrap(vk.ToABITuple())
@@ -26,5 +23,10 @@ func main() {
 	vk_x := circuit.Linearize(inputs, vk)
 	log.Printf("Local Linear combo returned: %+v", vk_x)
 
-	//circuit.CheckValidPairing(proof, vk, vk_x)
+	ok, err := circuit.CheckValidPairing(proof, vk, vk_x)
+	if err != nil {
+		log.Fatalf("Failed to check pairing: %+v", err)
+	}
+
+	log.Printf("Valid?  %t", ok)
 }

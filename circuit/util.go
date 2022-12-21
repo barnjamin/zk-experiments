@@ -202,33 +202,21 @@ func Linearize(input []*big.Int, vk *VK) *bn254.G1Affine {
 	return vk_x.Add(vk_x, &vk.IC[0])
 }
 
-func CheckValidPairing(proof groth16.Proof, vk groth16.VerifyingKey, vk_x *bn254.G1Affine) {
-	// P := []bn254.G1Affine{}
-	// Q := []bn254.G2Affine{}
+func CheckValidPairing(proof *Proof, vk *VK, vk_x *bn254.G1Affine) (bool, error) {
+	P := []bn254.G1Affine{}
+	Q := []bn254.G2Affine{}
 
-	// bn254.PairingCheck()
+	P = append(P, *proof.Ar.Neg(proof.Ar))
+	P = append(P, *vk.Alpha1)
+	P = append(P, *vk_x)
+	P = append(P, *proof.Krs)
 
-	/*
-		@Subroutine(TealType.uint64)
-		def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
-			g1_buff = ScratchVar()
-			g2_buff = ScratchVar()
-			return Seq(
-				# Construct G1 buffer
-				proof.A.use(lambda a: g1_buff.store(negate(a))),
-				vk.alpha1.use(lambda a: g1_buff.store(Concat(g1_buff.load(), a.encode()))),
-				g1_buff.store(Concat(g1_buff.load(), vk_x.encode())),
-				proof.C.use(lambda c: g1_buff.store(Concat(g1_buff.load(), c.encode()))),
-				# Construct G2 buffer
-				proof.B.use(lambda b: g2_buff.store(b.encode())),
-				vk.beta2.use(lambda b: g2_buff.store(Concat(g2_buff.load(), b.encode()))),
-				vk.gamma2.use(lambda g: g2_buff.store(Concat(g2_buff.load(), g.encode()))),
-				vk.delta2.use(lambda d: g2_buff.store(Concat(g2_buff.load(), d.encode()))),
-				# Check if its a valid pairing
-				curve_pairing(g1_buff.load(), g2_buff.load()),
-			)
-	*/
+	Q = append(Q, *proof.Bs)
+	Q = append(Q, *vk.Beta2)
+	Q = append(Q, *vk.Gamma2)
+	Q = append(Q, *vk.Delta2)
 
+	return bn254.PairingCheck(P, Q)
 }
 
 func InputsAsAbiTuple(inputs []*big.Int) interface{} {
@@ -255,19 +243,6 @@ func GetProof() (*Proof, *VK, []*big.Int) {
 	}
 
 	return proof, vk, inputs
-}
-
-func asg1(pts []interface{}) [2][32]byte {
-	n_x, _ := new(big.Int).SetString(pts[0].(string), 10)
-	x := [32]byte{}
-	copy(x[:], n_x.Bytes())
-
-	n_y, _ := new(big.Int).SetString(pts[1].(string), 10)
-	y := [32]byte{}
-	copy(y[:], n_y.Bytes())
-
-	v := [2][32]byte{x, y}
-	return v
 }
 
 func CreateProof(x, y uint64) {
