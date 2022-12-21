@@ -28,6 +28,17 @@ class Verifier(bkr.Application):
 
 
     @bkr.external
+    def linear_combination(self, inputs: CircuitInputs, *, output: G1):
+        return pt.Seq(
+            self.opup.ensure_budget(pt.Int(16000)),
+            self.get_vk(output=(vk := VerificationKey())),
+            # Compute vk_x from inputs
+            (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
+            output.set(vk_x)
+        )
+
+
+    @bkr.external
     def verify(self, inputs: CircuitInputs, proof: Proof, *, output: G1):
         return pt.Seq(
             # Max our budget for now 

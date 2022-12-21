@@ -14,6 +14,18 @@
             }
         },
         {
+            "name": "linear_combination",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                }
+            ],
+            "returns": {
+                "type": "byte[32][2]"
+            }
+        },
+        {
             "name": "verify",
             "args": [
                 {

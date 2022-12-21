@@ -1,7 +1,6 @@
 package circuit
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -9,6 +8,7 @@ import (
 	"os"
 
 	"github.com/consensys/gnark-crypto/ecc"
+	"github.com/consensys/gnark-crypto/ecc/bn254"
 	"github.com/consensys/gnark/backend/groth16"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/frontend/cs/r1cs"
@@ -25,127 +25,233 @@ type RawWriter interface {
 	WriteRawTo(w io.Writer) (int64, error)
 }
 
-func InputsAsAbiTuple(inputs [][]byte) interface{} {
-	return inputs
+type VK struct {
+	Alpha1 *bn254.G1Affine
+	Beta1  *bn254.G1Affine
+	Delta1 *bn254.G1Affine
+
+	Beta2  *bn254.G2Affine
+	Gamma2 *bn254.G2Affine
+	Delta2 *bn254.G2Affine
+
+	IC []bn254.G1Affine
 }
 
-func ProofAsABITuple(proof groth16.Proof) interface{} {
-	m := asMap(proof)
-
-	tuple := []interface{}{}
-
-	// Add A
-	tuple = append(tuple, asg1([]interface{}{
-		m["Ar"]["X"], m["Ar"]["Y"],
-	}))
-
-	// Add B
-	bs_x := m["Bs"]["X"].(map[string]interface{})
-	bs_y := m["Bs"]["Y"].(map[string]interface{})
-	tuple = append(tuple, [2][2][32]byte{
-		asg1([]interface{}{bs_x["A0"], bs_x["A1"]}),
-		asg1([]interface{}{bs_y["A0"], bs_y["A1"]}),
-	})
-
-	// Add C
-	tuple = append(tuple, asg1([]interface{}{
-		m["Krs"]["X"], m["Krs"]["Y"],
-	}))
-
-	return tuple
-}
-
-func VkAsABITuple(vk groth16.VerifyingKey) interface{} {
-	tuple := []interface{}{}
-
-	m := asMap(vk)
-
-	a1 := m["G1"]["Alpha"].(map[string]interface{})
-	tuple = append(tuple, asg1([]interface{}{
-		a1["X"], a1["Y"],
-	}))
-
-	b2 := m["G2"]["Beta"].(map[string]interface{})
-	b2_x := b2["X"].(map[string]interface{})
-	b2_y := b2["Y"].(map[string]interface{})
-	tuple = append(tuple, [2][2][32]byte{
-		asg1([]interface{}{b2_x["A0"], b2_x["A1"]}),
-		asg1([]interface{}{b2_y["A0"], b2_y["A1"]}),
-	})
-
-	d2 := m["G2"]["Delta"].(map[string]interface{})
-	d2_x := d2["X"].(map[string]interface{})
-	d2_y := d2["Y"].(map[string]interface{})
-	tuple = append(tuple, [2][2][32]byte{
-		asg1([]interface{}{d2_x["A0"], d2_x["A1"]}),
-		asg1([]interface{}{d2_y["A0"], d2_y["A1"]}),
-	})
-
-	g2 := m["G2"]["Gamma"].(map[string]interface{})
-	g2_x := g2["X"].(map[string]interface{})
-	g2_y := g2["Y"].(map[string]interface{})
-	tuple = append(tuple, [2][2][32]byte{
-		asg1([]interface{}{g2_x["A0"], g2_x["A1"]}),
-		asg1([]interface{}{g2_y["A0"], g2_y["A1"]}),
-	})
-
-	ic := m["G1"]["K"].([]interface{})
-	ic_arr := []interface{}{}
-	for _, i := range ic {
-		ig1 := i.(map[string]interface{})
-		ic_arr = append(ic_arr, asg1([]interface{}{
-			ig1["X"], ig1["Y"],
-		}))
-	}
-	tuple = append(tuple, ic_arr)
-
-	return tuple
-}
-
-// Hack because i cant access the `internal`
-// package of gnark, and too lazy to figure out
-// how the binary file is structured
-func asMap(x interface{}) map[string]map[string]interface{} {
-	b, err := json.Marshal(x)
+func NewVKFromFile(path string) *VK {
+	f, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("Failed to marshal to json: %+v", err)
+		log.Fatalf("Failed to read file: %+v", err)
+	}
+	defer f.Close()
+
+	dec := bn254.NewDecoder(f)
+
+	a1 := &bn254.G1Affine{}
+	err = dec.Decode(a1)
+	if err != nil {
+		log.Fatalf("Failed to decode a1: %+v", err)
 	}
 
-	m := map[string]map[string]interface{}{}
-	json.Unmarshal(b, &m)
-	return m
+	b1 := &bn254.G1Affine{}
+	err = dec.Decode(b1)
+	if err != nil {
+		log.Fatalf("Failed to decode b1: %+v", err)
+	}
+
+	b2 := &bn254.G2Affine{}
+	err = dec.Decode(b2)
+	if err != nil {
+		log.Fatalf("Failed to decode b2: %+v", err)
+	}
+
+	g2 := &bn254.G2Affine{}
+	err = dec.Decode(g2)
+	if err != nil {
+		log.Fatalf("Failed to decode g2: %+v", err)
+	}
+
+	d1 := &bn254.G1Affine{}
+	err = dec.Decode(d1)
+	if err != nil {
+		log.Fatalf("Failed to decode d1: %+v", err)
+	}
+
+	d2 := &bn254.G2Affine{}
+	err = dec.Decode(d2)
+	if err != nil {
+		log.Fatalf("Failed to decode d2: %+v", err)
+	}
+
+	ics := []bn254.G1Affine{}
+	err = dec.Decode(&ics)
+	if err != nil {
+		log.Fatalf("Failed to decode ics: %+v", err)
+	}
+
+	return &VK{
+		Alpha1: a1,
+		Beta2:  b2,
+		Gamma2: g2,
+		Delta2: d2,
+		IC:     ics,
+	}
+
 }
 
-func GetProof() (groth16.Proof, groth16.VerifyingKey, [][]byte) {
-	proof := groth16.NewProof(ecc.BN254)
-	{
-		f, _ := os.Open(PROOF_FILE)
-		_, err := proof.ReadFrom(f)
-		if err != nil {
-			log.Fatalf("Failed to read circuit: %+v", err)
-		}
-		f.Close()
+func (v *VK) ToABITuple() interface{} {
+	tuple := []interface{}{}
+
+	// A
+	tuple = append(tuple, []interface{}{v.Alpha1.X.Bytes(), v.Alpha1.Y.Bytes()})
+
+	// B
+	tuple = append(tuple, [][]interface{}{
+		{v.Beta2.X.A0.Bytes(), v.Beta2.X.A1.Bytes()},
+		{v.Beta2.Y.A0.Bytes(), v.Beta2.Y.A1.Bytes()},
+	})
+
+	// D
+	tuple = append(tuple, [][]interface{}{
+		{v.Delta2.X.A0.Bytes(), v.Delta2.X.A1.Bytes()},
+		{v.Delta2.Y.A0.Bytes(), v.Delta2.Y.A1.Bytes()},
+	})
+
+	// G
+	tuple = append(tuple, [][]interface{}{
+		{v.Gamma2.X.A0.Bytes(), v.Gamma2.X.A1.Bytes()},
+		{v.Gamma2.Y.A0.Bytes(), v.Gamma2.Y.A1.Bytes()},
+	})
+
+	// IC
+	ics := []interface{}{}
+	for _, ic := range v.IC {
+		ics = append(ics, []interface{}{ic.X.Bytes(), ic.Y.Bytes()})
+	}
+	tuple = append(tuple, ics)
+
+	return tuple
+}
+
+type Proof struct {
+	Ar, Krs *bn254.G1Affine
+	Bs      *bn254.G2Affine
+}
+
+func NewProofFromFile(path string) *Proof {
+	f, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Failed to read file: %+v", err)
+	}
+	defer f.Close()
+
+	dec := bn254.NewDecoder(f)
+
+	ar := &bn254.G1Affine{}
+	err = dec.Decode(ar)
+	if err != nil {
+		log.Fatalf("Failed to decode ar: %+v", err)
 	}
 
-	vk := groth16.NewVerifyingKey(ecc.BN254)
-	{
-		f, _ := os.Open(VK_FILE)
-		_, err := vk.ReadFrom(f)
-		if err != nil {
-			log.Fatalf("Failed to read circuit: %+v", err)
-		}
-		f.Close()
+	bs := &bn254.G2Affine{}
+	err = dec.Decode(bs)
+	if err != nil {
+		log.Fatalf("Failed to decode bs: %+v", err)
 	}
 
-	var inputs [][]byte
-	{
-		b, err := os.ReadFile(INPUT_FILE)
-		if err != nil {
-			log.Fatalf("Failed to read inputs: %+v", err)
-		}
-		for x := 0; x < len(b)/32; x += 1 {
-			inputs = append(inputs, b[x*32:(x+1)*32])
-		}
+	kr := &bn254.G1Affine{}
+	err = dec.Decode(kr)
+	if err != nil {
+		log.Fatalf("Failed to decode Krs: %+v", err)
+	}
+
+	return &Proof{
+		Ar:  ar,
+		Krs: kr,
+		Bs:  bs,
+	}
+
+}
+
+func (p *Proof) ToABITuple() interface{} {
+	tuple := []interface{}{}
+
+	// A
+	tuple = append(tuple, []interface{}{p.Ar.X.Bytes(), p.Ar.Y.Bytes()})
+
+	// Kr
+	tuple = append(tuple, []interface{}{p.Krs.X.Bytes(), p.Krs.Y.Bytes()})
+
+	// Bs
+	tuple = append(tuple, [][]interface{}{
+		{p.Bs.X.A0.Bytes(), p.Bs.X.A1.Bytes()},
+		{p.Bs.Y.A0.Bytes(), p.Bs.Y.A1.Bytes()},
+	})
+
+	return tuple
+}
+
+func Linearize(input []*big.Int, vk *VK) *bn254.G1Affine {
+	// Make sure that every input is less than the snark scalar field
+	vk_x := &bn254.G1Affine{}
+	for idx := 0; idx < len(input); idx++ {
+		ic := &vk.IC[idx+1]
+		ic = ic.ScalarMultiplication(ic, input[idx])
+
+		vk_x = vk_x.Add(vk_x, ic)
+	}
+	return vk_x.Add(vk_x, &vk.IC[0])
+}
+
+func CheckValidPairing(proof groth16.Proof, vk groth16.VerifyingKey, vk_x *bn254.G1Affine) {
+	// P := []bn254.G1Affine{}
+	// Q := []bn254.G2Affine{}
+
+	// bn254.PairingCheck()
+
+	/*
+		@Subroutine(TealType.uint64)
+		def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
+			g1_buff = ScratchVar()
+			g2_buff = ScratchVar()
+			return Seq(
+				# Construct G1 buffer
+				proof.A.use(lambda a: g1_buff.store(negate(a))),
+				vk.alpha1.use(lambda a: g1_buff.store(Concat(g1_buff.load(), a.encode()))),
+				g1_buff.store(Concat(g1_buff.load(), vk_x.encode())),
+				proof.C.use(lambda c: g1_buff.store(Concat(g1_buff.load(), c.encode()))),
+				# Construct G2 buffer
+				proof.B.use(lambda b: g2_buff.store(b.encode())),
+				vk.beta2.use(lambda b: g2_buff.store(Concat(g2_buff.load(), b.encode()))),
+				vk.gamma2.use(lambda g: g2_buff.store(Concat(g2_buff.load(), g.encode()))),
+				vk.delta2.use(lambda d: g2_buff.store(Concat(g2_buff.load(), d.encode()))),
+				# Check if its a valid pairing
+				curve_pairing(g1_buff.load(), g2_buff.load()),
+			)
+	*/
+
+}
+
+func InputsAsAbiTuple(inputs []*big.Int) interface{} {
+	tuple := make([]interface{}, len(inputs))
+	for idx, i := range inputs {
+		tuple[idx] = i.FillBytes(make([]byte, 32))
+	}
+	return tuple
+}
+
+func GetProof() (*Proof, *VK, []*big.Int) {
+	proof := NewProofFromFile(PROOF_FILE)
+	vk := NewVKFromFile(VK_FILE)
+
+	b, err := os.ReadFile(INPUT_FILE)
+	if err != nil {
+		log.Fatalf("Failed to read inputs: %+v", err)
+	}
+
+	var inputs []*big.Int
+	for x := 0; x < len(b)/32; x += 1 {
+		i := new(big.Int).SetBytes(b[x*32 : (x+1)*32])
+		inputs = append(inputs, i)
 	}
 
 	return proof, vk, inputs
