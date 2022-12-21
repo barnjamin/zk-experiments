@@ -203,18 +203,23 @@ func Linearize(input []*big.Int, vk *VK) *bn254.G1Affine {
 }
 
 func CheckValidPairing(proof *Proof, vk *VK, vk_x *bn254.G1Affine) (bool, error) {
-	P := []bn254.G1Affine{}
-	Q := []bn254.G2Affine{}
 
-	P = append(P, *proof.Ar.Neg(proof.Ar))
-	P = append(P, *vk.Alpha1)
-	P = append(P, *vk_x)
-	P = append(P, *proof.Krs)
+	P := []bn254.G1Affine{
+		*proof.Ar.Neg(proof.Ar),
+		*vk.Alpha1,
+		*vk_x,
+		*proof.Krs,
+	}
 
-	Q = append(Q, *proof.Bs)
-	Q = append(Q, *vk.Beta2)
-	Q = append(Q, *vk.Gamma2)
-	Q = append(Q, *vk.Delta2)
+	Q := []bn254.G2Affine{
+		*proof.Bs,
+		*vk.Beta2,
+		*vk.Gamma2,
+		*vk.Delta2,
+	}
+
+	log.Printf("%+v", P)
+	log.Printf("%+v", Q)
 
 	return bn254.PairingCheck(P, Q)
 }
