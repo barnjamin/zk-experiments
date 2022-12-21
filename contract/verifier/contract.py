@@ -61,4 +61,4 @@ class Verifier(bkr.Application):
 
 
 if __name__ == "__main__":
-    Verifier().dump("../artifacts")
+    Verifier(version=9).dump("../artifacts")

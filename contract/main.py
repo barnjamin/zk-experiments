@@ -22,11 +22,12 @@ def main(app_id: int = 0):
 
     print(f"App id: {app_id}")
 
+    # TODO: parse files from root dir and pass them
     # ac.call(v.bootstrap, vk=b"")
     # result = ac.call(v.verify, inputs=b"", proof=b"")
-
-    # print(result.return_value)
+    # print(f"Contract verified? {result.return_value}")
 
 
 if __name__ == "__main__":
+    Verifier(version=9).dump("./artifacts")
     main(1416)
