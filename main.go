@@ -16,12 +16,23 @@ import (
 	"github.com/consensys/gnark/frontend/cs/r1cs"
 )
 
+const (
+	PK_FILE    = "circuit.pk"
+	VK_FILE    = "circuit.vk"
+	PROOF_FILE = "circuit.proof"
+	INPUT_FILE = "circuit.inputs"
+)
+
 type RawWriter interface {
 	WriteRawTo(w io.Writer) (int64, error)
 }
+type u256 [32]byte
+type g1 [2]u256
+type g2 [2]g1
 
 func main() {
-	//createProof(3, uint64(math.Pow(3, 3)+3+5))
+	// createProof(3, uint64(math.Pow(3, 3)+3+5))
+	// Get proof for reproducibility
 	proof, vk, inputs := getProof()
 	log.Printf("%+v", proof)
 	log.Printf("%+v", vk)
@@ -30,20 +41,21 @@ func main() {
 	// TODO: Write abi arguments (vk, proof, inputs)  to file based on the type
 	contract := getContract()
 	method, _ := abi.GetMethodByName(contract.Methods, "bootstrap")
-	log.Printf("%+v", method)
 	for _, arg := range method.Args {
 		log.Printf("%+v", arg)
 	}
 
 	method, _ = abi.GetMethodByName(contract.Methods, "verify")
-	log.Printf("%+v", method)
+	for _, arg := range method.Args {
+		log.Printf("%+v", arg)
+	}
 
 }
 
 func getProof() (groth16.Proof, groth16.VerifyingKey, [][]byte) {
 	proof := groth16.NewProof(ecc.BN254)
 	{
-		f, _ := os.Open("circuit.proof")
+		f, _ := os.Open(PROOF_FILE)
 		_, err := proof.ReadFrom(f)
 		if err != nil {
 			log.Fatalf("Failed to read circuit: %+v", err)
@@ -53,7 +65,7 @@ func getProof() (groth16.Proof, groth16.VerifyingKey, [][]byte) {
 
 	vk := groth16.NewVerifyingKey(ecc.BN254)
 	{
-		f, _ := os.Open("circuit.vk")
+		f, _ := os.Open(VK_FILE)
 		_, err := vk.ReadFrom(f)
 		if err != nil {
 			log.Fatalf("Failed to read circuit: %+v", err)
@@ -63,7 +75,7 @@ func getProof() (groth16.Proof, groth16.VerifyingKey, [][]byte) {
 
 	var inputs [][]byte
 	{
-		b, err := os.ReadFile("circuit.input")
+		b, err := os.ReadFile(INPUT_FILE)
 		if err != nil {
 			log.Fatalf("Failed to read inputs: %+v", err)
 		}
@@ -76,32 +88,28 @@ func getProof() (groth16.Proof, groth16.VerifyingKey, [][]byte) {
 }
 
 func createProof(x, y uint64) {
-
-	bi := new(big.Int).SetUint64(35)
-	ioutil.WriteFile("circuit.input", bi.Bytes(), 0655)
-
 	var cubicCircuit circuit.Circuit
 	r1cs, err := frontend.Compile(ecc.BN254, r1cs.NewBuilder, &cubicCircuit)
 	if err != nil {
 		log.Fatalf("Failed to compile circuit")
 	}
-	pk, _ := setupKeys(r1cs)
+	// pk, _ := setupKeys(r1cs)
+	pk, _ := readKeys()
 
-	assignment := &circuit.Circuit{X: x, Y: y}
-
-	witness, err := frontend.NewWitness(assignment, ecc.BN254)
+	witness, err := frontend.NewWitness(&circuit.Circuit{X: x, Y: y}, ecc.BN254)
 	if err != nil {
 		log.Fatalf("Failed to create witness: %+v", err)
 	}
 
 	proof, err := groth16.Prove(r1cs, pk, witness)
 	if err != nil {
-		log.Fatalf("Failed to proove: %+v", err)
+		log.Fatalf("Failed to create proof: %+v", err)
 	}
+	writeToFile(PROOF_FILE, proof)
 
-	b, _ := json.MarshalIndent(proof, "", " ")
-	ioutil.WriteFile("proof.json", b, 0655)
-	writeToFile("circuit.proof", proof)
+	// TODO: idk if this actually writes 32 bytes?
+	input := new(big.Int).SetUint64(x)
+	ioutil.WriteFile(INPUT_FILE, input.Bytes(), 0655)
 }
 
 func getContract() *abi.Contract {
@@ -122,8 +130,8 @@ func setupKeys(r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, grot
 	if err != nil {
 		log.Fatalf("Failed to do setup: %+v", err)
 	}
-	writeToFile("circuit.pk", pk)
-	writeToFile("circuit.vk", vk)
+	writeToFile(PK_FILE, pk)
+	writeToFile(VK_FILE, vk)
 
 	return pk, vk
 }
@@ -133,7 +141,7 @@ func readKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
 	pk := groth16.NewProvingKey(ecc.BN254)
 	vk := groth16.NewVerifyingKey(ecc.BN254)
 
-	f, err := os.Open("./cubic.pk")
+	f, err := os.Open(PK_FILE)
 	if err != nil {
 		log.Fatalf("Failed to read pk: %+v", err)
 	}
@@ -143,7 +151,7 @@ func readKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
 	}
 	f.Close()
 
-	f, err = os.Open("./cubic.vk")
+	f, err = os.Open(VK_FILE)
 	if err != nil {
 		log.Fatalf("Failed to read vk: %+v", err)
 	}
