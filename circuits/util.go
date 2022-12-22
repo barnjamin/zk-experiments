@@ -1,6 +1,7 @@
 package circuits
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
@@ -14,11 +15,6 @@ import (
 	"github.com/consensys/gnark/frontend/cs/r1cs"
 )
 
-const (
-	PROOF_FILE = "circuit.proof"
-	INPUT_FILE = "circuit.inputs"
-)
-
 func SumInputs(input []*big.Int, vk *VK) *bn254.G1Affine {
 	vk_x := &bn254.G1Affine{}
 	for idx := 0; idx < len(input); idx++ {
@@ -30,7 +26,7 @@ func SumInputs(input []*big.Int, vk *VK) *bn254.G1Affine {
 	return vk_x.Add(vk_x, &vk.IC[0])
 }
 
-func CheckValidPairing(proof *Proof, vk *VK, input []*big.Int) (bool, error) {
+func CheckProof(input []*big.Int, proof *Proof, vk *VK) (bool, error) {
 	vk_x := SumInputs(input, vk)
 
 	P := []bn254.G1Affine{
@@ -50,11 +46,11 @@ func CheckValidPairing(proof *Proof, vk *VK, input []*big.Int) (bool, error) {
 	return bn254.PairingCheck(P, Q)
 }
 
-func GetLastProof() (*Proof, *VK, []*big.Int) {
-	proof := NewProofFromFile(PROOF_FILE)
-	vk := NewVKFromFile(VK_FILE)
+func GetLastProof(name string) (*Proof, *VK, []*big.Int) {
+	proof := NewProofFromFile(proofFile(name))
+	vk := NewVKFromFile(vkFile(name))
 
-	b, err := os.ReadFile(INPUT_FILE)
+	b, err := os.ReadFile(inputFile(name))
 	if err != nil {
 		log.Fatalf("Failed to read inputs: %+v", err)
 	}
@@ -75,7 +71,7 @@ func WriteCircuit(name string, c frontend.Circuit, opts ...frontend.CompileOptio
 		log.Fatalf("failed to compile circuit")
 	}
 
-	f, err := os.Open(fname)
+	f, err := os.Create(fname)
 	if err != nil {
 		log.Fatalf("failed to open file %s: %+v", fname, err)
 	}
@@ -103,19 +99,22 @@ func ReadCircuit(name string) frontend.CompiledConstraintSystem {
 }
 
 func CreateProofForCubic(x, y uint64) {
+	var name = "cubic"
+	WriteCircuit(name, &cubic.Circuit{})
+
 	witness, err := frontend.NewWitness(&cubic.Circuit{X: x, Y: y}, ecc.BN254)
 	if err != nil {
 		log.Fatalf("failed to create witness: %+v", err)
 	}
 
-	r1cs := ReadCircuit("cubic")
+	r1cs := ReadCircuit(name)
 
-	pk, vk := setupKeys(r1cs)
+	pk, vk := setupKeys(name, r1cs)
 	proof, err := groth16.Prove(r1cs, pk, witness)
 	if err != nil {
 		log.Fatalf("Failed to create proof: %+v", err)
 	}
-	writeToFile(PROOF_FILE, proof)
+	writeToFile(proofFile(name), proof)
 
 	pubWitness, err := witness.Public()
 	if err != nil {
@@ -129,5 +128,31 @@ func CreateProofForCubic(x, y uint64) {
 
 	input := new(big.Int).SetUint64(y)
 	buf := make([]byte, 32)
-	ioutil.WriteFile(INPUT_FILE, input.FillBytes(buf), 0655)
+	ioutil.WriteFile(inputFile(name), input.FillBytes(buf), 0655)
+}
+
+func inputFile(name string) string {
+	return fmt.Sprintf("%s.inputs", name)
+}
+func proofFile(name string) string {
+	return fmt.Sprintf("%s.proof", name)
+}
+func pkFile(name string) string {
+	return fmt.Sprintf("%s.pk", name)
+}
+func vkFile(name string) string {
+	return fmt.Sprintf("%s.vk", name)
+}
+
+func writeToFile(name string, rw RawWriter) {
+	f, err := os.Create(name)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	_, err = rw.WriteRawTo(f)
+	if err != nil {
+		panic(err)
+	}
 }

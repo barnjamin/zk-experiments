@@ -12,27 +12,22 @@ import (
 	"github.com/consensys/gnark/frontend"
 )
 
-const (
-	PK_FILE = "circuit.pk"
-	VK_FILE = "circuit.vk"
-)
-
-func setupKeys(r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, groth16.VerifyingKey) {
+func setupKeys(name string, r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, groth16.VerifyingKey) {
 	pk, vk, err := groth16.Setup(r1cs)
 	if err != nil {
 		log.Fatalf("Failed to do setup: %+v", err)
 	}
-	writeToFile(PK_FILE, pk)
-	writeToFile(VK_FILE, vk)
-
+	writeToFile(pkFile(name), pk)
+	writeToFile(vkFile(name), vk)
 	return pk, vk
 }
 
-func readLastKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
+func readLastKeys(name string) (groth16.ProvingKey, groth16.VerifyingKey) {
+
 	// read proving and verifying keys
 	pk := groth16.NewProvingKey(ecc.BN254)
 
-	f, err := os.Open(PK_FILE)
+	f, err := os.Open(pkFile(name))
 	if err != nil {
 		log.Fatalf("Failed to read pk: %+v", err)
 	}
@@ -43,7 +38,7 @@ func readLastKeys() (groth16.ProvingKey, groth16.VerifyingKey) {
 	f.Close()
 
 	vk := groth16.NewVerifyingKey(ecc.BN254)
-	f, err = os.Open(VK_FILE)
+	f, err = os.Open(vkFile(name))
 	if err != nil {
 		log.Fatalf("Failed to read vk: %+v", err)
 	}

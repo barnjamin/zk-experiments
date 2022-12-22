@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 
 	"github.com/barnjamin/zk-experiments/circuits"
 	"github.com/barnjamin/zk-experiments/sandbox"
@@ -11,14 +12,14 @@ const AppID = 1416
 
 func main() {
 	// Create new proof
-	// circuit.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
+	circuits.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
 
 	// Read the proof from disk
-	proof, vk, inputs := circuits.GetLastProof()
+	proof, vk, inputs := circuits.GetLastProof("cubic")
 
 	// TODO: fix to not use pointers
 	// Check locally
-	// ok, err := circuit.CheckValidPairing(proof, vk, inputs)
+	// ok, err := circuit.CheckProof(inputs, proof, vk)
 	// if err != nil || !ok {
 	// 	log.Fatalf("invalid proof:  %+v", err)
 	// }
