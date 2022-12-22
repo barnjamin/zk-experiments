@@ -146,22 +146,27 @@ def compute_linear_combination(
 ):
     # intermediate step
     scaled = abi.make(G1)
-    # alias output to vk_x
     return Seq(
+        # init vk_x to 0
         (vk_x := abi.make(G1)).decode(Uint512Zero),
+        # TODO: check if len(inputs) == len(vk.ic)+1?
+        # Iterate over inputs, accumulating sum
         For(
             (idx := ScratchVar()).store(Int(0)),
             idx.load() < inputs.length(),
             idx.store(idx.load() + Int(1)),
         ).Do(
-            inputs[idx.load()].store_into((pt := abi.make(Uint256))),
-            Assert(BytesLt(pt.get(), SnarkScalar), comment="input >= snark scalar"),
+            # get/check input value
+            inputs[idx.load()].store_into((input := abi.make(Uint256))),
+            Assert(BytesLt(input.get(), SnarkScalar), comment="input >= snark scalar"),
+            # scale circuit value by input
             # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(
                 lambda ics: ics[idx.load() + Int(1)].use(
-                    lambda vk_ic: scaled.decode(scale(vk_ic, pt))
+                    lambda vk_ic: scaled.decode(scale(vk_ic, input))
                 )
             ),
+            # add scaled point to vk_X
             vk_x.decode(add(vk_x, scaled)),
         ),
         # vk_X += vk.IC[0]

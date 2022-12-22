@@ -24,27 +24,19 @@ class Verifier(bkr.Application):
 
     @bkr.external(authorize=bkr.Authorize.only(pt.Global.creator_address()))
     def bootstrap(self, vk: VerificationKey):
+        # write the VK to box storage
         return pt.BoxPut(self.vk_box_name, vk.encode())
-
-    @bkr.external
-    def sum_inputs(self, inputs: Inputs, *, output: G1):
-        return pt.Seq(
-            self.opup.ensure_budget(pt.Int(1300)),
-            self.get_vk(output=(vk := VerificationKey())),
-            # Compute vk_x from inputs
-            (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
-            output.set(vk_x),
-        )
 
     @bkr.external
     def verify(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
-            # Max our budget for now
+            # idk if this will need to change but its enough for now
             self.opup.ensure_budget(pt.Int(1350)),
             # Make sure proof doesn't have any values > primeQ
             assert_proof_points_lt_prime_q(proof),
+            # Fetch the VK from box storage
             self.get_vk(output=(vk := VerificationKey())),
-            # Compute vk_x from inputs
+            # Compute vk_x from sum of inputs
             (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
             # return result (normal programs should assert out if its invalid)
             output.set(valid_pairing(proof, vk, vk_x)),

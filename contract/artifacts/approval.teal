@@ -1,27 +1,40 @@
 #pragma version 9
 intcblock 0 1 64 32 448
-bytecblock 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47 0x766b 0x068101 0x151f7c75 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+bytecblock 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47 0x766b 0x151f7c75 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 0x068101
 txn NumAppArgs
 intc_0 // 0
 ==
-bnz main_l10
+bnz main_l8
 txna ApplicationArgs 0
 pushbytes 0x793ae44d // "bootstrap((byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2]))void"
 ==
-bnz main_l9
-txna ApplicationArgs 0
-pushbytes 0xd45a05a9 // "sum_inputs(byte[32][1])byte[32][2]"
-==
-bnz main_l8
+bnz main_l7
 txna ApplicationArgs 0
 pushbytes 0x390cb476 // "verify(byte[32][1],(byte[32][2],byte[32][2][2],byte[32][2]))bool"
 ==
-bnz main_l7
+bnz main_l6
 txna ApplicationArgs 0
 pushbytes 0x59c3b0a7 // "get_vk()(byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2])"
 ==
-bnz main_l6
+bnz main_l5
 err
+main_l5:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub getvk_15
+store 10
+bytec_2 // 0x151f7c75
+load 10
+concat
+log
+intc_1 // 1
+return
 main_l6:
 txn OnCompletion
 intc_0 // NoOp
@@ -31,10 +44,19 @@ intc_0 // 0
 !=
 &&
 assert
-callsub getvk_16
-store 15
-bytec_3 // 0x151f7c75
-load 15
+txna ApplicationArgs 1
+store 0
+txna ApplicationArgs 2
+store 1
+load 0
+load 1
+callsub verify_14
+store 2
+bytec_2 // 0x151f7c75
+pushbytes 0x00 // 0x00
+intc_0 // 0
+load 2
+setbit
 concat
 log
 intc_1 // 1
@@ -49,64 +71,20 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-store 5
-txna ApplicationArgs 2
-store 6
-load 5
-load 6
-callsub verify_15
-store 7
-bytec_3 // 0x151f7c75
-pushbytes 0x00 // 0x00
-intc_0 // 0
-load 7
-setbit
-concat
-log
+callsub bootstrap_13
 intc_1 // 1
 return
 main_l8:
 txn OnCompletion
 intc_0 // NoOp
 ==
-txn ApplicationID
-intc_0 // 0
-!=
-&&
-assert
-txna ApplicationArgs 1
-callsub suminputs_14
-store 0
-bytec_3 // 0x151f7c75
-load 0
-concat
-log
-intc_1 // 1
-return
-main_l9:
-txn OnCompletion
-intc_0 // NoOp
-==
-txn ApplicationID
-intc_0 // 0
-!=
-&&
-assert
-txna ApplicationArgs 1
-callsub bootstrap_13
-intc_1 // 1
-return
-main_l10:
-txn OnCompletion
-intc_0 // NoOp
-==
-bnz main_l14
+bnz main_l12
 txn OnCompletion
 pushint 4 // UpdateApplication
 ==
-bnz main_l13
+bnz main_l11
 err
-main_l13:
+main_l11:
 txn ApplicationID
 intc_0 // 0
 !=
@@ -114,7 +92,7 @@ assert
 callsub update_11
 intc_1 // 1
 return
-main_l14:
+main_l12:
 txn ApplicationID
 intc_0 // 0
 ==
@@ -140,15 +118,15 @@ retsub
 
 // negate
 negate_3:
-store 42
-load 42
-bytec 4 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+store 37
+load 37
+bytec_3 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 b==
 bnz negate_3_l2
-load 42
+load 37
 extract 0 32
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
-load 42
+load 37
 extract 32 0
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b%
@@ -156,79 +134,79 @@ b-
 concat
 b negate_3_l3
 negate_3_l2:
-load 42
+load 37
 negate_3_l3:
 retsub
 
 // assert_proof_points_lt_prime_q
 assertproofpointsltprimeq_4:
-store 26
-load 26
+store 14
+load 14
 extract 0 64
-store 27
-load 27
+store 15
+load 15
 extract 0 32
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // a point > primeq
 assert
-load 27
+load 15
 extract 32 0
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // a point > primeq
 assert
-load 26
+load 14
 extract 64 128
-store 28
-load 28
+store 16
+load 16
 intc_2 // 64
 intc_0 // 0
 *
 intc_2 // 64
 extract3
-store 29
-load 29
+store 17
+load 17
 extract 0 32
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // b0 point > primeq
 assert
-load 29
+load 17
 extract 32 0
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // b0 point > primeq
 assert
-load 28
+load 16
 intc_2 // 64
 intc_1 // 1
 *
 intc_2 // 64
 extract3
-store 30
-load 30
+store 18
+load 18
 extract 0 32
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // b1 point > primeq
 assert
-load 30
+load 18
 extract 32 0
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // b1 point > primeq
 assert
-load 26
+load 14
 extract 192 0
-store 31
-load 31
+store 19
+load 19
 extract 0 32
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
 // c point > primeq
 assert
-load 31
+load 19
 extract 32 0
 bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b<
@@ -238,55 +216,55 @@ retsub
 
 // compute_linear_combination
 computelinearcombination_5:
+store 21
 store 20
-store 19
-bytec 4 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-store 22
-intc_0 // 0
+bytec_3 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 store 23
+intc_0 // 0
+store 24
 computelinearcombination_5_l1:
-load 23
+load 24
 intc_1 // 1
 <
 bz computelinearcombination_5_l3
-load 20
+load 21
 intc_3 // 32
-load 23
+load 24
 *
 intc_3 // 32
 extract3
-store 24
-load 24
+store 25
+load 25
 pushbytes 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001 // 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
 b<
 // input >= snark scalar
 assert
-load 19
+load 20
 intc 4 // 448
 dig 1
 len
 substring3
 intc_2 // 64
-load 23
+load 24
 intc_1 // 1
 +
 *
 intc_2 // 64
 extract3
-load 24
+load 25
 callsub scale_2
-store 21
-load 22
-load 21
-callsub add_1
 store 22
 load 23
+load 22
+callsub add_1
+store 23
+load 24
 intc_1 // 1
 +
-store 23
+store 24
 b computelinearcombination_5_l1
 computelinearcombination_5_l3:
-load 19
+load 20
 intc 4 // 448
 dig 1
 len
@@ -296,69 +274,69 @@ intc_0 // 0
 *
 intc_2 // 64
 extract3
-store 25
-load 22
-load 25
+store 26
+load 23
+load 26
 callsub add_1
-store 22
-load 22
+store 23
+load 23
 retsub
 
 // valid_pairing
 validpairing_6:
-store 34
-store 33
-store 32
-load 32
+store 29
+store 28
+store 27
+load 27
 extract 0 64
 callsub negate_3
-store 35
-load 33
+store 30
+load 28
 extract 0 64
-store 37
-load 35
-load 37
+store 32
+load 30
+load 32
 concat
-store 35
-load 35
+store 30
+load 30
+load 29
+concat
+store 30
+load 27
+extract 192 0
+store 33
+load 30
+load 33
+concat
+store 30
+load 27
+extract 64 128
+store 31
+load 28
+extract 64 128
+store 34
+load 31
 load 34
 concat
-store 35
-load 32
-extract 192 0
-store 38
-load 35
-load 38
-concat
-store 35
-load 32
-extract 64 128
-store 36
-load 33
-extract 64 128
-store 39
-load 36
-load 39
-concat
-store 36
-load 33
+store 31
+load 28
 extract 192 128
-store 40
-load 36
-load 40
+store 35
+load 31
+load 35
 concat
-store 36
-load 33
+store 31
+load 28
 pushint 320 // 320
 pushint 128 // 128
 extract3
-store 41
-load 36
-load 41
-concat
 store 36
-load 35
+load 31
 load 36
+concat
+store 31
+load 30
+load 31
 callsub curvepairing_9
 retsub
 
@@ -400,108 +378,72 @@ retsub
 
 // bootstrap
 bootstrap_13:
-store 18
+store 13
 txn Sender
 callsub authonly_12
 // unauthorized
 assert
 bytec_1 // "vk"
-load 18
+load 13
 box_put
 retsub
 
-// sum_inputs
-suminputs_14:
-store 1
-pushint 1300 // 1300
-pushint 10 // 10
-+
-store 2
-suminputs_14_l1:
-load 2
-global OpcodeBudget
->
-bz suminputs_14_l3
-itxn_begin
-pushint 6 // appl
-itxn_field TypeEnum
-pushint 5 // DeleteApplication
-itxn_field OnCompletion
-bytec_2 // 0x068101
-itxn_field ApprovalProgram
-bytec_2 // 0x068101
-itxn_field ClearStateProgram
-itxn_submit
-b suminputs_14_l1
-suminputs_14_l3:
-bytec_1 // "vk"
-box_get
+// verify
+verify_14:
 store 4
 store 3
-load 4
-// Verification Key not set
-assert
-load 3
-load 1
-callsub computelinearcombination_5
-retsub
-
-// verify
-verify_15:
-store 9
-store 8
 pushint 1350 // 1350
 pushint 10 // 10
 +
-store 10
-verify_15_l1:
-load 10
+store 5
+verify_14_l1:
+load 5
 global OpcodeBudget
 >
-bz verify_15_l3
+bz verify_14_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_2 // 0x068101
+bytec 4 // 0x068101
 itxn_field ApprovalProgram
-bytec_2 // 0x068101
+bytec 4 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b verify_15_l1
-verify_15_l3:
-load 9
+b verify_14_l1
+verify_14_l3:
+load 4
 callsub assertproofpointsltprimeq_4
 bytec_1 // "vk"
 box_get
-store 13
-store 12
-load 13
+store 8
+store 7
+load 8
 // Verification Key not set
 assert
-load 12
-store 11
-load 11
-load 8
+load 7
+store 6
+load 6
+load 3
 callsub computelinearcombination_5
-store 14
+store 9
+load 4
+load 6
 load 9
-load 11
-load 14
 callsub validpairing_6
 !
 !
 retsub
 
 // get_vk
-getvk_16:
+getvk_15:
 bytec_1 // "vk"
 box_get
-store 17
-store 16
-load 17
+store 12
+store 11
+load 12
 // Verification Key not set
 assert
-load 16
+load 11
 retsub
