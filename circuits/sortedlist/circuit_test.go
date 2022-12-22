@@ -12,7 +12,7 @@ func TestCubicEquation(t *testing.T) {
 	assert := test.NewAssert(t)
 
 	var sortedListCircuit = Circuit{
-		Z: []frontend.Variable{nil, nil, nil},
+		Z: make([]frontend.Variable, 3),
 	}
 
 	assert.ProverSucceeded(&sortedListCircuit, &Circuit{
