@@ -1,4 +1,4 @@
-package circuit
+package cubic
 
 import (
 	"github.com/consensys/gnark/frontend"
@@ -9,7 +9,6 @@ type Circuit struct {
 	Y frontend.Variable `gnark:",public"`
 }
 
-// Define declares the circuit constraints
 // x**3 + x + 5 == y
 func (circuit *Circuit) Define(api frontend.API) error {
 	x3 := api.Mul(circuit.X, circuit.X, circuit.X)

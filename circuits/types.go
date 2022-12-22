@@ -1,4 +1,4 @@
-package circuit
+package circuits
 
 // The gnark library has curve specific types in an internal package
 // so this is pmuch copy/paste from there
@@ -256,17 +256,4 @@ func NewProvingKeyFromFile(name string) *ProvingKey {
 
 	return pk
 
-}
-
-func writeToFile(name string, rw RawWriter) {
-	f, err := os.Create(name)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	_, err = rw.WriteRawTo(f)
-	if err != nil {
-		panic(err)
-	}
 }

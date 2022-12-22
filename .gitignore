@@ -1,6 +1,12 @@
 __pycache__/
 .venv/
-*.bin
 node_modules/
-circuit.*
 proof.json
+.vscode/
+
+*.bin
+*.pk
+*.inputs
+*.proof
+*.vk
+*.r1cs
