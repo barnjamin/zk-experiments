@@ -17,12 +17,11 @@ func main() {
 	// Read the proof from disk
 	proof, vk, inputs := circuits.GetLastProof("cubic")
 
-	// TODO: fix to not use pointers
-	// Check locally
-	// ok, err := circuit.CheckProof(inputs, proof, vk)
-	// if err != nil || !ok {
-	// 	log.Fatalf("invalid proof:  %+v", err)
-	// }
+	// Check locally first
+	ok, err := circuits.CheckProof(inputs, *proof, *vk)
+	if err != nil || !ok {
+		log.Fatalf("invalid proof:  %+v", err)
+	}
 
 	// Create a contract client
 	cc := sandbox.NewClient(AppID, "contract/artifacts/contract.json")

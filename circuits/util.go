@@ -18,19 +18,22 @@ import (
 func SumInputs(input []*big.Int, vk *VK) *bn254.G1Affine {
 	vk_x := &bn254.G1Affine{}
 	for idx := 0; idx < len(input); idx++ {
-		ic := &vk.IC[idx+1]
-		ic = ic.ScalarMultiplication(ic, input[idx])
+		ic := &bn254.G1Affine{}
+		ic = ic.ScalarMultiplication(&vk.IC[idx+1], input[idx])
 
 		vk_x = vk_x.Add(vk_x, ic)
 	}
 	return vk_x.Add(vk_x, &vk.IC[0])
 }
 
-func CheckProof(input []*big.Int, proof *Proof, vk *VK) (bool, error) {
-	vk_x := SumInputs(input, vk)
+func CheckProof(input []*big.Int, proof Proof, vk VK) (bool, error) {
+	vk_x := SumInputs(input, &vk)
+
+	negAr := &bn254.G1Affine{}
+	negAr.Neg(proof.Ar)
 
 	P := []bn254.G1Affine{
-		*proof.Ar.Neg(proof.Ar),
+		*negAr,
 		*vk.Alpha1,
 		*vk_x,
 		*proof.Krs,
