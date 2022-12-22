@@ -136,43 +136,8 @@ func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) bool {
 	return ret.MethodResults[0].ReturnValue.(bool)
 }
 
-func (cc *ContractClient) GetInputSum(inputs interface{}) []*big.Int {
-
-	sp, err := cc.client.SuggestedParams().Do(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to get suggeted params: %+v", err)
-	}
-
-	// Skipping error checks below during AddMethodCall and txn create
-	var atc = future.AtomicTransactionComposer{}
-
-	m, err := cc.contract.GetMethodByName("sum_inputs")
-	if err != nil {
-		log.Fatalf("No method named sum_inputs? %+v", err)
-	}
-	mcp := future.AddMethodCallParams{
-		AppID:           cc.appId,
-		Sender:          cc.acct.Address,
-		SuggestedParams: sp,
-		OnComplete:      types.NoOpOC,
-		Method:          m,
-		MethodArgs:      []interface{}{inputs},
-		Signer:          cc.signer,
-		BoxReferences:   []types.AppBoxReference{{AppID: cc.appId, Name: []byte("vk")}},
-	}
-
-	err = atc.AddMethodCall(mcp)
-	if err != nil {
-		log.Fatalf("Failed to add method call for sum_inputs: %+v", err)
-	}
-
-	ret, err := atc.Execute(cc.client, context.Background(), 4)
-	if err != nil {
-		log.Fatalf("Failed to execute call sum_inputs: %+v", err)
-	}
-
-	vals := ret.MethodResults[0].ReturnValue.([]interface{})
-
+func getBytesFromResult(inputs interface{}) []*big.Int {
+	vals := inputs.([]interface{})
 	out := []*big.Int{}
 	for _, val := range vals {
 		i := val.([]interface{})

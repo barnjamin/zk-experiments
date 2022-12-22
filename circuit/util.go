@@ -31,9 +31,23 @@ func SumInputs(input []*big.Int, vk *VK) *bn254.G1Affine {
 	return vk_x.Add(vk_x, &vk.IC[0])
 }
 
-func CheckValidPairing(proof *Proof, vk *VK, vk_x *bn254.G1Affine) (bool, error) {
-	P := []bn254.G1Affine{*proof.Ar.Neg(proof.Ar), *vk.Alpha1, *vk_x, *proof.Krs}
-	Q := []bn254.G2Affine{*proof.Bs, *vk.Beta2, *vk.Gamma2, *vk.Delta2}
+func CheckValidPairing(proof *Proof, vk *VK, input []*big.Int) (bool, error) {
+	vk_x := SumInputs(input, vk)
+
+	P := []bn254.G1Affine{
+		*proof.Ar.Neg(proof.Ar),
+		*vk.Alpha1,
+		*vk_x,
+		*proof.Krs,
+	}
+
+	Q := []bn254.G2Affine{
+		*proof.Bs,
+		*vk.Beta2,
+		*vk.Gamma2,
+		*vk.Delta2,
+	}
+
 	return bn254.PairingCheck(P, Q)
 }
 
