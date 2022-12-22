@@ -1,4 +1,4 @@
-package interact
+package sandbox
 
 import (
 	"context"

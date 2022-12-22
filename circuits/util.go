@@ -1,4 +1,4 @@
-package circuit
+package circuits
 
 import (
 	"io/ioutil"
@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/barnjamin/zk-experiments/circuits/cubic"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254"
 	"github.com/consensys/gnark/backend/groth16"
@@ -69,21 +70,56 @@ func GetLastProof() (*Proof, *VK, []*big.Int) {
 	return proof, vk, inputs
 }
 
-func CreateProof(x, y uint64) {
-	var cubicCircuit Circuit
+func CompileCircuit(name string, c frontend.Circuit, opts ...frontend.CompileOption) {
+	var fname = name + ".r1cs"
+	r1cs, err := frontend.Compile(ecc.BN254, r1cs.NewBuilder, c, opts...)
+	if err != nil {
+		log.Fatalf("Failed to compile circuit")
+	}
+
+	f, err := os.Open(fname)
+	if err != nil {
+		log.Fatalf("Failed to open file %s: %+v", fname, err)
+	}
+
+	_, err = r1cs.WriteTo(f)
+	if err != nil {
+		log.Fatalf("Failed to write to file %s: %+v", fname, err)
+	}
+
+}
+
+func ReadCircuit(name string) frontend.CompiledConstraintSystem {
+	var fname = name + ".r1cs"
+	f, err := os.Open(fname)
+	if err != nil {
+		log.Fatalf("Failed to open %s: %+v", fname, err)
+	}
+
+	r1cs := groth16.NewCS(ecc.BN254)
+	_, err = r1cs.ReadFrom(f)
+	if err != nil {
+		log.Fatalf("Failed to read %s: %+v", fname, err)
+	}
+
+	return r1cs
+}
+
+func CreateProofForCubic(x, y uint64) {
+	var cubicCircuit cubic.Circuit
 	r1cs, err := frontend.Compile(ecc.BN254, r1cs.NewBuilder, &cubicCircuit)
 	if err != nil {
 		log.Fatalf("Failed to compile circuit")
 	}
 
-	// Uncomment for a new set of keys
-	//pk, vk := setupKeys(r1cs)
-	pk, vk := readLastKeys()
-
-	witness, err := frontend.NewWitness(&Circuit{X: x, Y: y}, ecc.BN254)
+	witness, err := frontend.NewWitness(&cubic.Circuit{X: x, Y: y}, ecc.BN254)
 	if err != nil {
 		log.Fatalf("Failed to create witness: %+v", err)
 	}
+
+	// Uncomment for a new set of keys
+	//pk, vk := setupKeys(r1cs)
+	pk, vk := readLastKeys()
 
 	proof, err := groth16.Prove(r1cs, pk, witness)
 	if err != nil {
@@ -91,12 +127,12 @@ func CreateProof(x, y uint64) {
 	}
 	writeToFile(PROOF_FILE, proof)
 
-	pubWit, err := witness.Public()
+	pubWitness, err := witness.Public()
 	if err != nil {
 		log.Fatalf("couldnt create public proof: %+v", err)
 	}
 
-	err = groth16.Verify(proof, vk, pubWit)
+	err = groth16.Verify(proof, vk, pubWitness)
 	if err != nil {
 		log.Fatalf("Invalid Proof: %+v", err)
 	}
