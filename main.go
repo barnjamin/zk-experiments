@@ -4,13 +4,15 @@ import (
 	"log"
 	"math"
 
-	"github.com/barnjamin/zk-experiments/circuits"
+	"github.com/barnjamin/zk-experiments/groth16/circuits"
 	"github.com/barnjamin/zk-experiments/sandbox"
 )
 
-const AppID = 1416
-
 func main() {
+	RunGrothProof()
+}
+
+func RunGrothProof() {
 	// Create new proof
 	circuits.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
 
@@ -24,7 +26,9 @@ func main() {
 	}
 
 	// Create a contract client
-	cc := sandbox.NewClient(AppID, "contract/artifacts/contract.json")
+	cc := sandbox.NewClient("groth16/contract/artifacts/application.json", 0)
+	cc.Create()
+	cc.Fund(1_000_000_000)
 
 	// Bootstrap with our VK
 	cc.Bootstrap(vk.ToABITuple())

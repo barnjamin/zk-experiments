@@ -12,6 +12,12 @@ import (
 	"github.com/consensys/gnark/frontend"
 )
 
+// Schemes
+// Groth16 - pk/vk per circuit
+// Plonk -
+// Marlin -
+// Sonic
+
 func setupKeys(name string, r1cs frontend.CompiledConstraintSystem) (groth16.ProvingKey, groth16.VerifyingKey) {
 	pk, vk, err := groth16.Setup(r1cs)
 	if err != nil {

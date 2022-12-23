@@ -2,6 +2,7 @@ package sandbox
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -23,14 +24,16 @@ var (
 )
 
 type ContractClient struct {
-	appId    uint64
-	client   *algod.Client
-	contract *abi.Contract
-	acct     crypto.Account
-	signer   future.BasicAccountTransactionSigner
+	appId      uint64
+	appAddress string
+	client     *algod.Client
+	contract   *abi.Contract
+	acct       crypto.Account
+	signer     future.BasicAccountTransactionSigner
+	appSpec    *ApplicationSpecification
 }
 
-func NewClient(appId uint64, contractPath string) *ContractClient {
+func NewClient(appSpecPath string, appId uint64) *ContractClient {
 	client, err := algod.MakeClient(fmt.Sprintf("%s:%s", host, port), token)
 	if err != nil {
 		log.Fatalf("Failed to init client: %+v", err)
@@ -41,25 +44,99 @@ func NewClient(appId uint64, contractPath string) *ContractClient {
 		log.Fatalf("Failed to get accounts: %+v", err)
 	}
 
-	b, err := ioutil.ReadFile(contractPath)
+	b, err := ioutil.ReadFile(appSpecPath)
 	if err != nil {
 		log.Fatalf("Failed to open contract file: %+v", err)
 	}
 
-	contract := &abi.Contract{}
-	if err := json.Unmarshal(b, contract); err != nil {
+	appSpec := &ApplicationSpecification{}
+	if err := json.Unmarshal(b, appSpec); err != nil {
 		log.Fatalf("Failed to marshal contract: %+v", err)
 	}
 
 	acct := accts[2]
 	return &ContractClient{
-		appId:    appId,
-		client:   client,
-		acct:     acct,
-		signer:   future.BasicAccountTransactionSigner{Account: acct},
-		contract: contract,
+		appId:      appId,
+		client:     client,
+		acct:       acct,
+		signer:     future.BasicAccountTransactionSigner{Account: acct},
+		contract:   appSpec.Contract,
+		appSpec:    appSpec,
+		appAddress: crypto.GetApplicationAddress(appId).String(),
 	}
 
+}
+
+func (cc *ContractClient) compile(tealProg []byte) []byte {
+	res, err := cc.client.TealCompile(tealProg).Do(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to compile program: %+v", err)
+	}
+	bin, err := base64.StdEncoding.DecodeString(res.Result)
+	if err != nil {
+		log.Fatalf("Failed to decode program: %+v", err)
+	}
+	return bin
+}
+
+func (cc *ContractClient) Create() uint64 {
+	sp, err := cc.client.SuggestedParams().Do(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get suggeted params: %+v", err)
+	}
+	approvalBin := cc.compile(cc.appSpec.ApprovalProgram())
+	clearBin := cc.compile(cc.appSpec.ClearProgram())
+
+	var atc = future.AtomicTransactionComposer{}
+
+	appCreateTxn, err := future.MakeApplicationCreateTx(
+		false, approvalBin, clearBin, cc.appSpec.GlobalSchema(), cc.appSpec.LocalSchema(), nil, nil, nil, nil, sp, cc.acct.Address, nil, types.Digest{}, [32]byte{}, types.ZeroAddress,
+	)
+	if err != nil {
+		log.Fatalf("Failed to create app call txn: %+v", err)
+	}
+
+	stxn := future.TransactionWithSigner{Txn: appCreateTxn, Signer: cc.signer}
+	atc.AddTransaction(stxn)
+
+	exRes, err := atc.Execute(cc.client, context.Background(), 4)
+	if err != nil {
+		log.Fatalf("Failed to execute call: %+v", err)
+	}
+
+	result, _, err := cc.client.PendingTransactionInformation(exRes.TxIDs[0]).Do(context.Background())
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+	cc.appId = result.ApplicationIndex
+	cc.appAddress = crypto.GetApplicationAddress(result.ApplicationIndex).String()
+
+	return result.ApplicationIndex
+}
+
+func (cc *ContractClient) Update() {
+
+}
+
+func (cc *ContractClient) Fund(amt uint64) {
+	sp, err := cc.client.SuggestedParams().Do(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get suggeted params: %+v", err)
+	}
+	var atc = future.AtomicTransactionComposer{}
+
+	payTxn, err := future.MakePaymentTxn(cc.acct.Address.String(), cc.appAddress, amt, nil, "", sp)
+	if err != nil {
+		log.Fatalf("Failed to create app call txn: %+v", err)
+	}
+
+	stxn := future.TransactionWithSigner{Txn: payTxn, Signer: cc.signer}
+	atc.AddTransaction(stxn)
+
+	_, err = atc.Execute(cc.client, context.Background(), 4)
+	if err != nil {
+		log.Fatalf("Failed to execute call: %+v", err)
+	}
 }
 
 func (cc *ContractClient) Bootstrap(vk interface{}) {
@@ -69,7 +146,6 @@ func (cc *ContractClient) Bootstrap(vk interface{}) {
 		log.Fatalf("Failed to get suggeted params: %+v", err)
 	}
 
-	// Skipping error checks below during AddMethodCall and txn create
 	var atc = future.AtomicTransactionComposer{}
 
 	m, err := cc.contract.GetMethodByName("bootstrap")
@@ -105,7 +181,6 @@ func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) bool {
 		log.Fatalf("Failed to get suggeted params: %+v", err)
 	}
 
-	// Skipping error checks below during AddMethodCall and txn create
 	var atc = future.AtomicTransactionComposer{}
 
 	m, err := cc.contract.GetMethodByName("verify")

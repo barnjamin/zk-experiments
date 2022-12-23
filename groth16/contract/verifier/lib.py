@@ -159,6 +159,8 @@ def compute_linear_combination(
             # get/check input value
             inputs[idx.load()].store_into((input := abi.make(Uint256))),
             Assert(BytesLt(input.get(), SnarkScalar), comment="input >= snark scalar"),
+            # TODO: use multi_exp
+
             # scale circuit value by input
             # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(

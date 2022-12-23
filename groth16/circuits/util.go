@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/barnjamin/zk-experiments/circuits/cubic"
+	"github.com/barnjamin/zk-experiments/groth16/circuits/cubic"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark-crypto/ecc/bn254"
 	"github.com/consensys/gnark/backend/groth16"
