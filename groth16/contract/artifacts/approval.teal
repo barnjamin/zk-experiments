@@ -97,15 +97,15 @@ retsub
 
 // negate
 negate_3:
-store 29
-load 29
+store 24
+load 24
 bytec_0 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 b==
 bnz negate_3_l2
-load 29
+load 24
 extract 0 32
 bytec_1 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
-load 29
+load 24
 extract 32 0
 bytec_1 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b%
@@ -113,7 +113,7 @@ b-
 concat
 b negate_3_l3
 negate_3_l2:
-load 29
+load 24
 negate_3_l3:
 retsub
 
@@ -205,49 +205,27 @@ store 19
 load 19
 extract 0 64
 callsub negate_3
-store 22
 load 20
 extract 0 64
-store 24
-load 22
-load 24
 concat
-store 22
-load 22
 load 21
 concat
-store 22
 load 19
 extract 192 0
-store 25
-load 22
-load 25
 concat
 store 22
 load 19
 extract 64 128
-store 23
 load 20
 extract 64 128
-store 26
-load 23
-load 26
 concat
-store 23
 load 20
 extract 192 128
-store 27
-load 23
-load 27
 concat
-store 23
 load 20
 pushint 320 // 320
 pushint 128 // 128
 extract3
-store 28
-load 23
-load 28
 concat
 store 23
 load 22

@@ -1,0 +1,20 @@
+     40 %f_mod%
+      5 %x_domain_size%
+      5 %h_domain_size%
+      3 %pub_padded_size%
+      2 %k_domain_size%
+      2  
+      1 %x_root%
+      1 %vk_populate_index_comms%
+      1 %vk_kzg_h%
+      1 %vk_kzg_gamma_g%
+      1 %vk_kzg_g%
+      1 %vk_kzg_beta_h%
+      1 %vk_index_comms_length%
+      1 %vk_g2_shift%
+      1 %vk_g1_shift%
+      1 %num_public_inputs%
+      1 %fs_populate_init_seed%
+      1 %fs_init_seed_overflow_len%
+      1 %fs_init_seed_len%
+      1 %f_inv%

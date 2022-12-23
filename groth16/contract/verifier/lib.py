@@ -74,12 +74,12 @@ class Proof(abi.NamedTuple):
 ##
 
 
-def x(a: G1):
-    return Extract(a.encode(), Int(0), Int(32))
+def x(a):
+    return Extract(a, Int(0), Int(32))
 
 
-def y(a: G1):
-    return Suffix(a.encode(), Int(32))
+def y(a):
+    return Suffix(a, Int(32))
 
 
 @Subroutine(TealType.bytes)
@@ -93,11 +93,11 @@ def scale(g: G1, factor: Uint256):
 
 
 @Subroutine(TealType.bytes)
-def negate(g: G1):
+def negate(g1):
     return (
-        If(BytesEq(g.encode(), Uint512Zero))
-        .Then(g.encode())
-        .Else(Concat(x(g), BytesMinus(PrimeQ, BytesMod(y(g), PrimeQ))))
+        If(BytesEq(g1, Uint512Zero))
+        .Then(g1)
+        .Else(Concat(x(g1), BytesMinus(PrimeQ, BytesMod(y(g1), PrimeQ))))
     )
 
 
@@ -199,15 +199,23 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
     g2_buff = ScratchVar()
     return Seq(
         # Construct G1 buffer
-        proof.A.use(lambda a: g1_buff.store(negate(a))),
-        vk.alpha1.use(lambda a: g1_buff.store(Concat(g1_buff.load(), a.encode()))),
-        g1_buff.store(Concat(g1_buff.load(), vk_x.encode())),
-        proof.C.use(lambda c: g1_buff.store(Concat(g1_buff.load(), c.encode()))),
+        g1_buff.store(
+            Concat(
+                negate(proof.A.encode()),
+                vk.alpha1.encode(),
+                vk_x.encode(),
+                proof.C.encode()
+            )
+        ),
         # Construct G2 buffer
-        proof.B.use(lambda b: g2_buff.store(b.encode())),
-        vk.beta2.use(lambda b: g2_buff.store(Concat(g2_buff.load(), b.encode()))),
-        vk.gamma2.use(lambda g: g2_buff.store(Concat(g2_buff.load(), g.encode()))),
-        vk.delta2.use(lambda d: g2_buff.store(Concat(g2_buff.load(), d.encode()))),
+        g2_buff.store(
+            Concat(
+                proof.B.encode(),
+                vk.beta2.encode(),
+                vk.gamma2.encode(),
+                vk.delta2.encode(),
+            )
+        ),
         # Check if its a valid pairing
         curve_pairing(g1_buff.load(), g2_buff.load()),
     )
