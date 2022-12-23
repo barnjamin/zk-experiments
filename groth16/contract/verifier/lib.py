@@ -108,7 +108,6 @@ def negate(g: G1):
 
 @Subroutine(TealType.none)
 def assert_proof_points_lt_prime_q(proof: Proof):
-
     return Seq(
         proof.A.use(
             lambda a: Assert(

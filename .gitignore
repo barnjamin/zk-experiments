@@ -1,7 +1,6 @@
 __pycache__/
 .venv/
 node_modules/
-proof.json
 .vscode/
 
 *.bin
@@ -10,3 +9,10 @@ proof.json
 *.proof
 *.vk
 *.r1cs
+*.wtns
+*.key
+*.dat
+out
+witness
+proof.json
+abi.json

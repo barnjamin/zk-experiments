@@ -8,7 +8,6 @@ from .lib import (
     G1,
     compute_linear_combination,
     valid_pairing,
-    assert_proof_points_lt_prime_q,
 )
 
 
