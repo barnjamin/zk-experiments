@@ -108,20 +108,34 @@ def negate(g: G1):
 
 @Subroutine(TealType.none)
 def assert_proof_points_lt_prime_q(proof: Proof):
+
     return Seq(
         proof.A.use(
             lambda a: Assert(
-                curve_subgroup_check_g1(a.encode()), comment="a point invalid"
+                BytesLt(x(a), PrimeQ), BytesLt(y(a), PrimeQ), comment="a point > primeq"
             )
         ),
         proof.B.use(
-            lambda b: Assert(
-                curve_subgroup_check_g2(b.encode()), comment="b point invalid"
+            lambda b: Seq(
+                b[0].use(
+                    lambda b_0: Assert(
+                        BytesLt(x(b_0), PrimeQ),
+                        BytesLt(y(b_0), PrimeQ),
+                        comment="b0 point > primeq",
+                    )
+                ),
+                b[1].use(
+                    lambda b_1: Assert(
+                        BytesLt(x(b_1), PrimeQ),
+                        BytesLt(y(b_1), PrimeQ),
+                        comment="b1 point > primeq",
+                    )
+                ),
             )
         ),
         proof.C.use(
             lambda c: Assert(
-                curve_subgroup_check_g1(c.encode()), comment="c point invalid"
+                BytesLt(x(c), PrimeQ), BytesLt(y(c), PrimeQ), comment="c point > primeq"
             )
         ),
     )

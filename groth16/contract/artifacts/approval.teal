@@ -29,7 +29,7 @@ txna ApplicationArgs 2
 store 1
 load 0
 load 1
-callsub verify_16
+callsub verify_13
 store 2
 pushbytes 0x151f7c75 // 0x151f7c75
 pushbytes 0x00 // 0x00
@@ -50,7 +50,7 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-callsub bootstrap_15
+callsub bootstrap_12
 intc_1 // 1
 return
 main_l6:
@@ -68,7 +68,7 @@ txn ApplicationID
 intc_0 // 0
 !=
 assert
-callsub update_13
+callsub update_10
 intc_1 // 1
 return
 main_l10:
@@ -87,25 +87,25 @@ return
 
 // add
 add_1:
-callsub curveadd_9
+callsub curveadd_6
 retsub
 
 // scale
 scale_2:
-callsub curvescalarmul_10
+callsub curvescalarmul_7
 retsub
 
 // negate
 negate_3:
-store 30
-load 30
+store 29
+load 29
 bytec_0 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 b==
 bnz negate_3_l2
-load 30
+load 29
 extract 0 32
 bytec_1 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
-load 30
+load 29
 extract 32 0
 bytec_1 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
 b%
@@ -113,42 +113,22 @@ b-
 concat
 b negate_3_l3
 negate_3_l2:
-load 30
+load 29
 negate_3_l3:
 retsub
 
-// assert_proof_points_lt_prime_q
-assertproofpointsltprimeq_4:
-store 11
-load 11
-extract 0 64
-callsub curvesubgroupcheckg1_7
-// a point invalid
-assert
-load 11
-extract 64 128
-callsub curvesubgroupcheckg2_8
-// b point invalid
-assert
-load 11
-extract 192 0
-callsub curvesubgroupcheckg1_7
-// c point invalid
-assert
-retsub
-
 // compute_linear_combination
-computelinearcombination_5:
-store 13
+computelinearcombination_4:
 store 12
+store 11
 bytec_0 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-store 15
-load 12
+store 14
+load 11
 intc_3 // 448
 dig 1
 len
 substring3
-store 16
+store 15
 pushint 2 // 2
 intc_1 // 1
 -
@@ -156,50 +136,50 @@ intc_1 // 1
 ==
 assert
 intc_0 // 0
-store 17
-computelinearcombination_5_l1:
-load 17
+store 16
+computelinearcombination_4_l1:
+load 16
 intc_1 // 1
 <
-bz computelinearcombination_5_l3
-load 13
+bz computelinearcombination_4_l3
+load 12
 pushint 32 // 32
-load 17
+load 16
 *
 pushint 32 // 32
 extract3
-store 18
-load 18
+store 17
+load 17
 pushbytes 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001 // 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
 b<
 // input >= snark scalar
 assert
-load 12
+load 11
 intc_3 // 448
 dig 1
 len
 substring3
 intc_2 // 64
-load 17
+load 16
 intc_1 // 1
 +
 *
 intc_2 // 64
 extract3
-load 18
-callsub scale_2
-store 14
-load 15
-load 14
-callsub add_1
-store 15
 load 17
+callsub scale_2
+store 13
+load 14
+load 13
+callsub add_1
+store 14
+load 16
 intc_1 // 1
 +
-store 17
-b computelinearcombination_5_l1
-computelinearcombination_5_l3:
-load 12
+store 16
+b computelinearcombination_4_l1
+computelinearcombination_4_l3:
+load 11
 intc_3 // 448
 dig 1
 len
@@ -209,123 +189,113 @@ intc_0 // 0
 *
 intc_2 // 64
 extract3
-store 19
-load 15
-load 19
+store 18
+load 14
+load 18
 callsub add_1
-store 15
-load 15
+store 14
+load 14
 retsub
 
 // valid_pairing
-validpairing_6:
-store 22
+validpairing_5:
 store 21
 store 20
-load 20
+store 19
+load 19
 extract 0 64
 callsub negate_3
-store 23
-load 21
+store 22
+load 20
 extract 0 64
+store 24
+load 22
+load 24
+concat
+store 22
+load 22
+load 21
+concat
+store 22
+load 19
+extract 192 0
 store 25
-load 23
+load 22
 load 25
 concat
-store 23
-load 23
-load 22
-concat
+store 22
+load 19
+extract 64 128
 store 23
 load 20
-extract 192 0
+extract 64 128
 store 26
 load 23
 load 26
 concat
 store 23
 load 20
-extract 64 128
-store 24
-load 21
-extract 64 128
+extract 192 128
 store 27
-load 24
+load 23
 load 27
 concat
-store 24
-load 21
-extract 192 128
-store 28
-load 24
-load 28
-concat
-store 24
-load 21
+store 23
+load 20
 pushint 320 // 320
 pushint 128 // 128
 extract3
-store 29
-load 24
-load 29
-concat
-store 24
+store 28
 load 23
-load 24
-callsub curvepairing_11
-retsub
-
-// curve_subgroup_check_g1
-curvesubgroupcheckg1_7:
-ec_subgroup_check BN254_G1
-retsub
-
-// curve_subgroup_check_g2
-curvesubgroupcheckg2_8:
-ec_subgroup_check BN254_G2
+load 28
+concat
+store 23
+load 22
+load 23
+callsub curvepairing_8
 retsub
 
 // curve_add
-curveadd_9:
+curveadd_6:
 ec_add BN254_G1
 retsub
 
 // curve_scalar_mul
-curvescalarmul_10:
+curvescalarmul_7:
 ec_scalar_mul BN254_G1
 retsub
 
 // curve_pairing
-curvepairing_11:
+curvepairing_8:
 ec_pairing_check BN254_G1
 retsub
 
 // auth_only
-authonly_12:
+authonly_9:
 global CreatorAddress
 ==
 retsub
 
 // update
-update_13:
+update_10:
 txn Sender
-callsub authonly_12
+callsub authonly_9
 // unauthorized
 assert
 intc_1 // 1
 return
 
 // auth_only
-authonly_14:
+authonly_11:
 global CreatorAddress
 ==
 retsub
 
 // bootstrap
-bootstrap_15:
+bootstrap_12:
 store 10
 txn Sender
-callsub authonly_14
+callsub authonly_11
 // unauthorized
 assert
 bytec_2 // "vk"
@@ -334,18 +304,18 @@ box_put
 retsub
 
 // verify
-verify_16:
+verify_13:
 store 4
 store 3
 pushint 1350 // 1350
 pushint 10 // 10
 +
 store 5
-verify_16_l1:
+verify_13_l1:
 load 5
 global OpcodeBudget
 >
-bz verify_16_l3
+bz verify_13_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
@@ -356,10 +326,8 @@ itxn_field ApprovalProgram
 bytec_3 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b verify_16_l1
-verify_16_l3:
-load 4
-callsub assertproofpointsltprimeq_4
+b verify_13_l1
+verify_13_l3:
 bytec_2 // "vk"
 box_get
 store 8
@@ -371,12 +339,12 @@ load 7
 store 6
 load 6
 load 3
-callsub computelinearcombination_5
+callsub computelinearcombination_4
 store 9
 load 4
 load 6
 load 9
-callsub validpairing_6
+callsub validpairing_5
 !
 !
 retsub

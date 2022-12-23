@@ -32,10 +32,8 @@ class Verifier(bkr.Application):
         return pt.Seq(
             # idk if this will need to change but its enough for now
             self.opup.ensure_budget(pt.Int(1350)),
-            # Make sure proof doesn't have any values > primeQ
-            assert_proof_points_lt_prime_q(proof),
             # Fetch the VK from box storage
-            self.get_vk(output=(vk := VerificationKey())),
+            self.get_vk(output=(vk := VerificationKey())),  # type: ignore
             # Compute vk_x from sum of inputs
             (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
             # return result (normal programs should assert out if its invalid)
