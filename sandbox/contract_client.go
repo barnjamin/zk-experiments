@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/algorand/go-algorand-sdk/abi"
 	"github.com/algorand/go-algorand-sdk/client/v2/algod"
 	"github.com/algorand/go-algorand-sdk/crypto"
 	"github.com/algorand/go-algorand-sdk/future"
@@ -27,7 +26,6 @@ type ContractClient struct {
 	appId      uint64
 	appAddress string
 	client     *algod.Client
-	contract   *abi.Contract
 	acct       crypto.Account
 	signer     future.BasicAccountTransactionSigner
 	appSpec    *ApplicationSpecification
@@ -60,23 +58,9 @@ func NewClient(appSpecPath string, appId uint64) *ContractClient {
 		client:     client,
 		acct:       acct,
 		signer:     future.BasicAccountTransactionSigner{Account: acct},
-		contract:   appSpec.Contract,
 		appSpec:    appSpec,
 		appAddress: crypto.GetApplicationAddress(appId).String(),
 	}
-
-}
-
-func (cc *ContractClient) compile(tealProg []byte) []byte {
-	res, err := cc.client.TealCompile(tealProg).Do(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to compile program: %+v", err)
-	}
-	bin, err := base64.StdEncoding.DecodeString(res.Result)
-	if err != nil {
-		log.Fatalf("Failed to decode program: %+v", err)
-	}
-	return bin
 }
 
 func (cc *ContractClient) Create() uint64 {
@@ -115,7 +99,28 @@ func (cc *ContractClient) Create() uint64 {
 }
 
 func (cc *ContractClient) Update() {
+	sp, err := cc.client.SuggestedParams().Do(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get suggeted params: %+v", err)
+	}
+	approvalBin := cc.compile(cc.appSpec.ApprovalProgram())
+	clearBin := cc.compile(cc.appSpec.ClearProgram())
 
+	appUpdateTx, err := future.MakeApplicationUpdateTx(
+		cc.appId, nil, nil, nil, nil, approvalBin, clearBin, sp, cc.acct.Address, nil, types.Digest{}, [32]byte{}, types.ZeroAddress,
+	)
+	if err != nil {
+		log.Fatalf("Failed to create app call txn: %+v", err)
+	}
+
+	var atc = future.AtomicTransactionComposer{}
+	stxn := future.TransactionWithSigner{Txn: appUpdateTx, Signer: cc.signer}
+	atc.AddTransaction(stxn)
+
+	_, err = atc.Execute(cc.client, context.Background(), 4)
+	if err != nil {
+		log.Fatalf("Failed to execute call: %+v", err)
+	}
 }
 
 func (cc *ContractClient) Fund(amt uint64) {
@@ -140,65 +145,35 @@ func (cc *ContractClient) Fund(amt uint64) {
 }
 
 func (cc *ContractClient) Bootstrap(vk interface{}) {
+	var (
+		name = "bootstrap"
+		atc  = future.AtomicTransactionComposer{}
+		mcp  = cc.methodCallParams(name)
+	)
 
-	sp, err := cc.client.SuggestedParams().Do(context.Background())
+	mcp.MethodArgs = []interface{}{vk}
+
+	err := atc.AddMethodCall(mcp)
 	if err != nil {
-		log.Fatalf("Failed to get suggeted params: %+v", err)
-	}
-
-	var atc = future.AtomicTransactionComposer{}
-
-	m, err := cc.contract.GetMethodByName("bootstrap")
-	if err != nil {
-		log.Fatalf("No method named bootstrap? %+v", err)
-	}
-	mcp := future.AddMethodCallParams{
-		AppID:           cc.appId,
-		Sender:          cc.acct.Address,
-		SuggestedParams: sp,
-		OnComplete:      types.NoOpOC,
-		Method:          m,
-		MethodArgs:      []interface{}{vk},
-		Signer:          cc.signer,
-		BoxReferences:   []types.AppBoxReference{{AppID: cc.appId, Name: []byte("vk")}},
-	}
-
-	err = atc.AddMethodCall(mcp)
-	if err != nil {
-		log.Fatalf("Failed to add method call for bootstrap: %+v", err)
+		log.Fatalf("Failed to add method call for %s: %+v", name, err)
 	}
 
 	_, err = atc.Execute(cc.client, context.Background(), 4)
 	if err != nil {
-		log.Fatalf("Failed to execute call: %+v", err)
+		log.Fatalf("Failed to execute call for %s: %+v", name, err)
 	}
 }
 
 func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) bool {
+	var (
+		name = "verify"
+		atc  = future.AtomicTransactionComposer{}
+		mcp  = cc.methodCallParams(name)
+	)
 
-	sp, err := cc.client.SuggestedParams().Do(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to get suggeted params: %+v", err)
-	}
+	mcp.MethodArgs = []interface{}{inputs, proof}
 
-	var atc = future.AtomicTransactionComposer{}
-
-	m, err := cc.contract.GetMethodByName("verify")
-	if err != nil {
-		log.Fatalf("No method named verify? %+v", err)
-	}
-	mcp := future.AddMethodCallParams{
-		AppID:           cc.appId,
-		Sender:          cc.acct.Address,
-		SuggestedParams: sp,
-		OnComplete:      types.NoOpOC,
-		Method:          m,
-		MethodArgs:      []interface{}{inputs, proof},
-		Signer:          cc.signer,
-		BoxReferences:   []types.AppBoxReference{{AppID: cc.appId, Name: []byte("vk")}},
-	}
-
-	err = atc.AddMethodCall(mcp)
+	err := atc.AddMethodCall(mcp)
 	if err != nil {
 		log.Fatalf("Failed to add method call for verify: %+v", err)
 	}
@@ -211,7 +186,41 @@ func (cc *ContractClient) Verify(inputs interface{}, proof interface{}) bool {
 	return ret.MethodResults[0].ReturnValue.(bool)
 }
 
-func getBytesFromResult(inputs interface{}) []*big.Int {
+func (cc *ContractClient) methodCallParams(methodName string) future.AddMethodCallParams {
+	m, err := cc.appSpec.Contract.GetMethodByName(methodName)
+	if err != nil {
+		log.Fatalf("No method named `%s`? %+v", methodName, err)
+	}
+
+	sp, err := cc.client.SuggestedParams().Do(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get suggeted params: %+v", err)
+	}
+
+	return future.AddMethodCallParams{
+		AppID:           cc.appId,
+		Sender:          cc.acct.Address,
+		SuggestedParams: sp,
+		OnComplete:      types.NoOpOC,
+		Method:          m,
+		Signer:          cc.signer,
+		BoxReferences:   []types.AppBoxReference{{AppID: cc.appId, Name: []byte("vk")}},
+	}
+}
+
+func (cc *ContractClient) compile(tealProg []byte) []byte {
+	res, err := cc.client.TealCompile(tealProg).Do(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to compile program: %+v", err)
+	}
+	bin, err := base64.StdEncoding.DecodeString(res.Result)
+	if err != nil {
+		log.Fatalf("Failed to decode program: %+v", err)
+	}
+	return bin
+}
+
+func getBigIntsFromResult(inputs interface{}) []*big.Int {
 	vals := inputs.([]interface{})
 	out := []*big.Int{}
 	for _, val := range vals {
