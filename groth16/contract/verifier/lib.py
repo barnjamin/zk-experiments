@@ -1,5 +1,6 @@
 from typing import Literal
 from pyteal import (
+    Len,
     BytesMinus,
     BytesMod,
     Concat,
@@ -107,6 +108,7 @@ def negate(g: G1):
 
 @Subroutine(TealType.none)
 def assert_proof_points_lt_prime_q(proof: Proof):
+
     return Seq(
         proof.A.use(
             lambda a: Assert(
@@ -139,6 +141,23 @@ def assert_proof_points_lt_prime_q(proof: Proof):
     )
 
 
+# @Subroutine(TealType.bytes)
+# def compute_linear_combination(
+#     vk: VerificationKey,
+#     inputs: Inputs,
+# ):
+#     return Seq(
+#         (vk_x := abi.make(G1)).decode(Uint512Zero),
+#         vk.IC.use(lambda ic: Seq(
+#             vk_x.decode(
+#                 curve_multi_exp(Suffix(ic.encode(), Int(64)), inputs.encode())
+#             ),
+#             vk_x.decode(curve_add(vk_x.encode(), Extract(ic.encode(), Int(0), Int(64))))
+#         )),
+#         vk_x.encode(),
+#     )
+
+
 @Subroutine(TealType.bytes)
 def compute_linear_combination(
     vk: VerificationKey,
@@ -149,7 +168,7 @@ def compute_linear_combination(
     return Seq(
         # init vk_x to 0
         (vk_x := abi.make(G1)).decode(Uint512Zero),
-        # TODO: check if len(inputs) == len(vk.ic)+1?
+        vk.IC.use(lambda ic: Assert((ic.length() - Int(1)) == inputs.length())),
         # Iterate over inputs, accumulating sum
         For(
             (idx := ScratchVar()).store(Int(0)),
@@ -159,8 +178,6 @@ def compute_linear_combination(
             # get/check input value
             inputs[idx.load()].store_into((input := abi.make(Uint256))),
             Assert(BytesLt(input.get(), SnarkScalar), comment="input >= snark scalar"),
-            # TODO: use multi_exp
-
             # scale circuit value by input
             # vk_x += scaled(vk.ic[idx+1], input[idx])
             vk.IC.use(
@@ -201,19 +218,32 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
 # Curve Ops
 ##
 
-# "ec_add": proto("bb:b")
+
+@Subroutine(TealType.uint64)
+def curve_subgroup_check_g1(a):
+    return InlineAssembly("ec_subgroup_check BN254_G1", a, type=TealType.uint64)
+
+
+@Subroutine(TealType.uint64)
+def curve_subgroup_check_g2(a):
+    return InlineAssembly("ec_subgroup_check BN254_G2", a, type=TealType.uint64)
+
+
 @Subroutine(TealType.bytes)
 def curve_add(a, b):
     return InlineAssembly("ec_add BN254_G1", a, b, type=TealType.bytes)
 
 
-# "ec_scalar_mul":  proto("bb:b"), costly(970)
+@Subroutine(TealType.bytes)
+def curve_multi_exp(a, b):
+    return InlineAssembly("ec_multi_exp BN254_G1", a, b, type=TealType.bytes)
+
+
 @Subroutine(TealType.bytes)
 def curve_scalar_mul(a, b):
     return InlineAssembly("ec_scalar_mul BN254_G1", a, b, type=TealType.bytes)
 
 
-# "ec_pairing":  proto("bb:i"), costly(8700)
 @Subroutine(TealType.uint64)
 def curve_pairing(a, b):
-    return InlineAssembly("ec_pairing_check BN254", a, b, type=TealType.uint64)
+    return InlineAssembly("ec_pairing_check BN254_G1", a, b, type=TealType.uint64)

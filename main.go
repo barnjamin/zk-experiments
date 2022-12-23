@@ -4,7 +4,8 @@ import (
 	"log"
 	"math"
 
-	"github.com/barnjamin/zk-experiments/groth16/circuits"
+	grothCircuits "github.com/barnjamin/zk-experiments/groth16/circuits"
+	plonkCircuits "github.com/barnjamin/zk-experiments/plonk/circuits"
 	"github.com/barnjamin/zk-experiments/sandbox"
 )
 
@@ -12,15 +13,31 @@ func main() {
 	RunGrothProof()
 }
 
-func RunGrothProof() {
+func RunPlonkProof() {
 	// Create new proof
-	circuits.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
+	plonkCircuits.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
 
 	// Read the proof from disk
-	proof, vk, inputs := circuits.GetLastProof("cubic")
+	proof, vk, inputs := plonkCircuits.GetLastProof("cubic")
+	log.Printf("%+v %+v %+v", proof, vk, inputs)
 
 	// Check locally first
-	ok, err := circuits.CheckProof(inputs, *proof, *vk)
+	ok, err := plonkCircuits.CheckProof(inputs, *proof, *vk)
+	if err != nil || !ok {
+		log.Fatalf("invalid proof:  %+v", err)
+	}
+
+}
+
+func RunGrothProof() {
+	// Create new proof
+	grothCircuits.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
+
+	// Read the proof from disk
+	proof, vk, inputs := grothCircuits.GetLastProof("cubic")
+
+	// Check locally first
+	ok, err := grothCircuits.CheckProof(inputs, *proof, *vk)
 	if err != nil || !ok {
 		log.Fatalf("invalid proof:  %+v", err)
 	}
@@ -34,6 +51,6 @@ func RunGrothProof() {
 	cc.Bootstrap(vk.ToABITuple())
 
 	// Verify the with the inputs && proof
-	result := cc.Verify(circuits.InputsAsAbiTuple(inputs), proof.ToABITuple())
+	result := cc.Verify(grothCircuits.InputsAsAbiTuple(inputs), proof.ToABITuple())
 	log.Printf("Contract verified? %+v", result)
 }
