@@ -11,7 +11,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend/plonk"
 	"github.com/consensys/gnark/frontend"
-	"github.com/consensys/gnark/frontend/cs/r1cs"
+	"github.com/consensys/gnark/frontend/cs/scs"
 )
 
 func GetLastProof(name string) (*Proof, *VK, []*big.Int) {
@@ -34,7 +34,7 @@ func GetLastProof(name string) (*Proof, *VK, []*big.Int) {
 
 func WriteCircuit(name string, c frontend.Circuit, opts ...frontend.CompileOption) {
 	var fname = name + ".r1cs"
-	r1cs, err := frontend.Compile(ecc.BN254, r1cs.NewBuilder, c, opts...)
+	r1cs, err := frontend.Compile(ecc.BN254, scs.NewBuilder, c, opts...)
 	if err != nil {
 		log.Fatalf("failed to compile circuit")
 	}
