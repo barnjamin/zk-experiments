@@ -4,7 +4,7 @@ from beaker import client, sandbox
 from verifier.contract import Verifier
 
 
-def main(app_id: int = 0):
+def deploy(app_id: int = 0):
 
     accts = sandbox.get_accounts()
     acct = accts.pop()
@@ -30,4 +30,3 @@ def main(app_id: int = 0):
 
 if __name__ == "__main__":
     Verifier(version=9).dump("./artifacts")
-    main(1416)

@@ -14,6 +14,13 @@ import (
 	"github.com/consensys/gnark/frontend/cs/scs"
 )
 
+func CheckProof(inputs []*big.Int, proof Proof, vk VK) (bool, error) {
+	// TODO
+	// Now what?
+
+	return false, nil
+}
+
 func GetLastProof(name string) (*Proof, *VK, []*big.Int) {
 	proof := NewProofFromFile(proofFile(name))
 	vk := NewVKFromFile(vkFile(name))

@@ -10,12 +10,22 @@ import (
 )
 
 func main() {
-	RunPlonkProof()
+	RunGrothProof()
 }
 
 func RunPlonkProof() {
 	// Create new proof
 	plonkCircuits.CreateProofForCubic(3, uint64(math.Pow(3, 3)+3+5))
+
+	// Read the proof from disk
+	proof, vk, inputs := plonkCircuits.GetLastProof("cubic")
+	log.Printf("%+v %+v %+v", proof, vk, inputs)
+
+	// Check locally first
+	ok, err := plonkCircuits.CheckProof(inputs, *proof, *vk)
+	if err != nil || !ok {
+		log.Fatalf("invalid proof:  %+v", err)
+	}
 
 }
 

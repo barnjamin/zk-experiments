@@ -28,13 +28,6 @@
             "returns": {
                 "type": "bool"
             }
-        },
-        {
-            "name": "get_vk",
-            "args": [],
-            "returns": {
-                "type": "(byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2])"
-            }
         }
     ],
     "networks": {}
