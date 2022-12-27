@@ -1,18 +1,12 @@
-from typing import Literal
+from typing import Literal, get_args
 from pyteal import (
-    Len,
     BytesMinus,
     BytesMod,
     Concat,
     Suffix,
-    BytesEq,
     Extract,
-    If,
-    Assert,
     Bytes,
-    BytesLt,
     ScratchVar,
-    For,
     Subroutine,
     TealType,
     abi,
@@ -29,9 +23,10 @@ curve = "BLS12_381"
 curve_g1 = f"{curve}_G1"
 curve_g2 = f"{curve}_G2"
 
-keySize = 48
+# Depends on keysize (bls == 48, bn254 == 32)
+key_size = 48
 
-G1Zero = Bytes((0).to_bytes(keySize * 2, "big"))
+G1Zero = Bytes((0).to_bytes(key_size * 2, "big"))
 
 PrimeQ = Bytes(
     "base16",
@@ -43,10 +38,19 @@ PrimeQ = Bytes(
 # Types
 ##
 
+
+# Just make sure the literal int passed matches our key_size
+def check_size(t: type, ks: int):
+    size = get_args(get_args(t)[0])[0]
+    assert size == ks
+
+
 # Always 32 bytes
 Scalar = abi.StaticBytes[Literal[32]]
-# Depends on keysize (bls == 48, bn254 == 32)
 Value = abi.StaticBytes[Literal[48]]
+
+check_size(Value, key_size)
+
 
 G1 = abi.StaticArray[Value, Literal[2]]
 G2 = abi.StaticArray[G1, Literal[2]]
@@ -79,11 +83,11 @@ class Proof(abi.NamedTuple):
 
 
 def x(a):
-    return Extract(a, Int(0), Int(keySize))
+    return Extract(a, Int(0), Int(key_size))
 
 
 def y(a):
-    return Suffix(a, Int(keySize))
+    return Suffix(a, Int(key_size))
 
 
 @Subroutine(TealType.bytes)
@@ -103,8 +107,8 @@ def compute_linear_combination(
     inputs: Inputs,
 ):
     return curve_add(
-        curve_multi_exp(Suffix(vk.IC.encode(), Int(keySize * 2)), inputs.encode()),
-        Extract(vk.IC.encode(), Int(0), Int(keySize * 2)),
+        curve_multi_exp(Suffix(vk.IC.encode(), Int(key_size * 2)), inputs.encode()),
+        Extract(vk.IC.encode(), Int(0), Int(key_size * 2)),
     )
 
 
