@@ -1,7 +1,7 @@
 import pyteal as pt
 import beaker as bkr
 
-from .bn254 import (
+from .bls12_381 import (
     Inputs,
     Proof,
     VerificationKey,

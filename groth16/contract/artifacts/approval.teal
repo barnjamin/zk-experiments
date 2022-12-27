@@ -1,16 +1,16 @@
 #pragma version 9
-intcblock 0 1 448
-bytecblock 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47 0x766b 0x068101
+intcblock 0 1 672 288 192
+bytecblock 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab 0x766b 0x068101
 txn NumAppArgs
 intc_0 // 0
 ==
 bnz main_l6
 txna ApplicationArgs 0
-pushbytes 0x793ae44d // "bootstrap((byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2]))void"
+pushbytes 0x3363d2d7 // "bootstrap((byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2]))void"
 ==
 bnz main_l5
 txna ApplicationArgs 0
-pushbytes 0x390cb476 // "verify(byte[32][1],(byte[32][2],byte[32][2][2],byte[32][2]))bool"
+pushbytes 0x9c550b43 // "verify(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]))bool"
 ==
 bnz main_l4
 err
@@ -24,17 +24,17 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-store 0
+store 8
 txna ApplicationArgs 2
-store 1
-load 0
-load 1
+store 9
+load 8
+load 9
 callsub verify_11
-store 2
+store 10
 pushbytes 0x151f7c75 // 0x151f7c75
 pushbytes 0x00 // 0x00
 intc_0 // 0
-load 2
+load 10
 setbit
 concat
 log
@@ -87,13 +87,13 @@ return
 
 // negate
 negate_1:
-store 18
-load 18
-extract 0 32
-bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
-load 18
-extract 32 0
-bytec_0 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
+store 7
+load 7
+extract 0 48
+bytec_0 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
+load 7
+extract 48 0
+bytec_0 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
 b%
 b-
 concat
@@ -101,74 +101,79 @@ retsub
 
 // compute_linear_combination
 computelinearcombination_2:
-store 12
-store 11
-load 11
-intc_2 // 448
+store 1
+store 0
+load 0
+intc_2 // 672
 dig 1
 len
 substring3
-extract 64 0
-load 12
+extract 96 0
+load 1
 callsub curvemultiexp_5
-load 11
-intc_2 // 448
+load 0
+intc_2 // 672
 dig 1
 len
 substring3
-extract 0 64
+extract 0 96
 callsub curveadd_4
 retsub
 
 // valid_pairing
 validpairing_3:
-store 15
-store 14
-store 13
-load 13
-extract 0 64
+store 4
+store 3
+store 2
+load 2
+extract 0 96
 callsub negate_1
-load 14
-extract 0 64
+load 3
+extract 0 96
 concat
-load 15
+load 4
 concat
-load 13
-extract 192 0
+load 2
+intc_3 // 288
+dig 1
+len
+substring3
 concat
-store 16
-load 13
-extract 64 128
-load 14
-extract 64 128
+store 5
+load 2
+extract 96 192
+load 3
+extract 96 192
 concat
-load 14
-extract 192 128
-concat
-load 14
-pushint 320 // 320
-pushint 128 // 128
+load 3
+intc_3 // 288
+intc 4 // 192
 extract3
 concat
-store 17
-load 16
-load 17
+load 3
+pushint 480 // 480
+intc 4 // 192
+extract3
+concat
+store 6
+load 5
+load 6
 callsub curvepairing_6
 retsub
 
 // curve_add
 curveadd_4:
-ec_add BN254_G1
+ec_add BLS12_381_G1
 retsub
 
 // curve_multi_exp
 curvemultiexp_5:
-ec_multi_exp BN254_G1
+ec_multi_exp BLS12_381_G1
 retsub
 
 // curve_pairing
 curvepairing_6:
-ec_pairing_check BN254_G1
+ec_pairing_check BLS12_381_G1
 retsub
 
 // auth_only
@@ -194,26 +199,26 @@ retsub
 
 // bootstrap
 bootstrap_10:
-store 10
+store 18
 txn Sender
 callsub authonly_9
 // unauthorized
 assert
 bytec_1 // "vk"
-load 10
+load 18
 box_put
 retsub
 
 // verify
 verify_11:
-store 4
-store 3
+store 12
+store 11
 pushint 13500 // 13500
 pushint 10 // 10
 +
-store 5
+store 13
 verify_11_l1:
-load 5
+load 13
 global OpcodeBudget
 >
 bz verify_11_l3
@@ -231,20 +236,20 @@ b verify_11_l1
 verify_11_l3:
 bytec_1 // "vk"
 box_get
-store 8
-store 7
-load 8
+store 16
+store 15
+load 16
 // Verification Key not set
 assert
-load 7
-store 6
-load 6
-load 3
+load 15
+store 14
+load 14
+load 11
 callsub computelinearcombination_2
-store 9
-load 4
-load 6
-load 9
+store 17
+load 12
+load 14
+load 17
 callsub validpairing_3
 !
 !

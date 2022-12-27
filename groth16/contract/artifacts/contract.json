@@ -5,7 +5,7 @@
             "name": "bootstrap",
             "args": [
                 {
-                    "type": "(byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2])",
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
                     "name": "vk"
                 }
             ],
@@ -21,7 +21,7 @@
                     "name": "inputs"
                 },
                 {
-                    "type": "(byte[32][2],byte[32][2][2],byte[32][2])",
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
                     "name": "proof"
                 }
             ],
