@@ -1,16 +1,16 @@
 #pragma version 9
-intcblock 0 1 64 448
-bytecblock 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47 0x766b 0x068101
+intcblock 0 1 288 192
+bytecblock 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab 0x766b 0x068101
 txn NumAppArgs
 intc_0 // 0
 ==
 bnz main_l6
 txna ApplicationArgs 0
-pushbytes 0x793ae44d // "bootstrap((byte[32][2],byte[32][2][2],byte[32][2][2],byte[32][2][2],byte[32][2][2]))void"
+pushbytes 0x3363d2d7 // "bootstrap((byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2]))void"
 ==
 bnz main_l5
 txna ApplicationArgs 0
-pushbytes 0x390cb476 // "verify(byte[32][1],(byte[32][2],byte[32][2][2],byte[32][2]))bool"
+pushbytes 0x9c550b43 // "verify(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]))bool"
 ==
 bnz main_l4
 err
@@ -29,7 +29,7 @@ txna ApplicationArgs 2
 store 1
 load 0
 load 1
-callsub verify_13
+callsub verify_11
 store 2
 pushbytes 0x151f7c75 // 0x151f7c75
 pushbytes 0x00 // 0x00
@@ -50,7 +50,7 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-callsub bootstrap_12
+callsub bootstrap_10
 intc_1 // 1
 return
 main_l6:
@@ -68,7 +68,7 @@ txn ApplicationID
 intc_0 // 0
 !=
 assert
-callsub update_10
+callsub update_8
 intc_1 // 1
 return
 main_l10:
@@ -85,168 +85,110 @@ create_0:
 intc_1 // 1
 return
 
-// add
-add_1:
-callsub curveadd_6
-retsub
-
-// scale
-scale_2:
-callsub curvescalarmul_7
-retsub
-
 // negate
-negate_3:
-store 24
-load 24
-bytec_0 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-b==
-bnz negate_3_l2
-load 24
-extract 0 32
-bytec_1 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
-load 24
-extract 32 0
-bytec_1 // 0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47
+negate_1:
+store 19
+load 19
+extract 0 48
+bytec_0 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
+load 19
+extract 48 0
+bytec_0 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
 b%
 b-
 concat
-b negate_3_l3
-negate_3_l2:
-load 24
-negate_3_l3:
 retsub
 
 // compute_linear_combination
-computelinearcombination_4:
+computelinearcombination_2:
 store 12
 store 11
-bytec_0 // 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-store 14
+pushbytes 0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 // 0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 load 11
-intc_3 // 448
+pushint 672 // 672
 dig 1
 len
 substring3
-store 15
-pushint 2 // 2
-intc_1 // 1
--
-intc_1 // 1
-==
-assert
-intc_0 // 0
-store 16
-computelinearcombination_4_l1:
-load 16
-intc_1 // 1
-<
-bz computelinearcombination_4_l3
-load 12
-pushint 32 // 32
-load 16
-*
-pushint 32 // 32
-extract3
-store 17
-load 17
-pushbytes 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001 // 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
-b<
-// input >= snark scalar
-assert
-load 11
-intc_3 // 448
-dig 1
-len
-substring3
-intc_2 // 64
-load 16
-intc_1 // 1
-+
-*
-intc_2 // 64
-extract3
-load 17
-callsub scale_2
 store 13
-load 14
 load 13
-callsub add_1
-store 14
-load 16
-intc_1 // 1
-+
-store 16
-b computelinearcombination_4_l1
-computelinearcombination_4_l3:
-load 11
-intc_3 // 448
-dig 1
-len
-substring3
-intc_2 // 64
-intc_0 // 0
-*
-intc_2 // 64
-extract3
-store 18
-load 14
-load 18
-callsub add_1
-store 14
-load 14
+extract 96 0
+load 12
+callsub curvemultiexp_5
+load 13
+extract 0 96
+callsub curveadd_4
 retsub
 
 // valid_pairing
-validpairing_5:
-store 21
-store 20
-store 19
-load 19
-extract 0 64
-callsub negate_3
-load 20
-extract 0 64
+validpairing_3:
+store 16
+store 15
+store 14
+load 14
+extract 0 96
+callsub negate_1
+load 15
+extract 0 96
 concat
-load 21
+load 16
 concat
-load 19
-extract 192 0
+load 14
+intc_2 // 288
+dig 1
+len
+substring3
 concat
-store 22
-load 19
-extract 64 128
-load 20
-extract 64 128
+store 17
+load 14
+extract 96 192
+load 15
+extract 96 192
 concat
-load 20
-extract 192 128
-concat
-load 20
-pushint 320 // 320
-pushint 128 // 128
+load 15
+intc_2 // 288
+intc_3 // 192
 extract3
 concat
-store 23
-load 22
-load 23
-callsub curvepairing_8
+load 15
+pushint 480 // 480
+intc_3 // 192
+extract3
+concat
+store 18
+load 17
+load 18
+callsub curvepairing_6
 retsub
 
 // curve_add
-curveadd_6:
-ec_add BN254_G1
+curveadd_4:
+ec_add BLS12_381_G1
 retsub
 
-// curve_scalar_mul
-curvescalarmul_7:
-ec_scalar_mul BN254_G1
+// curve_multi_exp
+curvemultiexp_5:
+ec_multi_exp BLS12_381_G1
 retsub
 
 // curve_pairing
-curvepairing_8:
-ec_pairing_check BN254_G1
+curvepairing_6:
+ec_pairing_check BLS12_381_G1
 retsub
+
+// auth_only
+authonly_7:
+global CreatorAddress
+==
+retsub
+
+// update
+update_8:
+txn Sender
+callsub authonly_7
+// unauthorized
+assert
+intc_1 // 1
+return
 
 // auth_only
 authonly_9:
@@ -254,59 +196,44 @@ global CreatorAddress
 ==
 retsub
 
-// update
-update_10:
+// bootstrap
+bootstrap_10:
+store 10
 txn Sender
 callsub authonly_9
 // unauthorized
 assert
-intc_1 // 1
-return
-
-// auth_only
-authonly_11:
-global CreatorAddress
-==
-retsub
-
-// bootstrap
-bootstrap_12:
-store 10
-txn Sender
-callsub authonly_11
-// unauthorized
-assert
-bytec_2 // "vk"
+bytec_1 // "vk"
 load 10
 box_put
 retsub
 
 // verify
-verify_13:
+verify_11:
 store 4
 store 3
-pushint 1350 // 1350
+pushint 13500 // 13500
 pushint 10 // 10
 +
 store 5
-verify_13_l1:
+verify_11_l1:
 load 5
 global OpcodeBudget
 >
-bz verify_13_l3
+bz verify_11_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_3 // 0x068101
+bytec_2 // 0x068101
 itxn_field ApprovalProgram
-bytec_3 // 0x068101
+bytec_2 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b verify_13_l1
-verify_13_l3:
-bytec_2 // "vk"
+b verify_11_l1
+verify_11_l3:
+bytec_1 // "vk"
 box_get
 store 8
 store 7
@@ -317,12 +244,12 @@ load 7
 store 6
 load 6
 load 3
-callsub computelinearcombination_4
+callsub computelinearcombination_2
 store 9
 load 4
 load 6
 load 9
-callsub validpairing_5
+callsub validpairing_3
 !
 !
 retsub

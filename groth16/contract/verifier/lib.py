@@ -24,33 +24,37 @@ from beaker.lib.inline import InlineAssembly
 ##
 # Consts
 ##
-Uint256Zero = Bytes((0).to_bytes(32, "big"))
-Uint512Zero = Bytes((0).to_bytes(64, "big"))
+
+curve = "BLS12_381"
+curve_g1 = f"{curve}_G1"
+curve_g2 = f"{curve}_G2"
+
+keySize = 48
+
+G1Zero = Bytes((0).to_bytes(keySize * 2, "big"))
 
 PrimeQ = Bytes(
-    (
-        21888242871839275222246405745257275088696311157297823662689037894645226208583
-    ).to_bytes(32, "big")
+    "base16",
+    "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab",
 )
-SnarkScalar = Bytes(
-    (
-        21888242871839275222246405745257275088548364400416034343698204186575808495617
-    ).to_bytes(32, "big")
-)
+
 
 ##
 # Types
 ##
 
-Uint256 = abi.StaticBytes[Literal[32]]
+# Always 32 bytes
+Scalar = abi.StaticBytes[Literal[32]]
+# Depends on keysize (bls == 48, bn254 == 32)
+Value = abi.StaticBytes[Literal[48]]
 
-G1 = abi.StaticArray[Uint256, Literal[2]]
+G1 = abi.StaticArray[Value, Literal[2]]
 G2 = abi.StaticArray[G1, Literal[2]]
 
 InputNum = Literal[1]
 ICNum = Literal[2]  # input num + 1
 
-Inputs = abi.StaticArray[Uint256, InputNum]
+Inputs = abi.StaticArray[Scalar, InputNum]
 
 
 class VerificationKey(abi.NamedTuple):
@@ -75,11 +79,11 @@ class Proof(abi.NamedTuple):
 
 
 def x(a):
-    return Extract(a, Int(0), Int(32))
+    return Extract(a, Int(0), Int(keySize))
 
 
 def y(a):
-    return Suffix(a, Int(32))
+    return Suffix(a, Int(keySize))
 
 
 @Subroutine(TealType.bytes)
@@ -88,17 +92,13 @@ def add(a: G1, b: G1):
 
 
 @Subroutine(TealType.bytes)
-def scale(g: G1, factor: Uint256):
+def scale(g: G1, factor: Value):
     return curve_scalar_mul(g.encode(), factor.encode())
 
 
 @Subroutine(TealType.bytes)
 def negate(g1):
-    return (
-        If(BytesEq(g1, Uint512Zero))
-        .Then(g1)
-        .Else(Concat(x(g1), BytesMinus(PrimeQ, BytesMod(y(g1), PrimeQ))))
-    )
+    return Concat(x(g1), BytesMinus(PrimeQ, BytesMod(y(g1), PrimeQ)))
 
 
 ##
@@ -106,89 +106,25 @@ def negate(g1):
 ##
 
 
-@Subroutine(TealType.none)
-def assert_proof_points_lt_prime_q(proof: Proof):
-    return Seq(
-        proof.A.use(
-            lambda a: Assert(
-                BytesLt(x(a), PrimeQ), BytesLt(y(a), PrimeQ), comment="a point > primeq"
-            )
-        ),
-        proof.B.use(
-            lambda b: Seq(
-                b[0].use(
-                    lambda b_0: Assert(
-                        BytesLt(x(b_0), PrimeQ),
-                        BytesLt(y(b_0), PrimeQ),
-                        comment="b0 point > primeq",
-                    )
-                ),
-                b[1].use(
-                    lambda b_1: Assert(
-                        BytesLt(x(b_1), PrimeQ),
-                        BytesLt(y(b_1), PrimeQ),
-                        comment="b1 point > primeq",
-                    )
-                ),
-            )
-        ),
-        proof.C.use(
-            lambda c: Assert(
-                BytesLt(x(c), PrimeQ), BytesLt(y(c), PrimeQ), comment="c point > primeq"
-            )
-        ),
-    )
-
-
-# @Subroutine(TealType.bytes)
-# def compute_linear_combination(
-#     vk: VerificationKey,
-#     inputs: Inputs,
-# ):
-#     return Seq(
-#         (vk_x := abi.make(G1)).decode(Uint512Zero),
-#         vk.IC.use(lambda ic: Seq(
-#             vk_x.decode(
-#                 curve_multi_exp(Suffix(ic.encode(), Int(64)), inputs.encode())
-#             ),
-#             vk_x.decode(curve_add(vk_x.encode(), Extract(ic.encode(), Int(0), Int(64))))
-#         )),
-#         vk_x.encode(),
-#     )
-
-
 @Subroutine(TealType.bytes)
 def compute_linear_combination(
     vk: VerificationKey,
     inputs: Inputs,
 ):
-    # intermediate step
-    scaled = abi.make(G1)
     return Seq(
-        # init vk_x to 0
-        (vk_x := abi.make(G1)).decode(Uint512Zero),
-        vk.IC.use(lambda ic: Assert((ic.length() - Int(1)) == inputs.length())),
-        # Iterate over inputs, accumulating sum
-        For(
-            (idx := ScratchVar()).store(Int(0)),
-            idx.load() < inputs.length(),
-            idx.store(idx.load() + Int(1)),
-        ).Do(
-            # get/check input value
-            inputs[idx.load()].store_into((input := abi.make(Uint256))),
-            Assert(BytesLt(input.get(), SnarkScalar), comment="input >= snark scalar"),
-            # scale circuit value by input
-            # vk_x += scaled(vk.ic[idx+1], input[idx])
-            vk.IC.use(
-                lambda ics: ics[idx.load() + Int(1)].use(
-                    lambda vk_ic: scaled.decode(scale(vk_ic, input))
-                )
-            ),
-            # add scaled point to vk_X
-            vk_x.decode(add(vk_x, scaled)),
+        (vk_x := abi.make(G1)).decode(G1Zero),
+        vk.IC.use(
+            lambda ic: Seq(
+                vk_x.decode(
+                    curve_add(
+                        curve_multi_exp(
+                            Suffix(ic.encode(), Int(keySize * 2)), inputs.encode()
+                        ),
+                        Extract(ic.encode(), Int(0), Int(keySize * 2)),
+                    )
+                ),
+            )
         ),
-        # vk_X += vk.IC[0]
-        vk.IC.use(lambda ics: ics[Int(0)].use(lambda ic: vk_x.decode(add(vk_x, ic)))),
         vk_x.encode(),
     )
 
@@ -204,7 +140,7 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
                 negate(proof.A.encode()),
                 vk.alpha1.encode(),
                 vk_x.encode(),
-                proof.C.encode()
+                proof.C.encode(),
             )
         ),
         # Construct G2 buffer
@@ -228,29 +164,29 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
 
 @Subroutine(TealType.uint64)
 def curve_subgroup_check_g1(a):
-    return InlineAssembly("ec_subgroup_check BN254_G1", a, type=TealType.uint64)
+    return InlineAssembly(f"ec_subgroup_check {curve_g1}", a, type=TealType.uint64)
 
 
 @Subroutine(TealType.uint64)
 def curve_subgroup_check_g2(a):
-    return InlineAssembly("ec_subgroup_check BN254_G2", a, type=TealType.uint64)
+    return InlineAssembly(f"ec_subgroup_check {curve_g2}", a, type=TealType.uint64)
 
 
 @Subroutine(TealType.bytes)
 def curve_add(a, b):
-    return InlineAssembly("ec_add BN254_G1", a, b, type=TealType.bytes)
+    return InlineAssembly(f"ec_add {curve_g1}", a, b, type=TealType.bytes)
 
 
 @Subroutine(TealType.bytes)
 def curve_multi_exp(a, b):
-    return InlineAssembly("ec_multi_exp BN254_G1", a, b, type=TealType.bytes)
+    return InlineAssembly(f"ec_multi_exp {curve_g1}", a, b, type=TealType.bytes)
 
 
 @Subroutine(TealType.bytes)
 def curve_scalar_mul(a, b):
-    return InlineAssembly("ec_scalar_mul BN254_G1", a, b, type=TealType.bytes)
+    return InlineAssembly(f"ec_scalar_mul {curve_g1}", a, b, type=TealType.bytes)
 
 
 @Subroutine(TealType.uint64)
 def curve_pairing(a, b):
-    return InlineAssembly("ec_pairing_check BN254_G1", a, b, type=TealType.uint64)
+    return InlineAssembly(f"ec_pairing_check {curve_g1}", a, b, type=TealType.uint64)
