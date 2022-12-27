@@ -10,8 +10,8 @@ import (
 )
 
 func main() {
-	RunZokratesProof()
-	// RunGrothProof()
+	//RunZokratesProof()
+	RunGrothProof()
 }
 
 func RunZokratesProof() {
@@ -51,7 +51,6 @@ func RunGrothProof() {
 
 	// Bootstrap with our VK
 	cc.Bootstrap(vk.ToABITuple())
-	log.Printf("%+v", vk.ToABITuple())
 
 	// Verify the with the inputs && proof
 	result := cc.Verify(grothCircuits.InputsAsAbiTuple(inputs), proof.ToABITuple())
