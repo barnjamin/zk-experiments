@@ -87,17 +87,8 @@ def y(a):
 
 
 @Subroutine(TealType.bytes)
-def add(a: G1, b: G1):
-    return curve_add(a.encode(), b.encode())
-
-
-@Subroutine(TealType.bytes)
-def scale(g: G1, factor: Value):
-    return curve_scalar_mul(g.encode(), factor.encode())
-
-
-@Subroutine(TealType.bytes)
 def negate(g1):
+    # TODO: check length
     return Concat(x(g1), BytesMinus(PrimeQ, BytesMod(y(g1), PrimeQ)))
 
 
@@ -111,21 +102,9 @@ def compute_linear_combination(
     vk: VerificationKey,
     inputs: Inputs,
 ):
-    return Seq(
-        (vk_x := abi.make(G1)).decode(G1Zero),
-        vk.IC.use(
-            lambda ic: Seq(
-                vk_x.decode(
-                    curve_add(
-                        curve_multi_exp(
-                            Suffix(ic.encode(), Int(keySize * 2)), inputs.encode()
-                        ),
-                        Extract(ic.encode(), Int(0), Int(keySize * 2)),
-                    )
-                ),
-            )
-        ),
-        vk_x.encode(),
+    return curve_add(
+        curve_multi_exp(Suffix(vk.IC.encode(), Int(keySize * 2)), inputs.encode()),
+        Extract(vk.IC.encode(), Int(0), Int(keySize * 2)),
     )
 
 

@@ -16,20 +16,18 @@ func main() {
 
 func RunZokratesProof() {
 
-	vk := zokrates.NewVKFromFile("groth16/zokrates/verification.key")
-
 	// Create a contract client
 	cc := sandbox.NewClient("groth16/contract/artifacts/application.json", 0)
 	cc.Create()
 	cc.Fund(1_000_000_000)
 
 	// Bootstrap with our VK
+	vk := zokrates.NewVKFromFile("groth16/zokrates/verification.key")
 	cc.Bootstrap(vk.ToABITuple())
 
-	proof := zokrates.NewProofFromFile("groth16/zokrates/proof.json")
-	inputs := proof.Inputs
 	// Verify the with the inputs && proof
-	result := cc.Verify(zokrates.InputsAsAbiTuple(inputs), proof.ToABITuple())
+	proof := zokrates.NewProofFromFile("groth16/zokrates/proof.json")
+	result := cc.Verify(zokrates.InputsAsAbiTuple(proof.Inputs), proof.ToABITuple())
 	log.Printf("Contract verified? %+v", result)
 }
 
