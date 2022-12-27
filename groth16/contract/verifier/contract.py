@@ -1,7 +1,7 @@
 import pyteal as pt
 import beaker as bkr
 
-from .lib import (
+from .bn254 import (
     Inputs,
     Proof,
     VerificationKey,
@@ -30,7 +30,7 @@ class Verifier(bkr.Application):
     def verify(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
             # idk if this will need to change but its enough for now
-            self.opup.ensure_budget(pt.Int(1350)),
+            self.opup.ensure_budget(pt.Int(13500)),
             # Fetch the VK from box storage
             self.get_vk(output=(vk := VerificationKey())),  # type: ignore
             # Compute vk_x from sum of inputs

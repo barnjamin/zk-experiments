@@ -5,11 +5,30 @@ import (
 	"math"
 
 	grothCircuits "github.com/barnjamin/zk-experiments/groth16/circuits"
+	"github.com/barnjamin/zk-experiments/groth16/zokrates"
 	"github.com/barnjamin/zk-experiments/sandbox"
 )
 
 func main() {
+	//RunZokratesProof()
 	RunGrothProof()
+}
+
+func RunZokratesProof() {
+
+	// Create a contract client
+	cc := sandbox.NewClient("groth16/contract/artifacts/application.json", 0)
+	cc.Create()
+	cc.Fund(1_000_000_000)
+
+	// Bootstrap with our VK
+	vk := zokrates.NewVKFromFile("groth16/zokrates/verification.key")
+	cc.Bootstrap(vk.ToABITuple())
+
+	// Verify the with the inputs && proof
+	proof := zokrates.NewProofFromFile("groth16/zokrates/proof.json")
+	result := cc.Verify(zokrates.InputsAsAbiTuple(proof.Inputs), proof.ToABITuple())
+	log.Printf("Contract verified? %+v", result)
 }
 
 func RunGrothProof() {
