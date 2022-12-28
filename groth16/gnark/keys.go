@@ -1,4 +1,4 @@
-package circuits
+package gnark
 
 // WARNING: This code is completely insecure and written only for experimentation.
 // The proving key (pk) should be treated as toxic waste and disposed of

@@ -1,10 +1,11 @@
 import json
-import algosdk.abi as sdkabi
-from beaker import *
-from beaker import client, sandbox
+import algosdk.abi as sdkabi  # type: ignore
 
-from verifier.bls12_381 import VerificationKey, Proof, Inputs
-from verifier.contract import Verifier
+from typing import Any
+
+from verifier.lib.bls12_381 import VerificationKey, Proof
+
+# TODO: return the actual types from these methods instead of Any
 
 vk_codec = sdkabi.ABIType.from_string(str(VerificationKey().type_spec()))
 proof_codec = sdkabi.ABIType.from_string(str(Proof().type_spec()))
@@ -31,7 +32,7 @@ def decode_g2(coords: list[list[str]]) -> bytes:
     return x_0 + x_1 + y_0 + y_1
 
 
-def get_proof_and_inputs() -> tuple[bytes, bytes]:
+def get_proof_and_inputs() -> tuple[Any, Any]:
     with open(data_path + "/proof.json", "r") as f:
         _proof = json.loads(f.read())
 
@@ -42,10 +43,10 @@ def get_proof_and_inputs() -> tuple[bytes, bytes]:
 
     inputs = b"".join([decode_scalar(i) for i in _proof["inputs"]])
 
-    return (a + b + c, inputs)
+    return proof_codec.decode(a + b + c), input_codec.decode(inputs)
 
 
-def get_vk() -> bytes:
+def get_vk() -> Any:
     with open(data_path + "/verification.key", "r") as f:
         vk = json.loads(f.read())
     alpha = decode_g1(vk["alpha"])
@@ -54,43 +55,4 @@ def get_vk() -> bytes:
     delta = decode_g2(vk["delta"])
     ics = b"".join([decode_g1(ic) for ic in vk["gamma_abc"]])
 
-    return alpha + beta + gamma + delta + ics
-
-
-app_id = 0
-acct = sandbox.get_accounts().pop()
-algod_client = sandbox.get_algod_client()
-
-v = Verifier(version=9)
-ac = client.ApplicationClient(algod_client, v, app_id=app_id, signer=acct.signer)
-
-
-def deploy(app_id: int = 0):
-    if app_id == 0:
-        app_id, _, _ = ac.create()
-        print(f"Created app: {app_id}")
-        ac.fund(1000 * consts.algo)
-    else:
-        ac.build()
-        ac.update()
-
-
-def bootstrap():
-    ac.call(v.bootstrap, vk=vk_codec.decode(get_vk()), boxes=[(0, "vk")])
-
-
-def verify():
-    proof, inputs = get_proof_and_inputs()
-    proof = proof_codec.decode(proof)
-    inputs = input_codec.decode(inputs)
-
-    result = ac.call(v.verify, inputs=inputs, proof=proof, boxes=[(0, "vk")])
-    print(f"Contract verified? {result.return_value}")
-
-
-if __name__ == "__main__":
-    v.dump("./artifacts")
-
-    deploy()
-    bootstrap()
-    verify()
+    return vk_codec.decode(alpha + beta + gamma + delta + ics)

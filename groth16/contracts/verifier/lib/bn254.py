@@ -1,4 +1,4 @@
-from typing import Literal, get_args
+from typing import Literal
 from pyteal import (
     BytesMinus,
     BytesMod,
@@ -14,10 +14,12 @@ from pyteal import (
     Int,
 )
 from beaker.lib.inline import InlineAssembly
+from .util import check_size
 
 ##
 # Consts
 ##
+
 
 curve = "BN254"
 curve_g1 = f"{curve}_G1"
@@ -38,12 +40,6 @@ PrimeQ = Bytes(
 ##
 # Types
 ##
-
-
-# Just make sure the literal int passed matches our key_size
-def check_size(t: type, ks: int):
-    size = get_args(get_args(t)[0])[0]
-    assert size == ks
 
 
 # Always 32 bytes

@@ -1,4 +1,4 @@
-package circuits
+package gnark
 
 // The gnark library has curve specific types in an internal package
 // so this is pmuch copy/paste from there
