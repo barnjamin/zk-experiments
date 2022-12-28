@@ -3,7 +3,7 @@ import algosdk.abi as sdkabi  # type: ignore
 
 from typing import Any
 
-from verifier.lib.bls12_381 import VerificationKey, Proof
+from verifier.lib.bls12_381 import VerificationKey, Proof  # type: ignore
 
 # TODO: return the actual types from these methods instead of Any
 

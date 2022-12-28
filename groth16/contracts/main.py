@@ -1,7 +1,7 @@
-from beaker import *
-from beaker import client, sandbox
-from verifier import Verifier
-from zokrates import get_proof_and_inputs, get_vk
+from beaker import client, sandbox, consts
+
+from verifier import Verifier  # type: ignore
+from zokrates import get_proof_and_inputs, get_vk  # type: ignore
 
 
 def demo(app_id: int = 0):
@@ -19,10 +19,10 @@ def demo(app_id: int = 0):
         ac.build()
         ac.update()
 
-    ac.call(v.bootstrap, vk=get_vk(), boxes=[(0, "vk")])
+    ac.call(v.bootstrap, vk=get_vk(), boxes=[(0, b"vk")])
 
     proof, inputs = get_proof_and_inputs()
-    result = ac.call(v.verify, inputs=inputs, proof=proof, boxes=[(0, "vk")])
+    result = ac.call(v.verify, inputs=inputs, proof=proof, boxes=[(0, b"vk")])
     print(f"Contract verified? {result.return_value}")
 
 

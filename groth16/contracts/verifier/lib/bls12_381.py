@@ -1,4 +1,4 @@
-from typing import Literal, get_args
+from typing import Literal
 from pyteal import (
     BytesMinus,
     BytesMod,
@@ -14,6 +14,7 @@ from pyteal import (
     Int,
 )
 from beaker.lib.inline import InlineAssembly
+from .util import check_size
 
 ##
 # Consts
@@ -37,12 +38,6 @@ PrimeQ = Bytes(
 ##
 # Types
 ##
-
-
-# Just make sure the literal int passed matches our key_size
-def check_size(t: type, ks: int):
-    size = get_args(get_args(t)[0])[0]
-    assert size == ks
 
 
 # Always 32 bytes
@@ -82,15 +77,14 @@ class Proof(abi.NamedTuple):
 ##
 
 
-def x(a):
-    return Extract(a, Int(0), Int(key_size))
+def x(g1):
+    return Extract(g1, Int(0), Int(key_size))
 
 
-def y(a):
-    return Suffix(a, Int(key_size))
+def y(g1):
+    return Suffix(g1, Int(key_size))
 
 
-@Subroutine(TealType.bytes)
 def negate(g1):
     # TODO: check length
     return Concat(x(g1), BytesMinus(PrimeQ, BytesMod(y(g1), PrimeQ)))
