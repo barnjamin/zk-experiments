@@ -15,8 +15,5 @@ zokrates compute-witness -a 337 113569
 # generate a proof of computation
 zokrates generate-proof
 
-# export a solidity verifier
-#zokrates export-verifier
-
 # or verify natively
 zokrates verify
