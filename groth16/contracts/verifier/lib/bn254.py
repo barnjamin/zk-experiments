@@ -79,15 +79,14 @@ class Proof(abi.NamedTuple):
 ##
 
 
-def x(a):
-    return Extract(a, Int(0), Int(key_size))
+def x(g1):
+    return Extract(g1, Int(0), Int(key_size))
 
 
-def y(a):
-    return Suffix(a, Int(key_size))
+def y(g1):
+    return Suffix(g1, Int(key_size))
 
 
-@Subroutine(TealType.bytes)
 def negate(g1):
     # TODO: check length
     return Concat(x(g1), BytesMinus(PrimeQ, BytesMod(y(g1), PrimeQ)))
@@ -111,30 +110,19 @@ def compute_linear_combination(
 
 @Subroutine(TealType.uint64)
 def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
-    g1_buff = ScratchVar()
-    g2_buff = ScratchVar()
-    return Seq(
-        # Construct G1 buffer
-        g1_buff.store(
-            Concat(
-                negate(proof.A.encode()),
-                vk.alpha1.encode(),
-                vk_x.encode(),
-                proof.C.encode(),
-            )
-        ),
-        # Construct G2 buffer
-        g2_buff.store(
-            Concat(
-                proof.B.encode(),
-                vk.beta2.encode(),
-                vk.gamma2.encode(),
-                vk.delta2.encode(),
-            )
-        ),
-        # Check if its a valid pairing
-        curve_pairing(g1_buff.load(), g2_buff.load()),
+    g1_buff = Concat(
+        negate(proof.A.encode()),
+        vk.alpha1.encode(),
+        vk_x.encode(),
+        proof.C.encode(),
     )
+    g2_buff = Concat(
+        proof.B.encode(),
+        vk.beta2.encode(),
+        vk.gamma2.encode(),
+        vk.delta2.encode(),
+    )
+    return curve_pairing(g1_buff, g2_buff)
 
 
 ##
