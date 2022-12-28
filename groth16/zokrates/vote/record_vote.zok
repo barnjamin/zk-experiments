@@ -1,7 +1,5 @@
 import "hashes/sha256/512bitPadded" as sha256;
 
-
-
 def in_set<N>(u32[8] hash, u32[N][8] member_phrases) -> bool {
     bool mut hash_in_set = false;
     for u32 i in 0..N {
@@ -11,11 +9,8 @@ def in_set<N>(u32[8] hash, u32[N][8] member_phrases) -> bool {
 }
 
 def main(private u32[16] passphrase,  u32[2][8] member_phrases) -> u32[8] {
-    log("passphrase is {}", passphrase);
     // Hash the passphrase to get the member that is voting 
     u32[8] h = sha256(passphrase[0..8], passphrase[8..16]);
-    //u32[8] h = sha256([passphrase]);
-    log("hash is {}", h);
 
     // Check if the passphrase is a member of the passphrases
     assert(in_set(h, member_phrases));
