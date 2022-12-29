@@ -18,6 +18,7 @@ def get_hash(passphrase: list[int]) -> bytes:
     return sha256(encoded_passphrase).digest()
 
 
+# 16 u32s
 passphrase_length = 16 * 4
 
 passphrases: list[list[int]] = [
@@ -33,7 +34,6 @@ stuff = f"""
  set -eu
  
  PASSPHRASE="{as_input(passphrases[0])}"
- 
  MEMBER_ONE_PHRASE_HASH="{as_input(as_u32(members[0]))}"
  MEMBER_TWO_PHRASE_HASH="{as_input(as_u32(members[1]))}"
  MEMBER_PHRASES="$MEMBER_ONE_PHRASE_HASH $MEMBER_TWO_PHRASE_HASH"
