@@ -1,5 +1,8 @@
+use std::fs::File;
+use std::io::prelude::*;
+
 use methods::{MULTIPLY_ID, MULTIPLY_PATH};
-use risc0_zkvm::Prover;
+use risc0_zkvm::{Prover, Receipt};
 use risc0_zkvm::serde::{from_slice, to_vec};
 
 fn main() {
@@ -27,9 +30,22 @@ fn main() {
     );
 
     let c: u64 = from_slice(receipt.journal.as_slice()).unwrap();
-    println!("Hello: {}", c)
+    println!("Hello: {}", c);
 
     // TODO: Implement code for transmitting or serializing the receipt for other parties to verify here
+    write_receipt(receipt);
 
 
+}
+
+
+fn write_receipt(r: Receipt) -> std::io::Result<()> {
+    
+    let mut jfile = File::create("trivial.journal")?;
+    jfile.write_all(&r.get_journal_bytes())?;
+
+    let mut sfile = File::create("trivial.seal")?;
+    sfile.write_all(&r.get_seal_bytes())?;
+
+    Ok(())
 }

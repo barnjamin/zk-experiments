@@ -17,6 +17,7 @@ witness
 proof.json
 abi.json
 
-# Added by cargo
+*.seal
+*.journal
 
 /target
