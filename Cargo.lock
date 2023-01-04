@@ -1425,8 +1425,11 @@ name = "starter"
 version = "0.1.0"
 dependencies = [
  "methods",
+ "risc0-circuit-rv32im",
+ "risc0-zkp",
  "risc0-zkvm",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

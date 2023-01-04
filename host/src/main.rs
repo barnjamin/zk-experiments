@@ -20,6 +20,7 @@ fn main() {
     prover.add_input_u32_slice(to_vec(&a).unwrap().as_slice());
     prover.add_input_u32_slice(to_vec(&b).unwrap().as_slice());
 
+
     // Run prover & generate receipt
     let receipt = prover.run()
         .expect("Code should be provable unless it 1) had an error or 2) overflowed the cycle limit. See `embed_methods_with_options` for information on adjusting maximum cycle count.");
@@ -32,11 +33,20 @@ fn main() {
     let c: u64 = from_slice(receipt.journal.as_slice()).unwrap();
     println!("Hello: {}", c);
 
-    // TODO: Implement code for transmitting or serializing the receipt for other parties to verify here
-    write_receipt(receipt).expect("womp");
+
+
+    write_receipt(receipt).expect("Failed to write receipt");
+
+    let meth: risc0_zkvm::MethodId = MULTIPLY_ID.into();
+    write_method(meth).expect("Failed to write method");
 
 }
 
+fn write_method(m: risc0_zkvm::MethodId) ->std::io::Result<()> {
+    let mut mfile = File::create("trivial.method")?;
+    mfile.write_all(m.as_slice())?;
+    Ok(())
+}
 
 fn write_receipt(r: Receipt) -> std::io::Result<()> {
     
