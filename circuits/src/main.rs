@@ -4,6 +4,9 @@ use risc0_zkvm::Receipt;
 
 fn main() {
     read_receipt().expect("msg");
+
+    // Adapter provides {output_size, mix_size} & {tapset, code_size}
+
 }
 
 fn read_receipt()->std::io::Result<()> {

@@ -1,6 +1,9 @@
-# Compile circuit
+#!/bin/bash
+
+# Compile circuit with wasm witness generator
 circom tmp.circom --r1cs --wasm --sym
 
+# Write inputs to json file
 echo -n '{"a":"3","b":"11"}' > input.json
 
 # Generate `wtns` file to be used for proofs later
