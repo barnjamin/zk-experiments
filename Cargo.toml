@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "methods",
+    "host",
+]
+
+
+[patch.crates-io]
+risc0-build = {path = "/home/ben/risc0/risc0/build"}
+risc0-zkvm = {path = "/home/ben/risc0/risc0/zkvm"}

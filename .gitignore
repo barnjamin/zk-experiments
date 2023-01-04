@@ -16,3 +16,7 @@ out
 witness
 proof.json
 abi.json
+
+# Added by cargo
+
+/target

@@ -1,0 +1,12 @@
+[package]
+name = "methods-guest"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[build-dependencies]
+risc0-build = "1.0.0-rc.2"
+
+[dependencies]
+risc0-zkvm = "1.0.0-rc.2" 
