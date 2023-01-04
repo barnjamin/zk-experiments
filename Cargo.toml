@@ -1,9 +1,9 @@
 [workspace]
 members = [
+    "circuits",
     "methods",
     "host",
 ]
-
 
 [patch.crates-io]
 risc0-build = {path = "/home/ben/risc0/risc0/build"}

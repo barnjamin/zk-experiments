@@ -190,6 +190,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "circuits"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "methods",
+ "risc0-zkvm",
+]
+
+[[package]]
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -33,8 +33,7 @@ fn main() {
     println!("Hello: {}", c);
 
     // TODO: Implement code for transmitting or serializing the receipt for other parties to verify here
-    write_receipt(receipt);
-
+    write_receipt(receipt).expect("womp");
 
 }
 
