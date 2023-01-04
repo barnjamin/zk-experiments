@@ -7,12 +7,12 @@ fn main() {
 }
 
 fn read_receipt()->std::io::Result<()> {
-    let mut jf = File::open("/home/ben/zk-experiments/trivial.journal")?;
+    let mut jf = File::open("trivial.journal")?;
     let mut jbuf = Vec::new();
     jf.read_to_end(&mut jbuf)?;
 
 
-    let mut sf = File::open("/home/ben/zk-experiments/trivial.seal")?;
+    let mut sf = File::open("trivial.seal")?;
     let mut sbuf = Vec::new();
     sf.read_to_end(&mut sbuf)?;
 
@@ -21,6 +21,7 @@ fn read_receipt()->std::io::Result<()> {
 
     let receipt = Receipt::new(jvec, svec);
 
+    println!("{:?}", methods::MULTIPLY_ID);
     receipt.verify(methods::MULTIPLY_ID).expect(
         "Code you have proven should successfully verify; did you specify the correct method ID?",
     );
