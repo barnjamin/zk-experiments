@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# rm -rf tmp_js
-# rm public.json
-# rm proof.json
-# rm tmp.sym
-# rm tmp.zkey
-# rm tmp.r1cs
-# rm verification_key.json
-# rm witness.wtns
-# rm input.json
+rm abi.json
+rm out
+rm out.r1cs
+rm out.wtns
+rm proof.json
+rm proving.key
+rm verification.key
+rm witness
+rm verifier.sol
