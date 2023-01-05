@@ -1,0 +1,13 @@
+from "../merkle" import merkle;
+from "../utils/const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
+
+const u32 COMPILE_TIME_MT_DEPTH = 1;
+
+def main(                                    \
+    ShaDigest root,                          \
+    ShaDigest leaf,                          \
+    bool[COMPILE_TIME_MT_DEPTH] lr_selector, \
+    ShaDigest[COMPILE_TIME_MT_DEPTH] path) {
+    assert(merkle(root, leaf, lr_selector, path));
+    return;
+}
