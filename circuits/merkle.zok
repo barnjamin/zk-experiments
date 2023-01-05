@@ -2,23 +2,22 @@ import "hashes/sha256/512bit" as hash;
 import "hashes/utils/256bitsDirectionHelper" as multiplex;
 from "./utils/const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
 
-// const u32 MT_DEPTH = 3;
-
-def merkle<MT_DEPTH>(
-    ShaDigest root,
-    private ShaDigest leaf,
-    private bool[MT_DEPTH] lr_selector,
-    private ShaDigest[MT_DEPTH] path) -> bool {
+def merkle<MT_DEPTH>(                   \
+    ShaDigest root,                     \
+    ShaDigest leaf,                     \
+    bool[MT_DEPTH] lr_selector,         \
+    ShaDigest[MT_DEPTH] path) -> bool { \
 
     // Start from the leaf
     ShaDigest mut digest = leaf;
 
     // Loop up the tree
     for u32 i in 0..MT_DEPTH {
+        // lr_selector: if true, digest on lhs; otherwise, digest on rhs
         ShaDigest512 s = multiplex(lr_selector[i], digest, path[i]);
-        digest = hash(
-            s[0..DIGEST_WORD_NUM],
-            s[DIGEST_WORD_NUM..DIGEST_WORD_NUM * 2]
+        digest = hash(                              \
+            s[0..DIGEST_WORD_NUM],                  \
+            s[DIGEST_WORD_NUM..DIGEST_WORD_NUM * 2] \
         );
     }
 
