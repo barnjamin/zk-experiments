@@ -1,5 +1,6 @@
 from read_iop import ReadIOP
 from merkle import MerkleVerifier
+from field import encode_mont, decode_mont
 
 # what is this?
 INV_RATE = 4
@@ -25,16 +26,19 @@ def main():
     mix_size = 36
 
     iop = ReadIOP(output_size, seal)
-    print(iop.__dict__)
+    # print(int.from_bytes(bytes(seal[:4]), 'little'))
+    # print(encode_mont(391))
+    # print(decode_mont(134217711))
+    print(iop.out)
+    print(len(iop.out))
 
-    # po2 = iop.po2
-    # size = 1 << po2
-    # domain = INV_RATE * size
+    po2 = iop.po2
+    size = 1 << po2
+    domain = INV_RATE * size
+    code_size = 15
 
-    # code_size = 15
-
-    # code_merkle = MerkleVerifier(iop, domain, code_size, QUERIES)
-    # print(code_merkle.params.__dict__)
+    code_merkle = MerkleVerifier(iop, domain, code_size, QUERIES)
+    print(code_merkle.params.__dict__)
     # assert check_code_merkle(code_merkle)
 
 

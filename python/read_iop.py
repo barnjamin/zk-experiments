@@ -1,37 +1,5 @@
-from typing import Callable
 from hashlib import sha256
-
-# impl<S: Sha> RngCore for ShaRng<S> {
-#     fn next_u32(&mut self) -> u32 {
-#         if self.pool_used == DIGEST_WORDS {
-#             self.step();
-#         }
-#         let out = self.pool0.get()[self.pool_used];
-#         // Mark this word as used.
-#         self.pool_used += 1;
-#         out
-#     }
-#
-#     fn next_u64(&mut self) -> u64 {
-#         ((self.next_u32() as u64) << 32) | (self.next_u32() as u64)
-#     }
-#
-#     fn fill_bytes(&mut self, dest: &mut [u8]) {
-#         impls::fill_bytes_via_next(self, dest);
-#     }
-#
-#     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-#         Ok(self.fill_bytes(dest))
-#     }
-# }
-
-WORDS = 1
-
-
-class FieldElement:
-    @staticmethod
-    def from_u32s(words: list[int]) -> "FieldElement":
-        return FieldElement()
+from field import decode_mont
 
 
 class ShaRng:
@@ -64,6 +32,16 @@ class ShaRng:
         pass
 
 
+def u8_to_u32(u8s: list[int]) -> list[int]:
+    elems = 4
+    u32s = []
+    for idx in range(int(len(u8s) / elems)):
+        u32s.append(
+            int.from_bytes(bytes(u8s[idx * elems : (idx + 1) * elems]), "little")
+        )
+    return u32s
+
+
 class ReadIOP:
     def __init__(self, circuit_outputs: int, seal: list[int]) -> None:
         self.sha = sha256()
@@ -71,20 +49,23 @@ class ReadIOP:
         self.rng = ShaRng(self.sha)
 
         self.out = self.read_field_elem_slice(circuit_outputs)
-        self.po2 = int.from_bytes(bytes(self.read_u32s(1)), "big")
+        self.po2 = self.read_u32s(1).pop()
 
     def read_u32s(self, size: int) -> list[int]:
-        u32s = self.proof[: size * 4]
+        u32s = u8_to_u32(self.proof[: size * 4])
         self.proof = self.proof[size * 4 :]
         return u32s
 
     def read_field_elem_slice(self, size: int) -> list[int]:
-        return self.read_u32s(size * WORDS)
+        elems = []
+        for u in self.read_u32s(size):
+            elems.append(decode_mont(u))
+        return elems
 
     def read_pod_slice(self, size: int) -> list[int]:
-        u32s = self.proof[: size * 4]
-        self.proof = self.proof[size * 4 :]
-        return u32s
+        b = self.proof[:size]
+        self.proof = self.proof[size:]
+        return b
 
     def commit(self, digest: bytes) -> None:
         self.rng.mix(digest)
