@@ -307,9 +307,9 @@ dependencies = [
 
 [[package]]
 name = "downloader"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "074093edfa907e8203c17c5111b04e114e03bde5ccdfa21a388fa4f34dabad96"
+checksum = "d05213e96f184578b5f70105d4d0a644a168e99e12d7bea0b200c15d67b5c182"
 dependencies = [
  "futures",
  "rand",
@@ -701,9 +701,9 @@ dependencies = [
 
 [[package]]
 name = "lazy-regex"
-version = "2.3.2"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "274ae5b8ca435c817dd3b9a92bfa93179189e9f6963879982c33c85895251981"
+checksum = "fb06a211c24037a055686e0b2d79cb7f4c14d124a63a9097fdfcc05880f8ce28"
 dependencies = [
  "lazy-regex-proc_macros",
  "once_cell",
@@ -712,9 +712,9 @@ dependencies = [
 
 [[package]]
 name = "lazy-regex-proc_macros"
-version = "2.3.2"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b2adfafeb53fa30d6998407a5465bcba4c36ed992131f790ea25d398e10f621"
+checksum = "e256930eb532edd31ff0103cebde847040897b31d3cb344dd2c46d96c6f346f7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1539,9 +1539,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.23.0"
+version = "1.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eab6d665857cc6ca78d6e80303a02cea7a7851e85dfbd77cbdc09bd129f1ef46"
+checksum = "38a54aca0c15d014013256222ba0ebed095673f89345dd79119d912eb561b7a8"
 dependencies = [
  "autocfg",
  "bytes",

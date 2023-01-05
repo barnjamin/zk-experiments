@@ -1,15 +1,12 @@
 use std::{fs::File, io::Read};
 use risc0_zkvm::Receipt;
 
-
 fn main() {
-    read_receipt().expect("msg");
-
-    // Adapter provides {output_size, mix_size} & {tapset, code_size}
-
+    check_receipt().expect("FAILzore");
 }
 
-fn read_receipt()->std::io::Result<()> {
+fn check_receipt()->std::io::Result<()> {
+    
     let mut jf = File::open("trivial.journal")?;
     let mut jbuf = Vec::new();
     jf.read_to_end(&mut jbuf)?;

@@ -7,6 +7,8 @@ use risc0_zkvm::serde::{from_slice, to_vec};
 
 fn main() {
 
+    env_logger::init();
+
     let a: u64 = 17;
     let b: u64 = 23;
 
