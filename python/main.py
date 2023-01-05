@@ -58,7 +58,7 @@ def main():
 
     a = u8_to_u32(a)
     b = u8_to_u32(b)
-    print(sha_compress(a, b).hex())
+    assert sha_compress(a, b) == val
 
     # with open("../trivial.seal", "rb") as f:
     #    seal = list(f.read())
