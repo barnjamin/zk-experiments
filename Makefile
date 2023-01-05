@@ -17,5 +17,3 @@ step2:
 
 step3:
 	cargo run --bin sanitycheck 
-
-
