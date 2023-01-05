@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "circuits",
+    "sanitycheck",
     "methods",
     "host",
 ]
