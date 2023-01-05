@@ -1,6 +1,8 @@
-from read_iop import ReadIOP
+from read_iop import ReadIOP, u8_to_u32, u32_to_u8
 from merkle import MerkleVerifier
-from field import encode_mont, decode_mont
+from hashlib import sha256
+from Crypto.Hash import SHA256
+import struct
 
 # what is this?
 INV_RATE = 4
@@ -9,36 +11,51 @@ INV_RATE = 4
 QUERIES = 50
 
 
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::prove] Proof size = 44421
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::verify::host] Some([391, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0])
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::verify::host] out: 8
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::verify::host] output size: 18
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::verify::host] mix size: 36
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::verify::host] po2: 13
-# [2023-01-05T15:16:32Z DEBUG risc0_zkp::verify::host] size: 8192
+def swap32(i: int):
+    return struct.unpack("<I", struct.pack(">I", i))[0]
+
+h_hex = ['0x6a09e667', '0xbb67ae85', '0x3c6ef372', '0xa54ff53a', '0x510e527f', '0x9b05688c', '0x1f83d9ab', '0x5be0cd19']
+
+def sha_compress(a: list[int], b: list[int]):
+    initial_state = [int.from_bytes(bytes.fromhex(v[2:]), 'big') for v in h_hex]
+
+    h = SHA256.new()
+
+    block = [0]*16
+    for x in range(8):
+        block[x] = a[x]
+        block[x+8] = b[x]
+    block = u32_to_u8(block)
+
+    h.update(bytes(block))
+
+    return h.digest()
 
 
 def main():
-    with open("../trivial.seal", "rb") as f:
-        seal = list(f.read())
+    a = bytes.fromhex("7b3c0a71671781f9d6851b97d92cbe10d36eca939a0334756e03f06b28c22585")
+    b = bytes.fromhex("430bc748b6e13c43e48abe1b6e35cdec492e86bb901597810fc8f6831d5839ad")
+    val = bytes.fromhex("e957cefae0bcb78d2e2c6728704cd03ff3522de1ee275b5d7022fb5d01944f60")
 
-    output_size = 18
-    mix_size = 36
+    a = u8_to_u32(a)
+    b = u8_to_u32(b)
+    print(sha_compress(a,b).hex())
 
-    iop = ReadIOP(output_size, seal)
-    # print(int.from_bytes(bytes(seal[:4]), 'little'))
-    # print(encode_mont(391))
-    # print(decode_mont(134217711))
-    print(iop.out)
-    print(len(iop.out))
+    #with open("../trivial.seal", "rb") as f:
+    #    seal = list(f.read())
 
-    po2 = iop.po2
-    size = 1 << po2
-    domain = INV_RATE * size
-    code_size = 15
+    #circuit_output_size = 18
+    #circuit_mix_size = 36
 
-    code_merkle = MerkleVerifier(iop, domain, code_size, QUERIES)
-    print(code_merkle.params.__dict__)
+    #iop = ReadIOP(circuit_output_size, seal)
+
+    #po2 = iop.po2
+    #size = 1 << po2
+    #domain = INV_RATE * size
+    #code_size = 15
+
+    #code_merkle = MerkleVerifier(iop, domain, code_size, QUERIES)
+    #print(code_merkle.params.__dict__)
     # assert check_code_merkle(code_merkle)
 
 

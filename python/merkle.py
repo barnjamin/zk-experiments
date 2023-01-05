@@ -69,6 +69,22 @@ class MerkleVerifier:
     def __init__(self, iop: ReadIOP, row_size: int, col_size: int, queries: int):
         self.params = MerkleParams(row_size, col_size, queries)
 
+        self.top: list[bytes] = []
+        hash_length = 32
+        top_raw  = iop.read_pod_slice(self.params.top_size*hash_length)
+        for idx in range(self.params.top_size):
+            self.top.append(bytes(top_raw[idx*hash_length:(idx+1)*hash_length]))
+
+        # Evens
+        for idx in range(self.params.top_size-1, int(self.params.top_size /2)-1, -1):
+            top_idx = (idx*2) - self.params.top_size
+            hash_val = self.top[top_idx], self.top[top_idx + 1]
+            print(hash_val)
+
+            pass
+
+        
+
     def commit_(leafs):
         assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
         if len(leafs) == 1:
