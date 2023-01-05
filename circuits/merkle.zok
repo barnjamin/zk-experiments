@@ -1,23 +1,25 @@
 import "hashes/sha256/512bit" as hash;
 import "hashes/utils/256bitsDirectionHelper" as multiplex;
+from "./utils/const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
 
-const u32 DEPTH = 3;
+// const u32 MT_DEPTH = 3;
 
-def select(bool condition, u32[8] left, u32[8] right) -> (u32[8], u32[8]) {
-    return (condition ? right : left, condition ? left : right);
-}
+def merkle<MT_DEPTH>(
+    ShaDigest root,
+    private ShaDigest leaf,
+    private bool[MT_DEPTH] lr_selector,
+    private ShaDigest[MT_DEPTH] path) -> bool {
 
-// Merke-Tree inclusion proof for tree depth 4 using sha256
-// directionSelector => true if current digest is on the rhs of the hash
-
-def merkle(u32[8] root, private u32[8] leaf, private bool[DEPTH] directionSelector, private u32[DEPTH][8] path) -> bool {
     // Start from the leaf
-    u32[8] mut digest = leaf;
+    ShaDigest mut digest = leaf;
 
     // Loop up the tree
-	  for u32 i in 0..DEPTH {
-        (u32[8], u32[8]) s = select(directionSelector[i], digest, path[i]);
-        digest = hash(s.0, s.1);
+    for u32 i in 0..MT_DEPTH {
+        ShaDigest512 s = multiplex(lr_selector[i], digest, path[i]);
+        digest = hash(
+            s[0..DIGEST_WORD_NUM],
+            s[DIGEST_WORD_NUM..DIGEST_WORD_NUM * 2]
+        );
     }
 
     return digest == root;
