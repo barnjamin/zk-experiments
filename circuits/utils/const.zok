@@ -9,3 +9,8 @@ const u32 DIGEST_WORD_NUM = 8;
 type ShaDigest u32[DIGEST_WORD_NUM];
 // 32x16 = 512
 type ShaDigest512 u32[DIGEST_WORD_NUM * 2];
+
+// FRI related constants
+const u32 FRI_FOLD_PO2 = 4;
+const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;
+const u32 FRI_MIN_DEGREE = 256;
