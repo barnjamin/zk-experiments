@@ -1,5 +1,5 @@
 from typing import Callable
-from hashlib import sha256, _Hash
+from hashlib import sha256
 
 # impl<S: Sha> RngCore for ShaRng<S> {
 #     fn next_u32(&mut self) -> u32 {
@@ -35,8 +35,8 @@ class FieldElement:
 
 
 class ShaRng:
-    def __init__(self, hashfn: Callable[..., _Hash]):
-        self.sha = hashfn()
+    def __init__(self, hashfn):
+        self.sha = hashfn
 
         self.sha.update(b"Hello")
         self.pool0 = self.sha.digest()
@@ -65,22 +65,26 @@ class ShaRng:
 
 
 class ReadIOP:
-    def __init__(self, seal: list[int]) -> None:
-        self.sha: _Hash = sha256()
+    def __init__(self, circuit_outputs: int, seal: list[int]) -> None:
+        self.sha = sha256()
         self.proof = seal
         self.rng = ShaRng(self.sha)
 
+        self.out = self.read_field_elem_slice(circuit_outputs)
+        self.po2 = int.from_bytes(bytes(self.read_u32s(1)), "big")
+
     def read_u32s(self, size: int) -> list[int]:
-        u32s = self.proof[:size]
-        self.proof = self.proof[:size]
+        u32s = self.proof[: size * 4]
+        self.proof = self.proof[size * 4: ]
         return u32s
 
     def read_field_elem_slice(self, size: int) -> list[int]:
-        self.read_u32s(size * WORDS)
+        return self.read_u32s(size * WORDS)
+
 
     def read_pod_slice(self, size: int) -> list[int]:
-        u32s = self.proof[:size]
-        self.proof = self.proof[:size]
+        u32s = self.proof[: size * 4]
+        self.proof = self.proof[ size * 4: ]
         return u32s
 
     def commit(self, digest: bytes) -> None:

@@ -1,6 +1,6 @@
 from hashlib import sha256
 from math import log2
-
+from read_iop import ReadIOP
 
 
 # /// A struct against which we verify merkle branches, consisting of the
@@ -8,22 +8,23 @@ from math import log2
 # /// row of the tree, above which we verify only once.
 # pub struct MerkleTreeVerifier<'a, H: VerifyHal> {
 #     params: MerkleTreeParams,
-# 
+#
 #     // Conceptually, the merkle tree here is twice as long as the
 #     // "top" row (params.top_size), minus element #0.  The children of
 #     // the entry at virtual index i are stored at 2*i and 2*i+1.  The
 #     // root of the tree is at virtual element #1.
-# 
+#
 #     // "top" is a reference, top_size long, to the top row.  This
 #     // contains the virtual indexes [top_size..top_size*2).
 #     top: &'a [Digest],
-# 
+#
 #     // These are the rest of the tree.  These have the virtual indexes [1, top_size).
 #     rest: Vec<<H::Sha as Sha>::DigestPtr>,
-# 
+#
 #     // Support for accelerator operations.
 #     hal: &'a H,
 # }
+
 
 class MerkleParams:
 
@@ -36,39 +37,37 @@ class MerkleParams:
 
     def __init__(self, row_size: int, col_size: int, queries: int) -> None:
         # The number of layers is the logarithm base 2 of the row_size.
+        self.queries = queries
+        self.row_size = row_size
+        self.col_size = col_size
+
         self.layers: int = int(log2(row_size))
         assert 1 << self.layers == row_size
 
         # The "top" layer is a layer above which we verify all Merkle data only once at
-        # the beginning. 
+        # the beginning.
         #
-        # Later, we only verify merkle branches from the leaf up to this top layer. 
+        # Later, we only verify merkle branches from the leaf up to this top layer.
         #
-        # This allows us to avoid checking hashes in this part of the tree 
-        # multiple times. 
+        # This allows us to avoid checking hashes in this part of the tree
+        # multiple times.
         #
         # We choose the top layer to be the one with size at most equal to queries.
 
-        top_layer = 0
-        # for i in 1..layers {
-        #     if (1 << i) > queries {
-        #         break;
-        #     }
-        #     top_layer = i;
-        # }
-        # let top_size = 1 << top_layer;
-        # MerkleTreeParams {
-        #     row_size,
-        #     col_size,
-        #     queries,
-        #     layers,
-        #     top_layer,
-        #     top_size,
-        # }
-        pass
+        self.top_layer = 0
+        for idx in range(1, self.layers):
+            if 1 << idx > queries:
+                break
+            self.top_layer = idx
+
+        self.top_size = 1 << self.top_layer
+
 
 class MerkleVerifier:
     H = sha256
+
+    def __init__(self, iop: ReadIOP, row_size: int, col_size: int, queries: int):
+        self.params = MerkleParams(row_size, col_size, queries)
 
     def commit_(leafs):
         assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"

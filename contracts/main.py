@@ -11,7 +11,6 @@ def demo(app_id: int = 0):
     v = Verifier(version=9)
     ac = client.ApplicationClient(algod_client, v, app_id=app_id, signer=acct.signer)
 
-
     if app_id == 0:
         app_id, _, _ = ac.create()
         print(f"Created app: {app_id}")
