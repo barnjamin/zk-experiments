@@ -75,16 +75,15 @@ class ReadIOP:
 
     def read_u32s(self, size: int) -> list[int]:
         u32s = self.proof[: size * 4]
-        self.proof = self.proof[size * 4: ]
+        self.proof = self.proof[size * 4 :]
         return u32s
 
     def read_field_elem_slice(self, size: int) -> list[int]:
         return self.read_u32s(size * WORDS)
 
-
     def read_pod_slice(self, size: int) -> list[int]:
         u32s = self.proof[: size * 4]
-        self.proof = self.proof[ size * 4: ]
+        self.proof = self.proof[size * 4 :]
         return u32s
 
     def commit(self, digest: bytes) -> None:
