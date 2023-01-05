@@ -32,7 +32,6 @@ class ShaRng:
         pass
 
 
-
 def u8_to_u32(u8s: list[int]) -> list[int]:
     elems = 4
     u32s = []
@@ -42,11 +41,13 @@ def u8_to_u32(u8s: list[int]) -> list[int]:
         )
     return u32s
 
+
 def u32_to_u8(u32s: list[int]) -> list[int]:
     u8s = []
     for idx in range(len(u32s)):
-        u8s.extend(list(u32s[idx].to_bytes(4, 'little')))
+        u8s.extend(list(u32s[idx].to_bytes(4, "little")))
     return u8s
+
 
 class ReadIOP:
     def __init__(self, circuit_outputs: int, seal: list[int]) -> None:
