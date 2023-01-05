@@ -15,3 +15,13 @@ type ShaDigest512 = u32[DIGEST_WORD_512_NUM];
 const u32 FRI_FOLD_PO2 = 4;
 const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;
 const u32 FRI_MIN_DEGREE = 256;
+
+// RISC0 related configs
+const QUERIES u32 = 50;
+const ZK_CYCLES u32 = QUERIES;
+// MIN_PO2 = core::log2_ceil(1 + ZK_CYCLES);
+const MIN_PO2 u32 = 6;
+const MIN_CYCLES_PO2 u32 = 10;
+const MIN_CYCLES u32 = 1 << MIN_CYCLES_PO2; // 1K
+const MAX_CYCLES_PO2 u32 = 24;
+const MAX_CYCLES u32 = 1 << MAX_CYCLES_PO2; // 16M
