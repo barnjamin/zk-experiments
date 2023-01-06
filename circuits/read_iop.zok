@@ -1,0 +1,41 @@
+import "hashes/sha256/512bit" as hash;
+from "./utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM;
+
+// SHA based RNG definitions
+
+def sha_rng_step(ShaRngState mut old_state) -> ShaRngState {
+    old_state.pool0 = hash(old_state.pool0, old_state.pool1);
+    old_state.pool1 = hash(old_state.pool0, old_state.pool1);
+    old_state.cnt = 0;
+    return old_state;
+}
+
+def sha_rng_next_u32(ShaRngState mut old_state) -> (ShaRngState, u32) {
+    u32 mut pseudorand = 0;
+    if old_state.cnt == SHA_RNG_ROUND_BACK {
+        old_state = sha_rng_step(old_state);
+        pseudorand = old_state.pool0[old_state.cnt];
+        old_state.cnt = old_state.cnt + 1;
+        return (old_state, pseudorand);
+    } else {
+        pseudorand = old_state.pool0[old_state.cnt];
+        old_state.cnt = old_state.cnt + 1;
+        return (old_state, pseudorand);
+    }
+}
+
+def sha_rng_next_u64(ShaRngState mut old_state) -> (ShaRngState, u64) {
+    (ShaRngState, u32) mut temp = sha_rng_next_u32(old_state);
+    u64 result = temp.1;
+    result = result << 32;
+    temp = sha_rng_next_u32(temp.0);
+    result = result + temp.1;
+    return result;
+}
+
+def sha_rng_mix(ShaRngState mut old_state, ShaDigest digest) -> ShaRngState {
+    for u16 i = 0..DIGEST_WORD_NUM {
+        old_state.pool0[i] = old_state.pool0[i] ^ digest[i];
+    }
+    return sha_rng_step(old_state);
+}

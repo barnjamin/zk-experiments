@@ -2,11 +2,11 @@ import "hashes/sha256/512bit" as hash;
 import "hashes/utils/256bitsDirectionHelper" as multiplex;
 from "./utils/const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
 
-def merkle<MT_DEPTH>(                   \
-    ShaDigest root,                     \
-    ShaDigest leaf,                     \
-    bool[MT_DEPTH] lr_selector,         \
-    ShaDigest[MT_DEPTH] path) -> bool { \
+def merkle<MT_DEPTH>(           \
+    ShaDigest root,             \
+    ShaDigest leaf,             \
+    bool[MT_DEPTH] lr_selector, \
+    ShaDigest[MT_DEPTH] path) -> bool {
 
     // Start from the leaf
     ShaDigest mut digest = leaf;
