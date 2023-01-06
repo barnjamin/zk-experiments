@@ -69,7 +69,7 @@ K = [
 ]
 
 
-def generate_hash(message: bytearray) -> bytearray:
+def generate_hash(message: bytearray, compress_only: bool = False) -> bytearray:
     """Return a SHA-256 hash from the message passed.
     The argument should be a bytes, bytearray, or
     string object."""
@@ -82,12 +82,12 @@ def generate_hash(message: bytearray) -> bytearray:
         raise TypeError
 
     # Padding
-    # length = len(message) * 8 # len(message) is number of BYTES!!!
-    # message.append(0x80)
-    # while (len(message) * 8 + 64) % 512 != 0:
-    #    message.append(0x00)
-
-    # message += length.to_bytes(8, 'big') # pad to 8 bytes or 64 bits
+    length = len(message) * 8  # len(message) is number of BYTES!!!
+    if not compress_only:
+        message.append(0x80)
+        while (len(message) * 8 + 64) % 512 != 0:
+            message.append(0x00)
+        message += length.to_bytes(8, "big")  # pad to 8 bytes or 64 bits
 
     assert (len(message) * 8) % 512 == 0, "Padding did not complete properly!"
 
@@ -220,7 +220,3 @@ def _maj(x: int, y: int, z: int):
 def _rotate_right(num: int, shift: int, size: int = 32):
     """Rotate an integer right."""
     return (num >> shift) | (num << size - shift)
-
-
-if __name__ == "__main__":
-    print(generate_hash("Hello").hex())

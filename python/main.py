@@ -30,40 +30,24 @@ initial_state = [
 ]
 
 
-def sha_compress(a: list[int], b: list[int]):
-    return generate_hash(bytearray(a + b))
-
-
 def main():
-    # we should be able to assert hash(a,b) == val
-    a = bytes.fromhex(
-        "7b3c0a71671781f9d6851b97d92cbe10d36eca939a0334756e03f06b28c22585"
-    )
-    b = bytes.fromhex(
-        "430bc748b6e13c43e48abe1b6e35cdec492e86bb901597810fc8f6831d5839ad"
-    )
-    val = bytes.fromhex(
-        "e957cefae0bcb78d2e2c6728704cd03ff3522de1ee275b5d7022fb5d01944f60"
-    )
+    with open("../trivial.seal", "rb") as f:
+        seal = list(f.read())
 
-    print(sha_compress(a, b).hex())
-    assert sha_compress(a, b) == val
+    circuit_output_size = 18
+    circuit_mix_size = 36
 
-    # with open("../trivial.seal", "rb") as f:
-    #    seal = list(f.read())
+    iop = ReadIOP(circuit_output_size, seal)
 
-    # circuit_output_size = 18
-    # circuit_mix_size = 36
+    po2 = iop.po2
+    size = 1 << po2
+    domain = INV_RATE * size
+    code_size = 15
 
-    # iop = ReadIOP(circuit_output_size, seal)
-
-    # po2 = iop.po2
-    # size = 1 << po2
-    # domain = INV_RATE * size
-    # code_size = 15
-
-    # code_merkle = MerkleVerifier(iop, domain, code_size, QUERIES)
+    code_merkle = MerkleVerifier(iop, domain, code_size, QUERIES)
+    print(iop.rng.pool0.hex())
     # print(code_merkle.params.__dict__)
+    # print(code_merkle.root().hex())
     # assert check_code_merkle(code_merkle)
 
 
