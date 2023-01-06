@@ -1,33 +1,6 @@
-from read_iop import ReadIOP, u8_to_u32, u32_to_u8
+from read_iop import ReadIOP
 from merkle import MerkleVerifier
-from Crypto.Hash import SHA256
-import struct
-from sha256 import generate_hash
-
-# what is this?
-INV_RATE = 4
-
-# number of queries to make against iop
-QUERIES = 50
-
-
-def swap32(i: int):
-    return struct.unpack("<I", struct.pack(">I", i))[0]
-
-
-initial_state = [
-    int.from_bytes(bytes.fromhex(v[2:]), "big")
-    for v in [
-        "0x6a09e667",
-        "0xbb67ae85",
-        "0x3c6ef372",
-        "0xa54ff53a",
-        "0x510e527f",
-        "0x9b05688c",
-        "0x1f83d9ab",
-        "0x5be0cd19",
-    ]
-]
+from consts import QUERIES, INV_RATE
 
 
 def main():
@@ -51,8 +24,8 @@ def main():
     # assert check_code_merkle(code_merkle)
 
 
-def check_code_merkle(m: MerkleVerifier) -> bool:
-    # let check_code = |po2: u32, merkle_root: &Digest| -> Result<(), VerificationError> {
+def check_code_merkle(po2: int, merkle_root: bytes) -> bool:
+
     #     let po2 = po2 as usize;
     #     let which = po2 - MIN_CYCLES_PO2;
     #     #[cfg(not(target_os = "zkvm"))]

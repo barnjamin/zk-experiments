@@ -1,10 +1,8 @@
 from hashlib import sha256
 from sha256 import generate_hash
+from consts import PRIME, R2, M
 
-# montgomery form constants
-M = int.from_bytes(bytes.fromhex("88000001"), "big")
-R2 = 1172168163
-PRIME = int(15 * (1 << 27) + 1)
+import struct
 
 
 def sha_compress(a: bytes, b: bytes):
@@ -16,6 +14,10 @@ def sha_compress(a: bytes, b: bytes):
 
 def sha_hash(a: bytes) -> bytes:
     return sha256(a).digest()
+
+
+def swap32(i: int):
+    return struct.unpack("<I", struct.pack(">I", i))[0]
 
 
 def u8_to_u32(u8s: list[int]) -> list[int]:
