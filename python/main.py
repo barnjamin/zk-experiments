@@ -2,7 +2,16 @@ from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
 from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2, PRIME
-from util import to_elem, ROU_REV, hash_raw_pod, swap32
+from util import (
+    to_elem,
+    ROU_REV,
+    hash_raw_pod,
+    swap32,
+    generate_hash,
+    u32_to_u8,
+    u8_to_u32,
+    swap_endian,
+)
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -20,6 +29,17 @@ CHECK_SIZE = INV_RATE * EXT_SIZE
 
 
 def main():
+
+    result = u8_to_u32(
+        generate_hash(bytearray([0] * 64), compress_only=True, initial_state=None)
+    )
+    print(swap_endian(result))
+    result = u8_to_u32(
+        generate_hash(bytearray([0] * 64), compress_only=True, initial_state=result)
+    )
+    print(swap_endian(result))
+
+    return
 
     with open("../trivial.seal", "rb") as f:
         seal = list(f.read())
