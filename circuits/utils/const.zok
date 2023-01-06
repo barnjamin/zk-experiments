@@ -1,0 +1,12 @@
+const u32 INV_RATE = 4;
+
+// Definitions for SHA:
+// - digest word size 32 bits (4 bytes)
+// - digest word in total 8 (8x32 = 256 bits)
+const u32 DIGEST_WORD_SIZE = 4;
+const u32 DIGEST_WORD_NUM = 8;
+const u32 DIGEST_WORD_512_NUM = 16;
+// 32x8 = 256
+type ShaDigest = u32[DIGEST_WORD_NUM];
+// 32x16 = 512
+type ShaDigest512 = u32[DIGEST_WORD_512_NUM];

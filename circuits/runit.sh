@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# compile
+zokrates compile -i main.zok # --curve bls12_381
+# perform the setup phase
+zokrates setup # --proving-scheme g16
+# execute the program
+zokrates compute-witness -a 337 113569
+# generate a proof of computation
+zokrates generate-proof
+# export a solidity verifier
+zokrates export-verifier
+# or verify natively
+zokrates verify
+
+# following are for circom, we can discard them any time, leave for reference.
+
 # Compile circuit with wasm witness generator
 # circom tmp.circom --r1cs --wasm --sym
 
