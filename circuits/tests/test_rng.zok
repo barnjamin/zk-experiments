@@ -1,0 +1,6 @@
+from "../read_iop" import sha_rng_step, sha_rng_next_u32, sha_rng_next_u64, sha_rng_mix;
+from "../utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM;
+
+def main() {
+
+}
