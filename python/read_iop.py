@@ -8,6 +8,8 @@ class ShaRng:
         self.pool_used = 0
 
     def mix(self, digest: bytes):
+        # Generate a new digest by mixing two digests together via XOR,
+        # and stores it back in the pool.
         pool_words = u8_to_u32(list(self.pool0))
         val = u8_to_u32(list(digest))
 
