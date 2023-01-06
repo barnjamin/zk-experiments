@@ -69,7 +69,11 @@ K = [
 ]
 
 
-def generate_hash(message: bytearray, compress_only: bool = False) -> bytearray:
+def generate_hash(
+    message: bytearray,
+    initial_state: list[int] | None = None,
+    compress_only: bool = False,
+) -> bytearray:
     """Return a SHA-256 hash from the message passed.
     The argument should be a bytes, bytearray, or
     string object."""
@@ -105,6 +109,9 @@ def generate_hash(message: bytearray, compress_only: bool = False) -> bytearray:
     h4 = 0x510E527F
     h6 = 0x1F83D9AB
     h7 = 0x5BE0CD19
+
+    if initial_state is not None:
+        (h0, h1, h2, h3, h5, h4, h6, h7) = initial_state
 
     # SHA-256 Hash Computation
     for message_block in blocks:

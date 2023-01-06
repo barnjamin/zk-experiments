@@ -16,6 +16,42 @@ def sha_hash(a: bytes) -> bytes:
     return sha256(a).digest()
 
 
+def hash_raw_pod(raw: list[int]) -> bytes:
+    u8s = u32_to_u8(raw)
+    chunk_size = 64  # 64 byte chunks
+
+    state: list[int] | None = None
+    for idx in range(int(len(u8s) / chunk_size)):
+        block = u8s[idx * chunk_size : (idx + 1) * chunk_size]
+        state = u8_to_u32(
+            list(
+                generate_hash(bytearray(block), initial_state=state, compress_only=True)
+            )
+        )
+        state = [swap32(x) for x in state]
+        print("idx: {} state: {} block: {}".format(idx, state, block))
+
+        if idx > 0:
+            break
+
+    if state is None:
+        raise Exception("wat")
+
+    return bytes(u32_to_u8(state))
+
+    #    let remainder = blocks.remainder();
+    #    if remainder.len() > 0 {
+    #        let mut last_block: GenericArray<u8, U64> = GenericArray::default();
+    #        bytemuck::cast_slice_mut(last_block.as_mut_slice())[..remainder.len()]
+    #            .clone_from_slice(remainder);
+    #        compress256(&mut state, slice::from_ref(&last_block));
+    #    }
+    #    for word in state.iter_mut() {
+    #        *word = word.to_be();
+    #    }
+    #    Box::new(Digest::new(state))
+
+
 def swap32(i: int):
     return struct.unpack("<I", struct.pack(">I", i))[0]
 

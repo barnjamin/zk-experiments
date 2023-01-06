@@ -2,7 +2,7 @@ from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
 from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2, PRIME
-from util import to_elem, ROU_REV
+from util import to_elem, ROU_REV, hash_raw_pod, swap32
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -72,6 +72,25 @@ def main():
 
     back_one = ROU_REV[po2]
     assert back_one == 173369915
+
+    num_taps = NUM_TAPS
+
+    # TODO: This does _not_ produce a list of lists since we hash it and want u8s anyway
+    coeff_u = iop.read_field_elem_slice(num_taps + CHECK_SIZE)
+    # coeff_u = [
+    #    _coeff_u[x*4:(x+1)*4]
+    #    for x in range(int(len(_coeff_u)/4))
+    # ]
+    assert coeff_u[0] == 407240978
+
+    hash_u = hash_raw_pod(coeff_u)
+    print(hash_u.hex())
+    # assert (
+    #    hash_u.hex()
+    #    == "1e6142f8513eb63519f504ac6d872b03e56727ad514d99463d13202582cfbb70"
+    # )
+
+    # eval_u = [[0]*4]*num_taps
 
 
 def sample(iop: ReadIOP):
