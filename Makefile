@@ -18,8 +18,11 @@ step2:
 step3:
 	cargo run --bin sanitycheck 
 
+pre-clean-zok:
+	cd groth16/zokrates && ./clean.sh
+
 pre-contract-zok:
 	cd groth16/zokrates && ./doit.sh
 
 run-contract:
-	cd contracts && python main.py
+	cd groth16/contracts && python main.py
