@@ -20,6 +20,7 @@ CHECK_SIZE = INV_RATE * EXT_SIZE
 
 
 def main():
+
     with open("../trivial.seal", "rb") as f:
         seal = list(f.read())
 
