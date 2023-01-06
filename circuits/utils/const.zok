@@ -18,6 +18,14 @@ struct ShaRngState {
 }
 const u32 SHA_RNG_ROUND_BACK = 8;
 
+// self.pool0 = sha_hash(b"Hello")
+// self.pool1 = sha_hash(b"World")
+const ShaRngState SHA_RNG_START_STATE = ShaRngState {
+    pool0: [3012386584, 637432098, 4238762485, 640584595, 820774467, 2152847950, 1215746311, 1763260454],
+    pool1: [2103750264, 575493317, 1755328625, 199446826, 3145693127, 395283053, 2741203968, 617992684],
+    cnt: 0
+};
+
 // FRI related constants
 const u32 FRI_FOLD_PO2 = 4;
 const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;
