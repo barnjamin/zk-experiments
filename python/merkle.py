@@ -1,29 +1,7 @@
 from hashlib import sha256
 from math import log2
 from read_iop import ReadIOP
-
-
-# /// A struct against which we verify merkle branches, consisting of the
-# /// parameters of the Merkle tree and top - the vector of hash values in the top
-# /// row of the tree, above which we verify only once.
-# pub struct MerkleTreeVerifier<'a, H: VerifyHal> {
-#     params: MerkleTreeParams,
-#
-#     // Conceptually, the merkle tree here is twice as long as the
-#     // "top" row (params.top_size), minus element #0.  The children of
-#     // the entry at virtual index i are stored at 2*i and 2*i+1.  The
-#     // root of the tree is at virtual element #1.
-#
-#     // "top" is a reference, top_size long, to the top row.  This
-#     // contains the virtual indexes [top_size..top_size*2).
-#     top: &'a [Digest],
-#
-#     // These are the rest of the tree.  These have the virtual indexes [1, top_size).
-#     rest: Vec<<H::Sha as Sha>::DigestPtr>,
-#
-#     // Support for accelerator operations.
-#     hal: &'a H,
-# }
+from util import sha_compress
 
 
 class MerkleParams:
@@ -62,6 +40,12 @@ class MerkleParams:
 
         self.top_size = 1 << self.top_layer
 
+    def idx_to_top(self, i: int) -> int:
+        return (i * 2) - self.top_size
+
+    def idx_to_rest(self, i: int) -> int:
+        return i - 1
+
 
 class MerkleVerifier:
     H = sha256
@@ -69,64 +53,92 @@ class MerkleVerifier:
     def __init__(self, iop: ReadIOP, row_size: int, col_size: int, queries: int):
         self.params = MerkleParams(row_size, col_size, queries)
 
-    def commit_(leafs):
-        assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
-        if len(leafs) == 1:
-            return leafs[0]
-        else:
-            return MerkleVerifier.H(
-                MerkleVerifier.commit_(leafs[: len(leafs) // 2])
-                + MerkleVerifier.commit_(leafs[len(leafs) // 2 :])
-            ).digest()
+        self.top: list[bytes] = []
+        hash_length = 32
+        top_raw = iop.read_pod_slice(self.params.top_size * hash_length)
+        for idx in range(self.params.top_size):
+            self.top.append(bytes(top_raw[idx * hash_length : (idx + 1) * hash_length]))
 
-    def commit(data_array):
-        return MerkleVerifier.commit_(
-            [MerkleVerifier.H(bytes(da)).digest() for da in data_array]
-        )
+        self.rest: list[bytes] = [b""] * 32
+        self.rest[: len(self.top)] = self.top[:]
 
-    def open_(index, leafs):
-        assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
-        assert 0 <= index and index < len(leafs), "cannot open invalid index"
-        if len(leafs) == 2:
-            return [leafs[1 - index]]
-        elif index < (len(leafs) / 2):
-            return MerkleVerifier.open_(index, leafs[: len(leafs) // 2]) + [
-                MerkleVerifier.commit_(leafs[len(leafs) // 2 :])
-            ]
-        else:
-            return MerkleVerifier.open_(
-                index - len(leafs) // 2, leafs[len(leafs) // 2 :]
-            ) + [MerkleVerifier.commit_(leafs[: len(leafs) // 2])]
+        for idx in range(
+            self.params.top_size - 1, int(self.params.top_size / 2) - 1, -1
+        ):
+            top_idx = self.params.idx_to_top(idx)
+            self.rest[self.params.idx_to_rest(idx)] = sha_compress(
+                self.top[top_idx], self.top[top_idx + 1]
+            )
 
-    def open(index, data_array):
-        return MerkleVerifier.open_(
-            index, [MerkleVerifier.H(bytes(da)).digest() for da in data_array]
-        )
+        for idx in range(int(self.params.top_size / 2) - 1, 0, -1):
+            upper_rest_idx = self.params.idx_to_rest(idx * 2)
+            self.rest[self.params.idx_to_rest(idx)] = sha_compress(
+                self.rest[upper_rest_idx], self.rest[upper_rest_idx + 1]
+            )
 
-    def verify_(root, index, path, leaf):
-        assert 0 <= index and index < (1 << len(path)), "cannot verify invalid index"
-        if len(path) == 1:
-            if index == 0:
-                return root == MerkleVerifier.H(leaf + path[0]).digest()
-            else:
-                return root == MerkleVerifier.H(path[0] + leaf).digest()
-        else:
-            if index % 2 == 0:
-                return MerkleVerifier.verify_(
-                    root,
-                    index >> 1,
-                    path[1:],
-                    MerkleVerifier.H(leaf + path[0]).digest(),
-                )
-            else:
-                return MerkleVerifier.verify_(
-                    root,
-                    index >> 1,
-                    path[1:],
-                    MerkleVerifier.H(path[0] + leaf).digest(),
-                )
+        iop.commit(self.root())
 
-    def verify(root, index, path, data_element):
-        return MerkleVerifier.verify_(
-            root, index, path, MerkleVerifier.H(bytes(data_element)).digest()
-        )
+    def root(self):
+        return self.rest[self.params.idx_to_rest(1)]
+
+    # def commit_(leafs):
+    #    assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
+    #    if len(leafs) == 1:
+    #        return leafs[0]
+    #    else:
+    #        return MerkleVerifier.H(
+    #            MerkleVerifier.commit_(leafs[: len(leafs) // 2])
+    #            + MerkleVerifier.commit_(leafs[len(leafs) // 2 :])
+    #        ).digest()
+
+    # def commit(data_array):
+    #    return MerkleVerifier.commit_(
+    #        [MerkleVerifier.H(bytes(da)).digest() for da in data_array]
+    #    )
+
+    # def open_(index, leafs):
+    #    assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
+    #    assert 0 <= index and index < len(leafs), "cannot open invalid index"
+    #    if len(leafs) == 2:
+    #        return [leafs[1 - index]]
+    #    elif index < (len(leafs) / 2):
+    #        return MerkleVerifier.open_(index, leafs[: len(leafs) // 2]) + [
+    #            MerkleVerifier.commit_(leafs[len(leafs) // 2 :])
+    #        ]
+    #    else:
+    #        return MerkleVerifier.open_(
+    #            index - len(leafs) // 2, leafs[len(leafs) // 2 :]
+    #        ) + [MerkleVerifier.commit_(leafs[: len(leafs) // 2])]
+
+    # def open(index, data_array):
+    #    return MerkleVerifier.open_(
+    #        index, [MerkleVerifier.H(bytes(da)).digest() for da in data_array]
+    #    )
+
+    # def verify_(root, index, path, leaf):
+    #    assert 0 <= index and index < (1 << len(path)), "cannot verify invalid index"
+    #    if len(path) == 1:
+    #        if index == 0:
+    #            return root == MerkleVerifier.H(leaf + path[0]).digest()
+    #        else:
+    #            return root == MerkleVerifier.H(path[0] + leaf).digest()
+    #    else:
+    #        if index % 2 == 0:
+    #            return MerkleVerifier.verify_(
+    #                root,
+    #                index >> 1,
+    #                path[1:],
+    #                MerkleVerifier.H(leaf + path[0]).digest(),
+    #            )
+    #        else:
+    #            return MerkleVerifier.verify_(
+    #                root,
+    #                index >> 1,
+    #                path[1:],
+    #                MerkleVerifier.H(path[0] + leaf).digest(),
+    #            )
+
+    # def verify(root, index, path, data_element):
+    #    return MerkleVerifier.verify_(
+    #        root, index, path, MerkleVerifier.H(bytes(data_element)).digest()
+    #    )
