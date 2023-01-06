@@ -18,3 +18,4 @@ proof.json
 abi.json
 
 /target
+trivial.*

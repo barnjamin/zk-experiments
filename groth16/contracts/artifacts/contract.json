@@ -1,0 +1,34 @@
+{
+    "name": "Verifier",
+    "methods": [
+        {
+            "name": "bootstrap",
+            "args": [
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "verify",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
+        }
+    ],
+    "networks": {}
+}
