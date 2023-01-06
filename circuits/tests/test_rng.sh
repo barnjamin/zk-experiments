@@ -2,7 +2,7 @@
 
 CURVE=bls12_381
 
-zokrates compile -i test_rng.zok -c $CURVE
+zokrates compile -i test_rng.zok -c $CURVE --debug
 zokrates setup
 zokrates compute-witness
 zokrates generate-proof

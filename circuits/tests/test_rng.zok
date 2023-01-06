@@ -1,6 +1,42 @@
 from "../read_iop" import sha_rng_step, sha_rng_next_u32, sha_rng_next_u64, sha_rng_mix;
-from "../utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM;
+from "../utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, SHA_RNG_START_STATE;
 
 def main() {
+    ShaRngState mut state = SHA_RNG_START_STATE;
 
+    (ShaRngState, u32) mut state_and_u32 = sha_rng_next_u32(state);
+    assert(state_and_u32.0.cnt == 1);
+    assert(3012386584 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 2);
+    assert(637432098 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 3);
+    assert(4238762485 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 4);
+    assert(640584595 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 5);
+    assert(820774467 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 6);
+    assert(2152847950 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 7);
+    assert(1215746311 == state_and_u32.1);
+
+    state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    assert(state_and_u32.0.cnt == 0);
+    assert(1763260454 == state_and_u32.1);
+    log("{}, {}, {}", state_and_u32.0.pool0, state_and_u32.0.pool1, state_and_u32.0.cnt);
+    // assert(state_and_u32.0.cnt == 0);
+    // assert(state_and_u32.0.pool0[state_and_u32.0.cnt] == state_and_u32.1);
+    // assert(2024849939 == state_and_u32.1);
 }
