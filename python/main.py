@@ -1,8 +1,8 @@
 from read_iop import ReadIOP, u8_to_u32, u32_to_u8
 from merkle import MerkleVerifier
-from hashlib import sha256
 from Crypto.Hash import SHA256
 import struct
+from sha256 import generate_hash
 
 # what is this?
 INV_RATE = 4
@@ -31,17 +31,7 @@ initial_state = [
 
 
 def sha_compress(a: list[int], b: list[int]):
-    h = SHA256.new()
-
-    block = [0] * 16
-    for x in range(8):
-        block[x] = a[x]
-        block[x + 8] = b[x]
-    block = u32_to_u8(block)
-
-    h.update(bytes(block))
-
-    return h.digest()
+    return generate_hash(bytearray(a + b))
 
 
 def main():
@@ -56,8 +46,7 @@ def main():
         "e957cefae0bcb78d2e2c6728704cd03ff3522de1ee275b5d7022fb5d01944f60"
     )
 
-    a = u8_to_u32(a)
-    b = u8_to_u32(b)
+    print(sha_compress(a, b).hex())
     assert sha_compress(a, b) == val
 
     # with open("../trivial.seal", "rb") as f:
