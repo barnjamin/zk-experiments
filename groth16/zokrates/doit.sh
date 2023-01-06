@@ -12,7 +12,7 @@ function report_proof_public_inputs {
   echo "proof.json PUBLIC inputs:"
   for input in $inputs; do
     # Convert the hexadecimal string to a number and print it to the console
-    printf "%d\n" "$input"
+    python -c "print(int('$input', 16))"
   done
 }
 
