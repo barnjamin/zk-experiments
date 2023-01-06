@@ -37,13 +37,16 @@ class ShaRng:
         self.pool_used += 1
         return out
 
+    def next_u64(self) -> int:
+        return (self.next_u32() << 32) | self.next_u32()
+
 
 class ReadIOP:
     def __init__(self, circuit_outputs: int, seal: list[int]) -> None:
         self.proof = seal
         self.rng = ShaRng()
 
-        self.out = self.read_field_elem_slice(circuit_outputs)
+        self.out = [decode_mont(x) for x in self.read_field_elem_slice(circuit_outputs)]
         self.po2 = self.read_u32s(1).pop()
 
     def read_u32s(self, size: int) -> list[int]:
@@ -54,7 +57,7 @@ class ReadIOP:
     def read_field_elem_slice(self, size: int) -> list[int]:
         elems = []
         for u in self.read_u32s(size):
-            elems.append(decode_mont(u))
+            elems.append(u)
         return elems
 
     def read_pod_slice(self, size: int) -> list[int]:
