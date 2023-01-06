@@ -30,14 +30,16 @@ CHECK_SIZE = INV_RATE * EXT_SIZE
 
 def main():
 
-    result = u8_to_u32(
-        generate_hash(bytearray([0] * 64), compress_only=True, initial_state=None)
-    )
+    dummy = bytearray([0] * 64)
+    result = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=None))
     print(swap_endian(result))
-    result = u8_to_u32(
-        generate_hash(bytearray([0] * 64), compress_only=True, initial_state=result)
-    )
+    # matches
+    # [3663108286, 398046313, 1647531929, 2006957770, 2363872401, 3235013187, 3137272298, 406301144]
+
+    result = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=result))
     print(swap_endian(result))
+    # doesnt match
+    # [1753322530, 427712285, 3703720195, 2823132263, 2087222896, 476200146, 2194495960, 3856981803]
 
     return
 
