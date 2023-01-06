@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "deleting a bunch of zocrates outputs"
+
 rm abi.json
 rm out
 rm out.r1cs
