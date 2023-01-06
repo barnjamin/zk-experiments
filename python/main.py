@@ -6,12 +6,11 @@ from util import (
     to_elem,
     ROU_REV,
     hash_raw_pod,
-    swap32,
     generate_hash,
-    u32_to_u8,
     u8_to_u32,
     swap_endian,
 )
+from sha256 import IV
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -31,7 +30,7 @@ CHECK_SIZE = INV_RATE * EXT_SIZE
 def main():
 
     dummy = bytearray([0] * 64)
-    result = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=None))
+    result = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=IV))
     print(swap_endian(result))
     # matches
     # [3663108286, 398046313, 1647531929, 2006957770, 2363872401, 3235013187, 3137272298, 406301144]
