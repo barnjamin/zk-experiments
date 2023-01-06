@@ -21,8 +21,10 @@ step3:
 pre-clean-zok:
 	cd groth16/zokrates && ./clean.sh || exit 0
 
-ZOK := "root"
-WIT := "337 113569"
+# ZOK := "root"
+# WIT := "337 113569"
+ZOK := "secret_factor"
+WIT := "15825923429238183706"
 pre-contract-zok: pre-clean-zok
 	cd groth16/zokrates && ./doit.sh ${ZOK}.zok ${WIT}
 
