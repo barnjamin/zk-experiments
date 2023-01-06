@@ -1,4 +1,5 @@
 from util import sha_compress, u32_to_u8, u8_to_u32, sha_hash, decode_mont
+from consts import DIGEST_WORDS
 
 
 class ShaRng:
@@ -28,7 +29,13 @@ class ShaRng:
         self.pool_used = 0
 
     def next_u32(self) -> int:
-        return 0
+        if self.pool_used == DIGEST_WORDS:
+            self.step()
+
+        as_words = u8_to_u32(self.pool0)
+        out = as_words[self.pool_used]
+        self.pool_used += 1
+        return out
 
 
 class ReadIOP:
