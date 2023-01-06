@@ -10,3 +10,4 @@ env_logger = "0.10.0"
 methods = {path = "../methods"}
 bytemuck = "1.12"
 risc0-zkvm = "1.0.0-rc.2"
+risc0-zkp = "1.0.0-rc.2"
