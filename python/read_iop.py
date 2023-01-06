@@ -1,5 +1,4 @@
-from field import decode_mont
-from util import sha_compress, u32_to_u8, u8_to_u32, sha_hash
+from util import sha_compress, u32_to_u8, u8_to_u32, sha_hash, decode_mont
 
 
 class ShaRng:
@@ -9,9 +8,6 @@ class ShaRng:
         self.pool_used = 0
 
     def mix(self, digest: bytes):
-        # Generate a new digest by mixing two digests together via XOR,
-        # and stores it back in the pool.
-
         pool_words = u8_to_u32(list(self.pool0))
         val = u8_to_u32(list(digest))
 

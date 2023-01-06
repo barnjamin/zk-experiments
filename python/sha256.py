@@ -172,7 +172,7 @@ def generate_hash(message: bytearray, compress_only: bool = False) -> bytearray:
         h7 = (h7 + h) % 2**32
 
     return (
-        (h0).to_bytes(4, "big")
+        (h0).to_bytes(4, "big")  # type: ignore
         + (h1).to_bytes(4, "big")
         + (h2).to_bytes(4, "big")
         + (h3).to_bytes(4, "big")
