@@ -37,6 +37,9 @@ class ShaRng:
         self.pool_used += 1
         return out
 
+    def next_u64(self) -> int:
+        return (self.next_u32() << 32) | self.next_u32()
+
 
 class ReadIOP:
     def __init__(self, circuit_outputs: int, seal: list[int]) -> None:

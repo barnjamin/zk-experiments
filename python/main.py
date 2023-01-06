@@ -2,7 +2,7 @@ from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
 from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2, PRIME
-from util import to_elem, encode_mont, decode_mont, swap32
+from util import to_elem, ROU_REV
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -11,6 +11,12 @@ CIRCUIT_MIX_SIZE = 36
 CODE_TAP_SIZE = 15
 DATA_TAP_SIZE = 212
 ACCUM_TAP_SIZE = 36
+
+NUM_TAPS = 781
+
+# Extended field element size
+EXT_SIZE = 4
+CHECK_SIZE = INV_RATE * EXT_SIZE
 
 
 def main():
@@ -43,7 +49,7 @@ def main():
         == "36a851ef72541689fd9537c5b3a01c75c66bccffef7871f9757ee664c0ef909d"
     )
 
-    mix = accumulate(iop)
+    mix = sample_random_elements(iop, CIRCUIT_MIX_SIZE)
     assert mix[0] == 1374649985
 
     accum_merkle = MerkleVerifier(iop, domain, ACCUM_TAP_SIZE, QUERIES)
@@ -52,7 +58,20 @@ def main():
         == "c0f53b6615c2ce2332f06386b72cd7f300d52684885c694cd903b599c915ba57"
     )
 
-    print("so far so good")
+    poly_mix = sample_random_elements(iop, EXT_SIZE)
+    assert poly_mix[0] == 143271204
+
+    check_merkle = MerkleVerifier(iop, domain, CHECK_SIZE, QUERIES)
+    assert (
+        check_merkle.root().hex()
+        == "b5b6727b0e71ff6c699c59f0ceb258805dc427b839f10052229dcecf7ab78d45"
+    )
+
+    z = sample_random_elements(iop, EXT_SIZE)
+    assert z[0] == 1298130879
+
+    back_one = ROU_REV[po2]
+    assert back_one == 173369915
 
 
 def sample(iop: ReadIOP):
@@ -65,8 +84,8 @@ def sample(iop: ReadIOP):
     return val
 
 
-def accumulate(iop: ReadIOP):
-    return [to_elem(sample(iop)) for _ in range(CIRCUIT_MIX_SIZE)]
+def sample_random_elements(iop: ReadIOP, num: int):
+    return [to_elem(sample(iop)) for _ in range(num)]
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:
