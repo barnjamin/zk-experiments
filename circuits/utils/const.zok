@@ -17,11 +17,18 @@ const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;
 const u32 FRI_MIN_DEGREE = 256;
 
 // RISC0 related configs
-const QUERIES u32 = 50;
-const ZK_CYCLES u32 = QUERIES;
+const u32 QUERIES = 50;
+const u32 ZK_CYCLES = QUERIES;
 // MIN_PO2 = core::log2_ceil(1 + ZK_CYCLES);
-const MIN_PO2 u32 = 6;
-const MIN_CYCLES_PO2 u32 = 10;
-const MIN_CYCLES u32 = 1 << MIN_CYCLES_PO2; // 1K
-const MAX_CYCLES_PO2 u32 = 24;
-const MAX_CYCLES u32 = 1 << MAX_CYCLES_PO2; // 16M
+const u32 MIN_PO2 = 6;
+const u32 MIN_CYCLES_PO2 = 10;
+const u32 MIN_CYCLES = 1 << MIN_CYCLES_PO2; // 1K
+const u32 MAX_CYCLES_PO2 = 24;
+const u32 MAX_CYCLES = 1 << MAX_CYCLES_PO2; // 16M
+
+// montgomery form constants
+const u32 M_mont = 0x88000001;
+const u32 R_2 = 1172168163;
+
+// Prime field we're working in
+const u32 PRIME = 15 * (1 << 27) + 1;
