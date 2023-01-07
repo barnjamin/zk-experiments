@@ -88,6 +88,7 @@ def generate_hash(
     """Return a SHA-256 hash from the message passed.
     The argument should be a bytes, bytearray, or
     string object."""
+    print("init: ", initial_state)
 
     if isinstance(message, str):
         message = bytearray(message, "ascii")

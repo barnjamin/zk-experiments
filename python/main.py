@@ -9,6 +9,7 @@ from util import (
     generate_hash,
     u8_to_u32,
     swap_endian,
+    swap32,
 )
 from sha256 import IV
 
@@ -29,16 +30,118 @@ CHECK_SIZE = INV_RATE * EXT_SIZE
 
 def main():
 
-    dummy = bytearray([0] * 64)
-    result = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=IV))
-    print(swap_endian(result))
-    # matches
-    # [3663108286, 398046313, 1647531929, 2006957770, 2363872401, 3235013187, 3137272298, 406301144]
+    dummy = bytearray([1] * 64)
+    for x in range(32):
+        state = [(2**x)] * 8
 
-    result = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=result))
-    print(swap_endian(result))
-    # doesnt match
-    # [1753322530, 427712285, 3703720195, 2823132263, 2087222896, 476200146, 2194495960, 3856981803]
+        res = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=state))
+        print(f"po2 {x} main ", res)
+        print(f"po2 {x} swapped", swap_endian(res))
+
+    state = [1] * 8
+
+    state = u8_to_u32(generate_hash(dummy, compress_only=True, initial_state=state))
+    print("after 1", state)
+    print("after 1 swap endian", swap_endian(state))
+
+    result_noswap = u8_to_u32(
+        generate_hash(dummy, compress_only=True, initial_state=state)
+    )
+    print("after 1", result_noswap)
+    print("after 1 swap endian", swap_endian(result_noswap))
+
+    result_swap = u8_to_u32(
+        generate_hash(dummy, compress_only=True, initial_state=swap_endian(state))
+    )
+    print("after 1 preswap", result_swap)
+    print("after 1 preswap swap endian", swap_endian(result_swap))
+
+    return
+
+    result = [1] * 8
+    dummy = bytearray([0] * 64)
+    res_swap = u8_to_u32(
+        generate_hash(dummy, compress_only=True, initial_state=swap_endian(result))
+    )
+    print("main", res_swap)
+    print("swapped", swap_endian(res_swap))
+
+    return
+    from hashlib import sha256
+
+    msg = [0] * 63
+    padding = [
+        128,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        248,
+    ]
+    padded = msg + padding
+    print(sha256(bytes(msg)).hexdigest())
+    print(generate_hash(bytearray(msg)).hex())
+
+    print(generate_hash(bytearray(padded), compress_only=True, initial_state=IV).hex())
 
     return
 
