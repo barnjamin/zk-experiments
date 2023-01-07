@@ -41,7 +41,23 @@ class Verifier(bkr.Application):
             # idk if this will need to change but its enough for now
             self.opup.ensure_budget(pt.Int(13500)),
             # Fetch the VK from box storage
-            self.get_vk(output=(vk := VerificationKey())),  # type: ignore
+            self.root_vk_from_box(output=(vk := VerificationKey())),  # type: ignore
+            # Compute vk_x from sum of inputs
+            (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
+            # return result (normal programs should assert out if its invalid)
+            output.set(valid_pairing(proof, vk, vk_x)),
+        )
+
+    @bkr.external
+    def verify_secret_factor(
+        self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool
+    ):
+        return pt.Seq(
+            # idk if this will need to change but its enough for now
+            # Z: yeah, looks like GTG for groth 16
+            self.opup.ensure_budget(pt.Int(13500)),
+            # Fetch the VK from box storage
+            self.secret_factor_vk_from_box(output=(vk := VerificationKey())),  # type: ignore
             # Compute vk_x from sum of inputs
             (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
             # return result (normal programs should assert out if its invalid)
@@ -49,10 +65,19 @@ class Verifier(bkr.Application):
         )
 
     @bkr.internal
-    def get_vk(self, *, output: VerificationKey):
+    def root_vk_from_box(self, *, output: VerificationKey):
         # Read in the VK from our box
         return pt.Seq(
             vk_data := pt.BoxGet(self.root_vk_box_name),
+            pt.Assert(vk_data.hasValue(), comment="Verification Key not set"),
+            output.decode(vk_data.value()),
+        )
+
+    @bkr.internal
+    def secret_factor_vk_from_box(self, *, output: VerificationKey):
+        # Read in the VK from our box
+        return pt.Seq(
+            vk_data := pt.BoxGet(self.secret_factor_vk_box_name),
             pt.Assert(vk_data.hasValue(), comment="Verification Key not set"),
             output.decode(vk_data.value()),
         )

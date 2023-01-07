@@ -40,6 +40,22 @@
             "returns": {
                 "type": "bool"
             }
+        },
+        {
+            "name": "verify_secret_factor",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
         }
     ],
     "networks": {}

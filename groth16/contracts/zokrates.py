@@ -19,12 +19,15 @@ def decode_scalar(v: str) -> bytes:
 
 
 def decode_g1(coords: list[str]) -> bytes:
+    # TODO: assert expected lengths
     x = bytes.fromhex(coords[0][2:])
     y = bytes.fromhex(coords[1][2:])
     return x + y
 
 
 def decode_g2(coords: list[list[str]]) -> bytes:
+    # TODO: assert expected lengths
+    # Z asks: Is G2 a quaternian image?
     x_0 = bytes.fromhex(coords[0][0][2:])
     x_1 = bytes.fromhex(coords[0][1][2:])
     y_0 = bytes.fromhex(coords[1][0][2:])
@@ -32,7 +35,7 @@ def decode_g2(coords: list[list[str]]) -> bytes:
     return x_0 + x_1 + y_0 + y_1
 
 
-def get_proof_and_inputs(prefix: str) -> tuple[Any, Any]:
+def parse_proof(prefix: str) -> tuple[Any, Any]:
     with open(data_path + f"/{prefix}_proof.json", "r") as f:
         _proof = json.loads(f.read())
 
@@ -46,7 +49,7 @@ def get_proof_and_inputs(prefix: str) -> tuple[Any, Any]:
     return proof_codec.decode(a + b + c), input_codec.decode(inputs)
 
 
-def get_vk(prefix: str) -> Any:
+def parse_verification_key(prefix: str) -> Any:
     with open(data_path + f"/{prefix}_verification.key", "r") as f:
         vk = json.loads(f.read())
     alpha = decode_g1(vk["alpha"])

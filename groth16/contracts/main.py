@@ -1,7 +1,7 @@
 from beaker import client, sandbox, consts
 
-from verifier import Verifier  # type: ignore
-from zokrates import get_proof_and_inputs, get_vk  # type: ignore
+from verifier.application import Verifier  # type: ignore
+from zokrates import parse_proof, parse_verification_key  # type: ignore
 
 
 def demo(app_id: int = 0):
@@ -22,13 +22,21 @@ def demo(app_id: int = 0):
     boxes = [(0, name.encode()) for name in v.boxes_names.values()]
 
     # Bootstrap with vk
-    ac.call(v.bootstrap_root, vk=get_vk("root"), boxes=boxes)
-    ac.call(v.bootstrap_secret_factor, vk=get_vk("secret_factor"), boxes=boxes)
+    ac.call(v.bootstrap_root, vk=parse_verification_key("root"), boxes=boxes)
+    ac.call(
+        v.bootstrap_secret_factor,
+        vk=parse_verification_key("secret_factor"),
+        boxes=boxes,
+    )
 
     # Pass proof && inputs to be verified
-    proof, inputs = get_proof_and_inputs("root")
+    proof, inputs = parse_proof("root")
     result = ac.call(v.verify_root, inputs=inputs, proof=proof, boxes=boxes)
     print(f"Contract verifies root? {result.return_value}")
+
+    proof, inputs = parse_proof("secret_factor")
+    result = ac.call(v.verify_secret_factor, inputs=inputs, proof=proof, boxes=boxes)
+    print(f"Contract verifies secret_factor? {result.return_value}")
 
 
 if __name__ == "__main__":
