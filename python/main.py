@@ -15,7 +15,7 @@ from util import (
     mul,
     swap32,
 )
-from taps import TAPSET
+from taps import TAPSET, TapData
 import galois as gf  # type: ignore
 
 
@@ -107,7 +107,7 @@ def main():
     eval_u: list[list[int]] = []
 
     cur_pos = 0
-    for reg in TAPSET.taps[TAPSET.group_begin[2] :]:
+    for reg in register_taps():
         print(reg)
         for i in range(reg.skip):
             ml = wrapped_pow(back_one, reg.back + i)
@@ -116,9 +116,35 @@ def main():
             fx = poly_eval(coeffs, x)
             eval_u.append(fx)
         cur_pos += reg.skip
-    print(num_taps)
-    print(len(eval_u))
-    # assert num_taps == len(eval_u), "?"
+
+    assert num_taps == len(eval_u), "???"
+
+
+def register_taps() -> list[TapData]:
+    cursor = 0
+    taps: list[TapData] = []
+    while cursor < len(TAPSET.taps):
+        t = TAPSET.taps[cursor]
+        taps.append(t)
+        cursor += t.skip
+    return taps
+
+    # fn next(&mut self) -> Option<Self::Item> {
+    #    let cursor = self.cursor;
+    #    if cursor >= self.data.len() {
+    #        return None;
+    #    }
+    #    let next = cursor + self.data[cursor].skip as usize;
+    #    if next > self.end {
+    #        return None;
+    #    }
+    #    self.cursor = next;
+    #    Some(RegisterRef {
+    #        data: self.data,
+    #        cursor,
+    #    })
+    # }
+    pass
 
 
 class Elem:
