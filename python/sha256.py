@@ -88,7 +88,6 @@ def generate_hash(
     """Return a SHA-256 hash from the message passed.
     The argument should be a bytes, bytearray, or
     string object."""
-    print("init: ", initial_state)
 
     if isinstance(message, str):
         message = bytearray(message, "ascii")
@@ -113,7 +112,7 @@ def generate_hash(
         blocks.append(message[i : i + 64])
 
     # Setting Initial Hash Value
-    (h0, h1, h2, h3, h5, h4, h6, h7) = IV if initial_state is None else initial_state
+    (h0, h1, h2, h3,  h4, h5, h6, h7) = IV if initial_state is None else initial_state
 
     # SHA-256 Hash Computation
     for message_block in blocks:

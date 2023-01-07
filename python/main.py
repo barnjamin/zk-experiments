@@ -56,6 +56,36 @@ def main():
     print("after 1 preswap", result_swap)
     print("after 1 preswap swap endian", swap_endian(result_swap))
 
+    print("ASDFASDFASDF")
+    state = [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2510188968,
+        1,
+    ]
+    result_noswap = u8_to_u32(
+        generate_hash(dummy, compress_only=True, initial_state=state)
+    )
+    print("Single swapped", swap_endian(result_noswap))
+    state = [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1482133846,
+        2510188968,
+        1,
+    ]
+    result_noswap = u8_to_u32(
+        generate_hash(dummy, compress_only=True, initial_state=state)
+    )
+    print("double swapped", swap_endian(result_noswap))
+
     return
 
     result = [1] * 8
