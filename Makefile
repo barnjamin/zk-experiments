@@ -25,20 +25,24 @@ pre-clean-zok:
 ZOKDIR := "groth16/zokrates"
 
 # bls12_377, bls12_381, bn128, bw6_761
-# CURVE := "bls12_381"
-CURVE := "bn128"
+CURVE := "bls12_381"
 
-# ZOK := "root"
-ZOK := "secret_factor"
+ZOK := "root"
 alice: pre-clean-zok
-	cd ${ZOKDIR} && ./alice.sh ${CURVE} ${ZOK}.zok
+	cd ${ZOKDIR} && ./alice.sh ${CURVE} ${ZOK}
 
-WIT := "15825923429238183706"
-# WIT := "337 113569"
+WIT := "337 113569"
 eve:
-	cd ${ZOKDIR} && ./eve.sh ${WIT}
+	cd ${ZOKDIR} && ./eve.sh ${ZOK} ${WIT}
 
-alice-and-eve: alice eve
+root: alice eve
 
+secret-factor: 
+	make alice CURVE="bls12_381" ZOK="secret_factor"
+	make eve WIT="15825923429238183706" ZOK="secret_factor"
+
+CONTRACTS_DIR := "groth16/contracts"
 run-contract:
-	cd groth16/contracts && python main.py
+	cd ${CONTRACTS_DIR} && python main.py
+
+zk-snarks-and-beaker-it: root secret-factor run-contract

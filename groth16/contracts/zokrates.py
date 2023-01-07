@@ -32,8 +32,8 @@ def decode_g2(coords: list[list[str]]) -> bytes:
     return x_0 + x_1 + y_0 + y_1
 
 
-def get_proof_and_inputs() -> tuple[Any, Any]:
-    with open(data_path + "/proof.json", "r") as f:
+def get_proof_and_inputs(prefix: str) -> tuple[Any, Any]:
+    with open(data_path + f"/{prefix}_proof.json", "r") as f:
         _proof = json.loads(f.read())
 
     proof = _proof["proof"]
@@ -46,8 +46,8 @@ def get_proof_and_inputs() -> tuple[Any, Any]:
     return proof_codec.decode(a + b + c), input_codec.decode(inputs)
 
 
-def get_vk() -> Any:
-    with open(data_path + "/verification.key", "r") as f:
+def get_vk(prefix: str) -> Any:
+    with open(data_path + f"/{prefix}_verification.key", "r") as f:
         vk = json.loads(f.read())
     alpha = decode_g1(vk["alpha"])
     beta = decode_g2(vk["beta"])
