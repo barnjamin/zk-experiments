@@ -1,6 +1,13 @@
 import "hashes/sha256/512bit" as hash;
 from "utils/casts" import cast;
-from "./utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, ShaDigest;
+from "./utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
+                            sha_rng_start_state, ShaDigest, ReadIOP;
+
+def endian_conv(u32 mut v) -> u32 {
+    return (v >> 24) | \
+           ((v << 8) & 0x00ff0000) | \
+           ((v >> 8) & 0x0000ff00) | (v << 24);
+}
 
 // SHA based RNG definitions
 
@@ -24,7 +31,7 @@ def sha_rng_next_u32(ShaRngState mut old_state) -> (ShaRngState, u32) {
     u32 mut rand_u32 = old_state.pool0[old_state.cnt];
     old_state = sha_rng_incr(old_state);
     // cast to small endian
-    rand_u32 = (rand_u32 >> 24) | ((rand_u32 << 8) & 0x00ff0000) | ((rand_u32 >> 8) & 0x0000ff00) | (rand_u32 << 24);
+    rand_u32 = endian_conv(rand_u32);
     return (old_state, rand_u32);
 }
 
@@ -42,4 +49,40 @@ def sha_rng_mix(ShaRngState mut old_state, ShaDigest digest) -> ShaRngState {
         old_state.pool0[i] = old_state.pool0[i] ^ digest[i];
     }
     return sha_rng_step(old_state);
+}
+
+// Read IOP facility definition
+
+// TODO still need the other out and montgomary encoding
+def read_iop<N>(u32 mut circuit_outputs, u32[N] mut seal) -> ReadIOP<N> {
+    return ReadIOP {
+        proof: seal,
+        rng_state: sha_rng_start_state(),
+        proof_start_from: 0
+    };
+}
+
+def read_iop_u32s<N, LEN>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u32[LEN]) {
+    u32[LEN] mut u32_seg = iop.proof[iop.proof_start_from..iop.proof_start_from + LEN];
+    for u32 i in 0..LEN {
+        u32_seg[i] = endian_conv(u32_seg[i]);
+    }
+    iop.proof_start_from = iop.proof_start_from + LEN;
+    return (iop, u32_seg);
+}
+
+def read_iop_pod_slice<N, P_LEN>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u32[P_LEN]) {
+    iop.proof_start_from = iop.proof_start_from + P_LEN;
+    u32[P_LEN] pod = \
+        iop.proof[iop.proof_start_from..iop.proof_start_from + P_LEN];
+    return (iop, pod);
+}
+
+def read_iop_commit<N>(ReadIOP<N> mut iop, ShaDigest digest) -> ReadIOP<N> {
+    iop.rng_state = sha_rng_mix(iop.rng_state, digest);
+    return iop;
+}
+
+def read_iop_verify_complete<N>(ReadIOP<N> iop) -> bool {
+    return iop.proof_start_from == N;
 }
