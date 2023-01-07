@@ -42,7 +42,7 @@
             }
         },
         {
-            "name": "verify_secret_factor",
+            "name": "deprecated_verify_secret_factor",
             "args": [
                 {
                     "type": "byte[32][1]",

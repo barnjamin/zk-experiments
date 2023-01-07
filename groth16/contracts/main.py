@@ -1,6 +1,7 @@
 from beaker import client, sandbox, consts
 
 from verifier.application import Verifier  # type: ignore
+from vscode_hackery import hack_path
 from zokrates import parse_proof, parse_verification_key  # type: ignore
 
 
@@ -35,11 +36,13 @@ def demo(app_id: int = 0):
     print(f"Contract verifies root? {result.return_value}")
 
     proof, inputs = parse_proof("secret_factor")
-    result = ac.call(v.verify_secret_factor, inputs=inputs, proof=proof, boxes=boxes)
+    result = ac.call(
+        v.deprecated_verify_secret_factor, inputs=inputs, proof=proof, boxes=boxes
+    )
     print(f"Contract verifies secret_factor? {result.return_value}")
 
 
 if __name__ == "__main__":
     demo()
-
-    Verifier(version=9).dump("./artifacts")
+    artifacts_dir = hack_path("contracts/artifacts")
+    Verifier(version=9).dump(str(artifacts_dir))

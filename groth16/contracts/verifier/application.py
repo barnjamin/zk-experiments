@@ -48,10 +48,7 @@ class Verifier(bkr.Application):
             output.set(valid_pairing(proof, vk, vk_x)),
         )
 
-    @bkr.external
-    def verify_secret_factor(
-        self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool
-    ):
+    def _verify_secret_factor(self, inputs, proof, output) -> pt.Expr:
         return pt.Seq(
             # idk if this will need to change but its enough for now
             # Z: yeah, looks like GTG for groth 16
@@ -63,6 +60,22 @@ class Verifier(bkr.Application):
             # return result (normal programs should assert out if its invalid)
             output.set(valid_pairing(proof, vk, vk_x)),
         )
+
+    # @bkr.external
+    # def claim_bounty(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
+    #     verification = pt.abi.make(pt.abi.Bool)
+    #     verify_seq = self._verify_secret_factor(inputs, proof, verification)
+    #     return pt.Seq(
+    #         pt.Assert(
+    #             verify_seq, comment="verification failed!!! (bounty reward refused)"
+    #         )
+    #     )
+
+    @bkr.external
+    def deprecated_verify_secret_factor(
+        self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool
+    ):
+        return self._verify_secret_factor(inputs, proof, output)
 
     @bkr.internal
     def root_vk_from_box(self, *, output: VerificationKey):
