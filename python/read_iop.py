@@ -1,5 +1,12 @@
-from util import sha_compress_leaves, u32_to_u8, u8_to_u32, sha_hash, decode_mont
-from consts import DIGEST_WORDS
+from util import (
+    sha_compress_leaves,
+    u32_to_u8,
+    u8_to_u32,
+    sha_hash,
+    decode_mont,
+    to_elem,
+)
+from consts import DIGEST_WORDS, PRIME
 
 
 class ShaRng:
@@ -71,3 +78,15 @@ class ReadIOP:
 
     def verify_complete(self):
         assert len(self.proof) == 0
+
+    def sample_elements(self, n: int) -> list[int]:
+        return [to_elem(self.sample()) for _ in range(n)]
+
+    def sample(self) -> int:
+        val = 0
+        for _ in range(6):
+            val <<= 32
+            val %= 2**64
+            val += self.rng.next_u32()
+            val %= PRIME
+        return val

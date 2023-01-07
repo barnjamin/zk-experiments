@@ -6,12 +6,14 @@ from util import (
     to_elem,
     ROU_REV,
     hash_raw_pod,
-    generate_hash,
-    u8_to_u32,
-    swap_endian,
+    wrapped_pow,
+    wrapped_mul,
+    encode_mont,
+    decode_mont,
     swap32,
 )
-from sha256 import IV
+from taps import TAPSET
+import galois as gf  # type: ignore
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -21,11 +23,13 @@ CODE_TAP_SIZE = 15
 DATA_TAP_SIZE = 212
 ACCUM_TAP_SIZE = 36
 
-NUM_TAPS = 781
 
 # Extended field element size
 EXT_SIZE = 4
 CHECK_SIZE = INV_RATE * EXT_SIZE
+
+
+as_field_elem = gf.GF(PRIME)
 
 
 def main():
@@ -58,7 +62,7 @@ def main():
         == "36a851ef72541689fd9537c5b3a01c75c66bccffef7871f9757ee664c0ef909d"
     )
 
-    mix = sample_random_elements(iop, CIRCUIT_MIX_SIZE)
+    mix = iop.sample_elements(CIRCUIT_MIX_SIZE)
     assert mix[0] == 1374649985
 
     accum_merkle = MerkleVerifier(iop, domain, ACCUM_TAP_SIZE, QUERIES)
@@ -67,7 +71,7 @@ def main():
         == "c0f53b6615c2ce2332f06386b72cd7f300d52684885c694cd903b599c915ba57"
     )
 
-    poly_mix = sample_random_elements(iop, EXT_SIZE)
+    poly_mix = iop.sample_elements(EXT_SIZE)
     assert poly_mix[0] == 143271204
 
     check_merkle = MerkleVerifier(iop, domain, CHECK_SIZE, QUERIES)
@@ -76,20 +80,19 @@ def main():
         == "b5b6727b0e71ff6c699c59f0ceb258805dc427b839f10052229dcecf7ab78d45"
     )
 
-    z = sample_random_elements(iop, EXT_SIZE)
+    z = as_field_elem(iop.sample_elements(EXT_SIZE))
     assert z[0] == 1298130879
 
     back_one = ROU_REV[po2]
     assert back_one == 173369915
 
-    num_taps = NUM_TAPS
+    num_taps = len(TAPSET.taps)
 
     coeff_u = iop.read_field_ext_elem_slice((num_taps + CHECK_SIZE))
-    # TODO: This does _not_ produce a list of lists since we hash it and want u8s anyway
-    # coeff_u = [
-    #    _coeff_u[x*4:(x+1)*4]
-    #    for x in range(int(len(_coeff_u)/4))
-    # ]
+    coeff_elems = [
+        as_field_elem(coeff_u[x * 4 : (x + 1) * 4])
+        for x in range(int(len(coeff_u) / 4))
+    ]
     assert coeff_u[0] == 407240978
 
     hash_u = hash_raw_pod(coeff_u)
@@ -99,35 +102,46 @@ def main():
     )
     iop.commit(hash_u)
 
-    # eval_u = [0] * num_taps * 4
-    # for i in range(num_taps):
-    #    for j in range():
-    #        # for reg in taps.regs() {
-    #        #    for i in 0..reg.size() {
-    #        #        let x = z * back_one.pow(reg.back(i));
-    #        #        let fx = hal.poly_eval(&coeff_u[cur_pos..(cur_pos + reg.size())], x);
-    #        #        eval_u.push(fx);
-    #        #    }
-    #        #    cur_pos += reg.size();
-    #        #    hal.debug(&format!("cur_pos {:?},", cur_pos));
-    #        # }
-    #        pass
+    ####
+
+    eval_u: list[gf.Array] = []
+
+    cur_pos = 0
+    for reg in TAPSET.taps:
+        for i in range(reg.skip):
+            mul = decode_mont(wrapped_pow(back_one, reg.back + i))
+            x = z * as_field_elem(mul)
+            coeffs = coeff_elems[cur_pos : cur_pos + reg.skip]
+            print(coeffs)
+            print(x)
+
+            #### Not working yet
+            fx = poly_eval(coeffs, x)
+            print(fx)
+
+            eval_u.append(fx)
+
+        cur_pos += reg.skip
+        # p = lagrange_poly(, x)
+        #        let fx = hal.poly_eval(&coeff_u[cur_pos..(cur_pos + reg.size())], x);
+        #        eval_u.push(fx);
+        #    }
+        #    cur_pos += reg.size();
+        #    hal.debug(&format!("cur_pos {:?},", cur_pos));
+        # }
+        break
 
     # eval_u = [[0]*4]*num_taps
 
 
-def sample(iop: ReadIOP):
-    val = 0
-    for _ in range(6):
-        val <<= 32
-        val %= 2**64
-        val += iop.rng.next_u32()
-        val %= PRIME
-    return val
+def poly_eval(coeffs: list[gf.Array], x: gf.Array) -> gf.Array:
+    mul_x = as_field_elem([1] * 4)
+    tot = as_field_elem([0] * 4)
 
-
-def sample_random_elements(iop: ReadIOP, num: int):
-    return [to_elem(sample(iop)) for _ in range(num)]
+    for i in range(len(coeffs)):
+        tot += coeffs[i] * mul_x
+        mul_x *= x
+    return tot
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:

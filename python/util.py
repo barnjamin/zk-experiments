@@ -101,6 +101,23 @@ def mul(lhs: int, rhs: int) -> int:
     return ret
 
 
+# def elem_pow(base: int, exp: int)->int:
+#    n = exp
+#    tot = 1
+#    x = base
+#
+#    while n != 0:
+#        n = exp
+#        tot = 1
+#        x = base
+#        while n != 0:
+#            if n % 2 == 1:
+#                tot *= x
+#            n = int(n / 2)
+#            x *= x
+#    return tot
+
+
 def wrapped_mul(lhs: int, rhs: int, size: int) -> int:
     return (lhs * rhs) % 2**size
 
@@ -111,6 +128,13 @@ def wrapped_add(lhs: int, rhs: int, size: int) -> int:
 
 def wrapped_sub(lhs: int, rhs: int, size: int) -> int:
     return (lhs - rhs) % 2**size
+
+
+def wrapped_pow(base: int, exp: int) -> int:
+    b = 1
+    for _ in range(exp):
+        b = wrapped_mul(b, base, 32)
+    return b
 
 
 MAX_ROU_PO2 = 27
