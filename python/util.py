@@ -5,7 +5,7 @@ from consts import PRIME, R2, M
 import struct
 
 
-def sha_compress(a: bytes, b: bytes):
+def sha_compress_leaves(a: bytes, b: bytes):
     assert (
         len(a) + len(b) == 64
     ), "Cannot use sha_compress directly unless the length of bytes is a multiple of 64"
@@ -27,24 +27,17 @@ def hash_raw_pod(raw: list[int]) -> bytes:
                 generate_hash(bytearray(block), initial_state=state, compress_only=True)
             )
         )
-        print("idx: {} state: {} block: {}".format(idx, swap_endian(state), block))
+        state = swap_endian(state)
 
-    leftover = u8s[:-(len(u8s)%chunk_size)]
-    print(leftover)
-
-    #let remainder = blocks.remainder();
-    #if remainder.len() > 0 {
-    #    let mut last_block: GenericArray<u8, U64> = GenericArray::default();
-    #    bytemuck::cast_slice_mut(last_block.as_mut_slice())[..remainder.len()]
-    #        .clone_from_slice(remainder);
-    #    compress256(&mut state, slice::from_ref(&last_block));
-    #}
-
-    #for word in state.iter_mut() {
-    #    *word = word.to_be();
-    #}
-    #Box::new(Digest::new(state))
-
+    remainder = u8s[-(len(u8s) % chunk_size) :]
+    if len(remainder) > 0:
+        block = [0] * 64
+        block[: len(remainder)] = remainder[:]
+        state = u8_to_u32(
+            list(
+                generate_hash(bytearray(block), initial_state=state, compress_only=True)
+            )
+        )
 
     return bytes(u32_to_u8(state))
 

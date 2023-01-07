@@ -1,4 +1,4 @@
-from util import sha_compress, u32_to_u8, u8_to_u32, sha_hash, decode_mont
+from util import sha_compress_leaves, u32_to_u8, u8_to_u32, sha_hash, decode_mont
 from consts import DIGEST_WORDS
 
 
@@ -24,8 +24,8 @@ class ShaRng:
         self.step()
 
     def step(self):
-        self.pool0 = sha_compress(self.pool0, self.pool1)
-        self.pool1 = sha_compress(self.pool0, self.pool1)
+        self.pool0 = sha_compress_leaves(self.pool0, self.pool1)
+        self.pool1 = sha_compress_leaves(self.pool0, self.pool1)
         self.pool_used = 0
 
     def next_u32(self) -> int:
@@ -54,11 +54,12 @@ class ReadIOP:
         self.proof = self.proof[size * 4 :]
         return u32s
 
+    def read_field_ext_elem_slice(self, size: int) -> list[int]:
+        # ext elems are 4x elem
+        return self.read_field_elem_slice(size * 4)
+
     def read_field_elem_slice(self, size: int) -> list[int]:
-        elems = []
-        for u in self.read_u32s(size):
-            elems.append(u)
-        return elems
+        return [u for u in self.read_u32s(size)]
 
     def read_pod_slice(self, size: int) -> list[int]:
         b = self.proof[:size]

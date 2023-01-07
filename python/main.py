@@ -84,8 +84,8 @@ def main():
 
     num_taps = NUM_TAPS
 
+    coeff_u = iop.read_field_ext_elem_slice((num_taps + CHECK_SIZE))
     # TODO: This does _not_ produce a list of lists since we hash it and want u8s anyway
-    coeff_u = iop.read_field_elem_slice(num_taps + CHECK_SIZE)
     # coeff_u = [
     #    _coeff_u[x*4:(x+1)*4]
     #    for x in range(int(len(_coeff_u)/4))
@@ -93,11 +93,25 @@ def main():
     assert coeff_u[0] == 407240978
 
     hash_u = hash_raw_pod(coeff_u)
-    print(hash_u.hex())
-    # assert (
-    #    hash_u.hex()
-    #    == "1e6142f8513eb63519f504ac6d872b03e56727ad514d99463d13202582cfbb70"
-    # )
+    assert (
+        hash_u.hex()
+        == "1e6142f8513eb63519f504ac6d872b03e56727ad514d99463d13202582cfbb70"
+    )
+    iop.commit(hash_u)
+
+    # eval_u = [0] * num_taps * 4
+    # for i in range(num_taps):
+    #    for j in range():
+    #        # for reg in taps.regs() {
+    #        #    for i in 0..reg.size() {
+    #        #        let x = z * back_one.pow(reg.back(i));
+    #        #        let fx = hal.poly_eval(&coeff_u[cur_pos..(cur_pos + reg.size())], x);
+    #        #        eval_u.push(fx);
+    #        #    }
+    #        #    cur_pos += reg.size();
+    #        #    hal.debug(&format!("cur_pos {:?},", cur_pos));
+    #        # }
+    #        pass
 
     # eval_u = [[0]*4]*num_taps
 
