@@ -2,7 +2,7 @@
     "name": "Verifier",
     "methods": [
         {
-            "name": "bootstrap",
+            "name": "bootstrap_root",
             "args": [
                 {
                     "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
@@ -14,7 +14,19 @@
             }
         },
         {
-            "name": "verify",
+            "name": "bootstrap_secret_factor",
+            "args": [
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "verify_root",
             "args": [
                 {
                     "type": "byte[32][1]",

@@ -12,8 +12,12 @@ from .lib.bls12_381 import (
 
 
 class Verifier(bkr.Application):
-    _vk_box_name = "vk"
-    vk_box_name = pt.Bytes(_vk_box_name)
+    boxes_names = {
+        "root": "root_vk",
+        "secret_factor": "secret_factor_vk",
+    }
+    root_vk_box_name = pt.Bytes(boxes_names["root"])
+    secret_factor_vk_box_name = pt.Bytes(boxes_names["secret_factor"])
 
     opup = pt.OpUp(pt.OpUpMode.OnCall)
 
@@ -22,12 +26,17 @@ class Verifier(bkr.Application):
         return pt.Approve()
 
     @bkr.external(authorize=bkr.Authorize.only(pt.Global.creator_address()))
-    def bootstrap(self, vk: VerificationKey):
+    def bootstrap_root(self, vk: VerificationKey):
         # write the VK to box storage
-        return pt.BoxPut(self.vk_box_name, vk.encode())
+        return pt.BoxPut(self.root_vk_box_name, vk.encode())
+
+    @bkr.external(authorize=bkr.Authorize.only(pt.Global.creator_address()))
+    def bootstrap_secret_factor(self, vk: VerificationKey):
+        # write the VK to box storage
+        return pt.BoxPut(self.secret_factor_vk_box_name, vk.encode())
 
     @bkr.external
-    def verify(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
+    def verify_root(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
         return pt.Seq(
             # idk if this will need to change but its enough for now
             self.opup.ensure_budget(pt.Int(13500)),
@@ -43,7 +52,7 @@ class Verifier(bkr.Application):
     def get_vk(self, *, output: VerificationKey):
         # Read in the VK from our box
         return pt.Seq(
-            vk_data := pt.BoxGet(self.vk_box_name),
+            vk_data := pt.BoxGet(self.root_vk_box_name),
             pt.Assert(vk_data.hasValue(), comment="Verification Key not set"),
             output.decode(vk_data.value()),
         )

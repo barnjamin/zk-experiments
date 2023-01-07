@@ -19,15 +19,16 @@ def demo(app_id: int = 0):
         ac.build()
         ac.update()
 
-    boxes = [(0, v._vk_box_name.encode())]
+    boxes = [(0, name.encode()) for name in v.boxes_names.values()]
 
     # Bootstrap with vk
-    ac.call(v.bootstrap, vk=get_vk("root"), boxes=boxes)
+    ac.call(v.bootstrap_root, vk=get_vk("root"), boxes=boxes)
+    ac.call(v.bootstrap_secret_factor, vk=get_vk("secret_factor"), boxes=boxes)
 
     # Pass proof && inputs to be verified
     proof, inputs = get_proof_and_inputs("root")
-    result = ac.call(v.verify, inputs=inputs, proof=proof, boxes=boxes)
-    print(f"Contract verified? {result.return_value}")
+    result = ac.call(v.verify_root, inputs=inputs, proof=proof, boxes=boxes)
+    print(f"Contract verifies root? {result.return_value}")
 
 
 if __name__ == "__main__":
