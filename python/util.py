@@ -19,31 +19,32 @@ def sha_hash(a: bytes) -> bytes:
 def hash_raw_pod(raw: list[int]) -> bytes:
     u8s = u32_to_u8(raw)
     chunk_size = 64  # 64 byte chunks
-
-    # little endian u32s
-    # Iter 0 'State: [1914189627, 1935612854, 4183361634, 859907526, 2960161666, 1235396345, 2224743624, 1210959022],
-    # Block: [18, 1, 70, 24, 135, 2, 146, 0, 155, 131, 6, 37, 182, 153, 142, 35, ...
-
-    # Iter 1 'State: [879058070, 1941735893, 1209893642, 3181760915, 1079618972, 81921200, 4120098236, 146853299],
-    # Block: [16, 39, 72, 17, 163, 79, 203, 61, 105, 140, 97, 29, 223, 236, 199, ...
-
     state: list[int] = IV
     for idx in range(int(len(u8s) / chunk_size)):
         block = u8s[idx * chunk_size : (idx + 1) * chunk_size]
-
         state = u8_to_u32(
             list(
                 generate_hash(bytearray(block), initial_state=state, compress_only=True)
             )
         )
-
         print("idx: {} state: {} block: {}".format(idx, swap_endian(state), block))
 
-        if idx == 1:
-            break
+    leftover = u8s[:-(len(u8s)%chunk_size)]
+    print(leftover)
 
-    if state is None:
-        raise Exception("wat")
+    #let remainder = blocks.remainder();
+    #if remainder.len() > 0 {
+    #    let mut last_block: GenericArray<u8, U64> = GenericArray::default();
+    #    bytemuck::cast_slice_mut(last_block.as_mut_slice())[..remainder.len()]
+    #        .clone_from_slice(remainder);
+    #    compress256(&mut state, slice::from_ref(&last_block));
+    #}
+
+    #for word in state.iter_mut() {
+    #    *word = word.to_be();
+    #}
+    #Box::new(Digest::new(state))
+
 
     return bytes(u32_to_u8(state))
 
