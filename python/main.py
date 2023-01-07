@@ -8,8 +8,11 @@ from util import (
     hash_raw_pod,
     wrapped_pow,
     wrapped_mul,
+    wrapped_add,
     encode_mont,
+    add,
     decode_mont,
+    mul,
     swap32,
 )
 from taps import TAPSET
@@ -28,11 +31,11 @@ ACCUM_TAP_SIZE = 36
 EXT_SIZE = 4
 CHECK_SIZE = INV_RATE * EXT_SIZE
 
-
-as_field_elem = gf.GF(PRIME)
+NBETA = to_elem(PRIME - 11)
 
 
 def main():
+
     with open("../trivial.seal", "rb") as f:
         seal = list(f.read())
 
@@ -80,7 +83,7 @@ def main():
         == "b5b6727b0e71ff6c699c59f0ceb258805dc427b839f10052229dcecf7ab78d45"
     )
 
-    z = as_field_elem(iop.sample_elements(EXT_SIZE))
+    z = iop.sample_elements(EXT_SIZE)
     assert z[0] == 1298130879
 
     back_one = ROU_REV[po2]
@@ -89,10 +92,7 @@ def main():
     num_taps = len(TAPSET.taps)
 
     coeff_u = iop.read_field_ext_elem_slice((num_taps + CHECK_SIZE))
-    coeff_elems = [
-        as_field_elem(coeff_u[x * 4 : (x + 1) * 4])
-        for x in range(int(len(coeff_u) / 4))
-    ]
+    coeff_elems = [coeff_u[x * 4 : (x + 1) * 4] for x in range(int(len(coeff_u) / 4))]
     assert coeff_u[0] == 407240978
 
     hash_u = hash_raw_pod(coeff_u)
@@ -104,44 +104,54 @@ def main():
 
     ####
 
-    eval_u: list[gf.Array] = []
+    eval_u: list[list[int]] = []
 
     cur_pos = 0
-    for reg in TAPSET.taps:
+    for reg in TAPSET.taps[TAPSET.group_begin[2] :]:
+        print(reg)
         for i in range(reg.skip):
-            mul = decode_mont(wrapped_pow(back_one, reg.back + i))
-            x = z * as_field_elem(mul)
+            ml = wrapped_pow(back_one, reg.back + i)
+            x = [mul(z[i], ml) for i in range(len(z))]
             coeffs = coeff_elems[cur_pos : cur_pos + reg.skip]
-            print(coeffs)
-            print(x)
-
-            #### Not working yet
             fx = poly_eval(coeffs, x)
-            print(fx)
-
             eval_u.append(fx)
-
         cur_pos += reg.skip
-        # p = lagrange_poly(, x)
-        #        let fx = hal.poly_eval(&coeff_u[cur_pos..(cur_pos + reg.size())], x);
-        #        eval_u.push(fx);
-        #    }
-        #    cur_pos += reg.size();
-        #    hal.debug(&format!("cur_pos {:?},", cur_pos));
-        # }
-        break
-
-    # eval_u = [[0]*4]*num_taps
+    print(num_taps)
+    print(len(eval_u))
+    # assert num_taps == len(eval_u), "?"
 
 
-def poly_eval(coeffs: list[gf.Array], x: gf.Array) -> gf.Array:
-    mul_x = as_field_elem([1] * 4)
-    tot = as_field_elem([0] * 4)
+class Elem:
+    def __init__(self, n: int):
+        self.n = n
+
+    def __mul__(self, other: "Elem") -> "Elem":
+        return Elem(mul(self.n, other.n))
+
+    def __add__(self, other: "Elem") -> "Elem":
+        return Elem(add(self.n, other.n))
+
+
+def mul_e(a: list[Elem], b: list[Elem]) -> list[Elem]:
+    return [
+        a[0] * b[0] + Elem(NBETA) * (a[1] * b[3] + a[2] * b[2] + a[3] * b[1]),
+        a[0] * b[1] + a[1] * b[0] + Elem(NBETA) * (a[2] * b[3] + a[3] * b[2]),
+        a[0] * b[2] + a[1] * b[1] + a[2] * b[0] + Elem(NBETA) * (a[3] * b[3]),
+        a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0],
+    ]
+
+
+def poly_eval(coeffs, x):
+    mul_x = [Elem(q) for q in [1, 0, 0, 0]]
+    tot = [Elem(q) for q in [0, 0, 0, 0]]
+    x = [Elem(q) for q in x]
 
     for i in range(len(coeffs)):
-        tot += coeffs[i] * mul_x
-        mul_x *= x
-    return tot
+        cc = [Elem(q) for q in coeffs[i]]
+        product = mul_e(cc, mul_x)
+        tot = [tot[idx] + product[idx] for idx in range(4)]
+        mul_x = mul_e(mul_x, x)
+    return [q.n for q in tot]
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:
