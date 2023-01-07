@@ -21,12 +21,24 @@ step3:
 pre-clean-zok:
 	cd groth16/zokrates && ./clean.sh || exit 0
 
+
+ZOKDIR := "groth16/zokrates"
+
+# bls12_377, bls12_381, bn128, bw6_761
+# CURVE := "bls12_381"
+CURVE := "bn128"
+
 # ZOK := "root"
-# WIT := "337 113569"
 ZOK := "secret_factor"
+alice: pre-clean-zok
+	cd ${ZOKDIR} && ./alice.sh ${CURVE} ${ZOK}.zok
+
 WIT := "15825923429238183706"
-pre-contract-zok: pre-clean-zok
-	cd groth16/zokrates && ./doit.sh ${ZOK}.zok ${WIT}
+# WIT := "337 113569"
+eve:
+	cd ${ZOKDIR} && ./eve.sh ${WIT}
+
+alice-and-eve: alice eve
 
 run-contract:
 	cd groth16/contracts && python main.py

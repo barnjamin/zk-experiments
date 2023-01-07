@@ -16,6 +16,7 @@ out
 witness
 proof.json
 abi.json
+verifier*.sol
 
 /target
 trivial.*
