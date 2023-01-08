@@ -11,7 +11,7 @@ from util import (
     pow,
     mul,
 )
-from fp import Elem, NBETA
+from fp import Elem, NBETA, ExtElem, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
 
 
@@ -130,39 +130,17 @@ def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[
     pass
 
 
-def mul_e(a: list[Elem], b: list[Elem]) -> list[Elem]:
-    return [
-        a[0] * b[0] + Elem(NBETA) * (a[1] * b[3] + a[2] * b[2] + a[3] * b[1]),
-        a[0] * b[1] + a[1] * b[0] + Elem(NBETA) * (a[2] * b[3] + a[3] * b[2]),
-        a[0] * b[2] + a[1] * b[1] + a[2] * b[0] + Elem(NBETA) * (a[3] * b[3]),
-        a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0],
-    ]
-
-
 def poly_eval(coeffs, x):
-    mul_x = [Elem(q) for q in [1, 0, 0, 0]]
-    tot = [Elem(q) for q in [0, 0, 0, 0]]
-    x = [Elem(encode_mont(q)) for q in x]
+    mul_x = ExtElemOne
+    tot = ExtElemZero
+    x = ExtElem.from_ints([encode_mont(q) for q in x])
 
     for i in range(len(coeffs)):
-        cc = [Elem(q) for q in coeffs[i]]
-        product = mul_e(cc, mul_x)
-        tot = [tot[idx] + product[idx] for idx in range(4)]
-        mul_x = mul_e(mul_x, x)
-    return [q.n for q in tot]
-
-
-# def poly_eval(coeffs, x):
-#    mul_x = ExtElemOne
-#    tot = ExtElemZero
-#    x = ExtElem.from_ints(x)
-#
-#    for i in range(len(coeffs)):
-#        cc = ExtElem.from_ints(coeffs[i])
-#        product = cc * mul_x
-#        tot = ExtElem([tot.e[idx] + p for idx,p in enumerate(product.e)])
-#        mul_x = mul_x * x
-#    return [q.n for q in tot.e]
+        cc = ExtElem.from_ints(coeffs[i])
+        product = cc * mul_x
+        tot = ExtElem([tot.e[idx] + p for idx, p in enumerate(product.e)])
+        mul_x = mul_x * x
+    return [q.n for q in tot.e]
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:
