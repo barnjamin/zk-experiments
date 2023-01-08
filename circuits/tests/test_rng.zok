@@ -1,6 +1,6 @@
 import "hashes/sha256/sha256Padded" as sha_hash;
 from "../read_iop" import sha_rng_next_u32, sha_rng_mix, sha_rng_sample_field;
-from "../utils/const" import ShaRngState, sha_rng_start_state;
+from "../const" import ShaRngState, sha_rng_start_state;
 
 def main() {
     ShaRngState mut state = sha_rng_start_state();

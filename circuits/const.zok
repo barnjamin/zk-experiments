@@ -42,7 +42,6 @@ struct ReadIOP<PROOF_LEN> {
 //         self.out = [decode_mont(x) for x in self.read_field_elem_slice(circuit_outputs)]
 //         self.po2 = self.read_u32s(1).pop()
 
-
 // FRI related constants
 const u32 FRI_FOLD_PO2 = 4;
 const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;

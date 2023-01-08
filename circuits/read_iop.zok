@@ -1,13 +1,8 @@
 import "hashes/sha256/512bit" as hash;
 from "utils/casts" import cast;
-from "./utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
-                            sha_rng_start_state, ShaDigest, ReadIOP, PRIME;
-
-def endian_conv(u32 mut v) -> u32 {
-    return (v >> 24) | \
-           ((v << 8) & 0x00ff0000) | \
-           ((v >> 8) & 0x0000ff00) | (v << 24);
-}
+from "./const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
+                      sha_rng_start_state, ShaDigest, ReadIOP, PRIME;
+from "./utils" import endian_conv;
 
 // SHA based RNG definitions
 

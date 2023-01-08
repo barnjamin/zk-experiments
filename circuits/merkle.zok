@@ -1,6 +1,6 @@
 import "hashes/sha256/512bit" as hash;
 import "hashes/utils/256bitsDirectionHelper" as multiplex;
-from "./utils/const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
+from "./const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
 
 def merkle<MT_DEPTH>(           \
     ShaDigest root,             \
