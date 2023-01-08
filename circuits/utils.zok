@@ -1,4 +1,4 @@
-from "./const" import PRIME, M_mont, R_2, Fp;
+from "./const" import PRIME, M_mont, R_2, Fp, FpExt, BETA_COEFF;
 
 def endian_conv(u32 mut v) -> u32 {
     return (v >> 24) | \
@@ -53,3 +53,57 @@ def fp_pow(Fp base, u64 exp) -> Fp {
 def fp_inv(Fp fp) -> Fp {
     return fp_pow(fp, PRIME - 2);
 }
+
+// TODO extension field definitions
+const Fp BETA = to_Fp(BETA_COEFF);
+const Fp NBETA = to_Fp(PRIME - BETA_COEFF);
+
+def fp_ext_mul(FpExt a, FpExt b) -> FpExt {
+    Fp f0 = fp_add(                                             \
+        fp_mul(a[0], b[0]),                                     \
+        fp_mul(                                                 \
+            NBETA,                                              \
+            fp_add(                                             \
+                fp_add(fp_mul(a[1], b[3]), fp_mul(a[2], b[2])), \
+                fp_mul(a[3], b[1])                              \
+            )                                                   \
+        )                                                       \
+    );
+
+    Fp f1 = fp_add(                                        \
+        fp_add(fp_mul(a[0], b[1]), fp_mul(a[1], b[0])),    \
+        fp_mul(                                            \
+            NBETA,                                         \
+            fp_add(fp_mul(a[2], b[3]), fp_mul(a[3], b[2])) \
+        )                                                  \
+    );
+
+    Fp f2 = fp_add(                                         \
+        fp_add(                                             \
+            fp_add(fp_mul(a[0], b[2]), fp_mul(a[1], b[1])), \
+            fp_mul(a[2], b[0])                              \
+        ),                                                  \
+        fp_mul(NBETA, fp_mul(a[3], b[3]))                   \
+    );
+
+    Fp f3 = fp_add(                                         \
+        fp_add(                                             \
+            fp_add(fp_mul(a[0], b[3]), fp_mul(a[1], b[2])), \
+            fp_mul(a[2], b[1])                              \
+        ),                                                  \
+        fp_mul(a[3], b[0])                                  \
+    );
+    return [f0, f1, f2, f3];
+}
+
+// def poly_eval(coeffs, x):
+//     mul_x = [Elem(q) for q in [1, 0, 0, 0]]
+//     tot = [Elem(q) for q in [0, 0, 0, 0]]
+//     x = [Elem(q) for q in x]
+
+//     for i in range(len(coeffs)):
+//         cc = [Elem(q) for q in coeffs[i]]
+//         product = mul_e(cc, mul_x)
+//         tot = [tot[idx] + product[idx] for idx in range(4)]
+//         mul_x = mul_e(mul_x, x)
+//     return [q.n for q in tot]

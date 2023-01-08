@@ -66,3 +66,4 @@ const u64 PRIME = 15 * (1 << 27) + 1;
 type Fp = u64;
 const u32 POLY_FIELD_DEG = 4;
 type FpExt = Fp[POLY_FIELD_DEG];
+const u64 BETA_COEFF = 11;
