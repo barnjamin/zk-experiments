@@ -64,6 +64,16 @@ def sha_rng_sample_field(ShaRngState mut state) -> (ShaRngState, u64) {
     return (state, val);
 }
 
+def sha_rng_sample_field_elems<N>(ShaRngState mut state) -> (ShaRngState, u64[N]) {
+    u64[N] mut res = [0; N];
+    for u32 i in 0..N {
+        (ShaRngState, u64) intermediate = sha_rng_sample_field(state);
+        state = intermediate.0;
+        res[i] = intermediate.1;
+    }
+    return (state, res);
+}
+
 // Read IOP facility definition
 
 // TODO still need the other out and montgomary encoding
@@ -104,4 +114,14 @@ def read_iop_sample_field_elem<N>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u64) {
     (ShaRngState, u64) state_and_u64 = sha_rng_sample_field(iop.rng_state);
     iop.rng_state = state_and_u64.0;
     return (iop, state_and_u64.1);
+}
+
+def read_iop_sample_field_elems<N, NFs>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u64[N]) {
+    (ShaRngState, u64[NFs]) mut state_and_samples = sha_rng_sample_field_elems(iop.rng_state);
+    iop.rng_state = state_and_samples.0;
+    for u32 i in 0..NFs {
+        // TODO to elem conversion
+        state_and_samples.1[i] = state_and_samples.1[i];
+    }
+    return (iop, state_and_samples.1);
 }
