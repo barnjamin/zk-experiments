@@ -129,24 +129,6 @@ def register_taps() -> list[TapData]:
         cursor += t.skip
     return taps
 
-    # fn next(&mut self) -> Option<Self::Item> {
-    #    let cursor = self.cursor;
-    #    if cursor >= self.data.len() {
-    #        return None;
-    #    }
-    #    let next = cursor + self.data[cursor].skip as usize;
-    #    if next > self.end {
-    #        return None;
-    #    }
-    #    self.cursor = next;
-    #    Some(RegisterRef {
-    #        data: self.data,
-    #        cursor,
-    #    })
-    # }
-    pass
-
-
 class Elem:
     def __init__(self, n: int):
         self.n = n
