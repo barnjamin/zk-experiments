@@ -73,8 +73,9 @@ def demo(app_id: int = 0):
         winner=eve.address,
         boxes=boxes,
     )
+    hidden_factor = cb_result.return_value
     print(
-        f"Eve claim_bounty? YES!!! Here's the encrypted secret_factor: {cb_result.return_value}"
+        f"Eve claim_bounty? YES!!! Here's the encrypted secret_factor: {hidden_factor:_}"
     )
     expected_eve_address_b64 = cb_result.tx_info["logs"][2]
     expected_eve_address_b32 = encode_address(b64decode(expected_eve_address_b64))
@@ -110,8 +111,20 @@ def demo(app_id: int = 0):
             print(f"Contract claim_bounty again? {cb_result2.return_value}")
         except client.logic_error.LogicException as cle:
             print(f"THANKFULLY Eve COULD NOT claim_bounty again:\n{cle}")
-        except Exception as e:
-            x = 42
+
+    composite = 1698269078375486647
+    secret_summand = 15825923428474158623
+    factor = (hidden_factor + 2**64 - secret_summand) % 2**64
+    print(
+        f"""
+FINAL EX-POST-FACTO VERIFICATION BY ALICE FOR {composite=:_}:
+DECRYPT {hidden_factor=:_} --> (x + 2**64 - ({secret_summand=:_}) % 2**64)
+    = {factor:_}
+{(1 < factor < composite)=:_} (1 < {factor:_} < {composite:_})
+{(composite % factor)=:_} ({composite:_} % {factor:_})
+{(composite // factor)=:_}
+"""
+    )
 
 
 if __name__ == "__main__":

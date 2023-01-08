@@ -10,12 +10,13 @@ node_modules/
 *.vk
 *.r1cs
 *.wtns
-*.key
 *.dat
 out
 witness
 proof.json
 abi.json
+proving.key
+verification.key
 verifier*.sol
 
 /target

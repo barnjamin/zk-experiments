@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROOF_PREFIX=$1
-WITNESSES=$2
+WITNESSES=$(echo "$2" | tr ',' ' ')
 
 echo ""
 echo ""
@@ -10,6 +10,7 @@ echo "################## HELLO FROM EVE!!!!!!! #######################"
 echo "################## HELLO FROM EVE!!!!!!! #######################"
 echo ""
 
+echo "\$2=$2"
 echo "build zk-SNARK proof for WITNESSES=$WITNESSES and PROOF_PREFIX=$PROOF_PREFIX"
 
 # Define the parse_inputs function
