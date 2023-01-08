@@ -1,17 +1,15 @@
 from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
-from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2, PRIME
+from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
 from util import (
     ROU_REV,
     hash_raw_pod,
-    wrapped_pow,
-    decode_mont,
-    encode_mont,
     pow,
-    mul,
 )
-from fp import Elem, NBETA, ExtElem, ExtElemOne, ExtElemZero
+
+from poly_ext_def import POLY_EXT_DEF
+from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
 
 
@@ -127,25 +125,21 @@ def compute_poly(
 
 
 def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[Elem]]):
-    fp_vars = []
-    mix_vars = []
     # let mut fp_vars = Vec::with_capacity(self.block.len() - (self.ret + 1));
     # let mut mix_vars = Vec::with_capacity(self.ret + 1);
-    # for op in self.block.iter() {
-    #    op.step::<F>(&mut fp_vars, &mut mix_vars, mix, u, args);
-    # }
-    # assert_eq!(
-    #    fp_vars.len(),
-    #    self.block.len() - (self.ret + 1),
-    #    "Miscalculated capacity for fp_vars"
-    # );
-    # assert_eq!(
-    #    mix_vars.len(),
-    #    self.ret + 1,
-    #    "Miscalculated capacity for mix_vars"
-    # );
-    # mix_vars[self.ret]
+    # fp_vars = []
+    # mix_vars = []
+    for op in POLY_EXT_DEF.block:
+        op.step()  # op.step::<F>(&mut fp_vars, &mut mix_vars, mix, u, args);
+        pass
 
+    # assert (
+    #   fp_vars.len() == self.block.len() - (self.ret + 1),
+    #   "Miscalculated capacity for fp_vars"
+    # )
+    # assert mix_vars.len() == self.ret + 1,  "Miscalculated capacity for mix_vars"
+
+    # return mix_vars[self.ret]
     pass
 
 
