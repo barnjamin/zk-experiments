@@ -15,13 +15,6 @@ proof_codec = sdkabi.ABIType.from_string(str(Proof().type_spec()))
 # this probably depends very much on the particular *.zok file!
 input_codec = sdkabi.ABIType.from_string("byte[32][1]")
 
-# # hackery to deal with vs-code debugging issues:
-# parent = Path.cwd()
-# if parent.name == "zk-experiments":
-#     parent = parent / "groth16"
-# else:
-#     parent = parent.parent
-# data_path = parent / "zokrates"
 data_path = hack_path("zokrates")
 
 
