@@ -1,7 +1,7 @@
 from hashlib import sha256
 from math import log2
 from read_iop import ReadIOP
-from util import sha_compress
+from util import sha_compress_leaves
 
 
 class MerkleParams:
@@ -66,13 +66,13 @@ class MerkleVerifier:
             self.params.top_size - 1, int(self.params.top_size / 2) - 1, -1
         ):
             top_idx = self.params.idx_to_top(idx)
-            self.rest[self.params.idx_to_rest(idx)] = sha_compress(
+            self.rest[self.params.idx_to_rest(idx)] = sha_compress_leaves(
                 self.top[top_idx], self.top[top_idx + 1]
             )
 
         for idx in range(int(self.params.top_size / 2) - 1, 0, -1):
             upper_rest_idx = self.params.idx_to_rest(idx * 2)
-            self.rest[self.params.idx_to_rest(idx)] = sha_compress(
+            self.rest[self.params.idx_to_rest(idx)] = sha_compress_leaves(
                 self.rest[upper_rest_idx], self.rest[upper_rest_idx + 1]
             )
 

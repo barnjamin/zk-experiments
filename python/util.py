@@ -5,7 +5,7 @@ from consts import PRIME, R2, M
 import struct
 
 
-def sha_compress(a: bytes, b: bytes):
+def sha_compress_leaves(a: bytes, b: bytes):
     assert (
         len(a) + len(b) == 64
     ), "Cannot use sha_compress directly unless the length of bytes is a multiple of 64"
@@ -19,31 +19,25 @@ def sha_hash(a: bytes) -> bytes:
 def hash_raw_pod(raw: list[int]) -> bytes:
     u8s = u32_to_u8(raw)
     chunk_size = 64  # 64 byte chunks
-
-    # little endian u32s
-    # Iter 0 'State: [1914189627, 1935612854, 4183361634, 859907526, 2960161666, 1235396345, 2224743624, 1210959022],
-    # Block: [18, 1, 70, 24, 135, 2, 146, 0, 155, 131, 6, 37, 182, 153, 142, 35, ...
-
-    # Iter 1 'State: [879058070, 1941735893, 1209893642, 3181760915, 1079618972, 81921200, 4120098236, 146853299],
-    # Block: [16, 39, 72, 17, 163, 79, 203, 61, 105, 140, 97, 29, 223, 236, 199, ...
-
     state: list[int] = IV
     for idx in range(int(len(u8s) / chunk_size)):
         block = u8s[idx * chunk_size : (idx + 1) * chunk_size]
-
         state = u8_to_u32(
             list(
                 generate_hash(bytearray(block), initial_state=state, compress_only=True)
             )
         )
+        state = swap_endian(state)
 
-        print("idx: {} state: {} block: {}".format(idx, swap_endian(state), block))
-
-        if idx == 1:
-            break
-
-    if state is None:
-        raise Exception("wat")
+    remainder = u8s[-(len(u8s) % chunk_size) :]
+    if len(remainder) > 0:
+        block = [0] * 64
+        block[: len(remainder)] = remainder[:]
+        state = u8_to_u32(
+            list(
+                generate_hash(bytearray(block), initial_state=state, compress_only=True)
+            )
+        )
 
     return bytes(u32_to_u8(state))
 
@@ -107,6 +101,23 @@ def mul(lhs: int, rhs: int) -> int:
     return ret
 
 
+# def elem_pow(base: int, exp: int)->int:
+#    n = exp
+#    tot = 1
+#    x = base
+#
+#    while n != 0:
+#        n = exp
+#        tot = 1
+#        x = base
+#        while n != 0:
+#            if n % 2 == 1:
+#                tot *= x
+#            n = int(n / 2)
+#            x *= x
+#    return tot
+
+
 def wrapped_mul(lhs: int, rhs: int, size: int) -> int:
     return (lhs * rhs) % 2**size
 
@@ -117,6 +128,13 @@ def wrapped_add(lhs: int, rhs: int, size: int) -> int:
 
 def wrapped_sub(lhs: int, rhs: int, size: int) -> int:
     return (lhs - rhs) % 2**size
+
+
+def wrapped_pow(base: int, exp: int) -> int:
+    b = 1
+    for _ in range(exp):
+        b = wrapped_mul(b, base, 32)
+    return b
 
 
 MAX_ROU_PO2 = 27
