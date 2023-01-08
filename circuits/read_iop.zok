@@ -2,7 +2,7 @@ import "hashes/sha256/512bit" as hash;
 from "utils/casts" import cast;
 from "./const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
                       sha_rng_start_state, ShaDigest, ReadIOP,          \
-                      PRIME, FieldElem, PolyFieldExt;
+                      PRIME, Fp, FpExt;
 from "./utils" import endian_conv;
 
 // SHA based RNG definitions
@@ -47,23 +47,23 @@ def sha_rng_mix(ShaRngState mut old_state, ShaDigest digest) -> ShaRngState {
     return sha_rng_step(old_state);
 }
 
-def sha_rng_sample_field_raw(ShaRngState mut state) -> (ShaRngState, FieldElem) {
-    FieldElem mut val = 0;
+def sha_rng_sample_fp_raw(ShaRngState mut state) -> (ShaRngState, Fp) {
+    Fp mut val = 0;
     for u32 i in 0..6 {
         val = val << 32;
         (ShaRngState, u32) state_and_u32 = sha_rng_next_u32(state);
         state = state_and_u32.0;
-        FieldElem cast_u32 = cast(state_and_u32.1);
+        Fp cast_u32 = cast(state_and_u32.1);
         val = val + cast_u32;
         val = val % PRIME;
     }
     return (state, val);
 }
 
-def sha_rng_sample_field_elems_raw<N>(ShaRngState mut state) -> (ShaRngState, FieldElem[N]) {
-    FieldElem[N] mut res = [0; N];
+def sha_rng_sample_fps_raw<N>(ShaRngState mut state) -> (ShaRngState, Fp[N]) {
+    Fp[N] mut res = [0; N];
     for u32 i in 0..N {
-        (ShaRngState, u64) intermediate = sha_rng_sample_field_raw(state);
+        (ShaRngState, u64) intermediate = sha_rng_sample_fp_raw(state);
         state = intermediate.0;
         res[i] = intermediate.1;
     }
@@ -106,15 +106,15 @@ def read_iop_verify_complete<N>(ReadIOP<N> iop) -> bool {
     return iop.proof_start_from == N;
 }
 
-def read_iop_sample_field_raw<N>(ReadIOP<N> mut iop) -> (ReadIOP<N>, FieldElem) {
-    (ShaRngState, FieldElem) state_and_u64 = sha_rng_sample_field_raw(iop.rng_state);
+def read_iop_sample_fp_raw<N>(ReadIOP<N> mut iop) -> (ReadIOP<N>, Fp) {
+    (ShaRngState, Fp) state_and_u64 = sha_rng_sample_fp_raw(iop.rng_state);
     iop.rng_state = state_and_u64.0;
     return (iop, state_and_u64.1);
 }
 
-def read_iop_sample_field_elems<N, NFs>(ReadIOP<N> mut iop) -> (ReadIOP<N>, FieldElem[N]) {
-    (ShaRngState, u64[NFs]) mut state_and_samples = \
-        sha_rng_sample_field_elems_raw(iop.rng_state);
+def read_iop_sample_fps<N, NFs>(ReadIOP<N> mut iop) -> (ReadIOP<N>, Fp[N]) {
+    (ShaRngState, Fp[NFs]) mut state_and_samples = \
+        sha_rng_sample_fps_raw(iop.rng_state);
     iop.rng_state = state_and_samples.0;
     for u32 i in 0..NFs {
         // TODO to elem conversion

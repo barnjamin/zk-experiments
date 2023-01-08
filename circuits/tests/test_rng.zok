@@ -1,5 +1,5 @@
 import "hashes/sha256/sha256Padded" as sha_hash;
-from "../read_iop" import sha_rng_next_u32, sha_rng_mix, sha_rng_sample_field_raw;
+from "../read_iop" import sha_rng_next_u32, sha_rng_mix, sha_rng_sample_fp_raw;
 from "../const" import ShaRngState, sha_rng_start_state;
 
 def main() {
@@ -21,7 +21,7 @@ def main() {
 
     (ShaRngState, u64) mut state_and_u64 = (state, 0);
     for u32 i in 0..10 {
-        state_and_u64 = sha_rng_sample_field_raw(state_and_u64.0);
+        state_and_u64 = sha_rng_sample_fp_raw(state_and_u64.0);
     }
-    assert(1726317912 == sha_rng_sample_field_raw(state_and_u64.0).1);
+    assert(1726317912 == sha_rng_sample_fp_raw(state_and_u64.0).1);
 }
