@@ -1,0 +1,131 @@
+from "./const" import PRIME, M_mont, R_2, Fp, FpExt, BETA_COEFF, POLY_FIELD_DEG;
+
+def endian_conv(u32 mut v) -> u32 {
+    return (v >> 24) | \
+           ((v << 8) & 0x00ff0000) | \
+           ((v >> 8) & 0x0000ff00) | (v << 24);
+}
+
+def fp_mul(Fp lhs, Fp rhs) -> Fp {
+    u64 mut o64 = lhs * rhs;
+    u64 cast_down_o64 = o64 % (1u64 << 32);
+    u64 low = (-cast_down_o64) % (1u64 << 32);
+    u64 red = (M_mont * low) % (1u64 << 32);
+    o64 = o64 + red * PRIME;
+    Fp ret = o64 >> 32;
+    return if ret > PRIME { ret - PRIME } else { ret };
+}
+
+def encode_mont(u64 a) -> Fp {
+    return fp_mul(R_2, a);
+}
+
+def decode_mont(Fp a) -> u64 {
+    return fp_mul(1, a);
+}
+
+def fp_add(Fp lhs, Fp rhs) -> Fp {
+    Fp mut x = (lhs + rhs) % (1u64 << 32);
+    return if x < PRIME { x } else { (x - PRIME) % (1u64 << 32) };
+}
+
+def fp_sub(Fp lhs, Fp rhs) -> Fp {
+    Fp mut x = (lhs - rhs) % (1u64 << 32);
+    return if x > PRIME { (x + PRIME) % (1u64 << 32) } else { x };
+}
+
+def to_Fp(u64 raw) -> Fp {
+    return encode_mont(raw % PRIME);
+}
+
+def fp_pow(Fp base, u64 exp) -> Fp {
+    Fp mut total = to_Fp(1);
+    Fp mut x = base;
+    u64 mut mask = 1;
+    for u32 i in 0..64 {
+        total = if (mask & exp) > 0 { fp_mul(total, x) } else { total };
+        mask = mask << 1;
+        x = fp_mul(x, x);
+    }
+    return total;
+}
+
+def fp_inv(Fp fp) -> Fp {
+    return fp_pow(fp, PRIME - 2);
+}
+
+// field extension (Z_p[x] / (x^4 + 11)) definitions
+const Fp BETA = to_Fp(BETA_COEFF);
+const Fp NBETA = to_Fp(PRIME - BETA_COEFF);
+
+def fp_ext_mul(FpExt a, FpExt b) -> FpExt {
+    Fp f0 = fp_add(                                             \
+        fp_mul(a[0], b[0]),                                     \
+        fp_mul(                                                 \
+            NBETA,                                              \
+            fp_add(                                             \
+                fp_add(fp_mul(a[1], b[3]), fp_mul(a[2], b[2])), \
+                fp_mul(a[3], b[1])                              \
+            )                                                   \
+        )                                                       \
+    );
+
+    Fp f1 = fp_add(                                        \
+        fp_add(fp_mul(a[0], b[1]), fp_mul(a[1], b[0])),    \
+        fp_mul(                                            \
+            NBETA,                                         \
+            fp_add(fp_mul(a[2], b[3]), fp_mul(a[3], b[2])) \
+        )                                                  \
+    );
+
+    Fp f2 = fp_add(                                         \
+        fp_add(                                             \
+            fp_add(fp_mul(a[0], b[2]), fp_mul(a[1], b[1])), \
+            fp_mul(a[2], b[0])                              \
+        ),                                                  \
+        fp_mul(NBETA, fp_mul(a[3], b[3]))                   \
+    );
+
+    Fp f3 = fp_add(                                         \
+        fp_add(                                             \
+            fp_add(fp_mul(a[0], b[3]), fp_mul(a[1], b[2])), \
+            fp_mul(a[2], b[1])                              \
+        ),                                                  \
+        fp_mul(a[3], b[0])                                  \
+    );
+    return [f0, f1, f2, f3];
+}
+
+def fp_ext_add(FpExt a, FpExt b) -> FpExt {
+    return [                \
+        fp_add(a[0], b[0]), \
+        fp_add(a[1], b[1]), \
+        fp_add(a[2], b[2]), \
+        fp_add(a[3], b[3])  \
+    ];
+}
+
+def fp_ext_sub(FpExt a, FpExt b) -> FpExt {
+    return [                \
+        fp_sub(a[0], b[0]), \
+        fp_sub(a[1], b[1]), \
+        fp_sub(a[2], b[2]), \
+        fp_sub(a[3], b[3])  \
+    ];
+}
+
+def to_fp_ext(u64[POLY_FIELD_DEG] val) -> FpExt {
+    return [to_Fp(val[0]), to_Fp(val[1]), to_Fp(val[2]), to_Fp(val[3])];
+}
+
+def poly_eval<N>(FpExt[N] coeffs, FpExt x) -> FpExt {
+    FpExt mut mul_x = to_fp_ext([1, 0, 0, 0]);
+    FpExt mut total = to_fp_ext([0, 0, 0, 0]);
+
+    for u32 i in 0..N {
+        FpExt prod = fp_ext_mul(coeffs[i], mul_x);
+        total = fp_ext_add(total, prod);
+        mul_x = fp_ext_mul(mul_x, x);
+    }
+    return total;
+}

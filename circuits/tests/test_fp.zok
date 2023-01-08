@@ -1,0 +1,19 @@
+from "../utils" import to_Fp, to_fp_ext, fp_add, fp_inv, fp_mul, fp_sub, fp_ext_mul, fp_ext_add;
+from "../const" import Fp, PRIME, FpExt;
+
+def main() {
+    assert(to_Fp(0) == to_Fp(0));
+    assert(to_Fp(PRIME) == to_Fp(0));
+    assert(to_Fp(1) == to_Fp(1));
+    assert(fp_add(to_Fp(1), to_Fp(PRIME - 1)) == to_Fp(0));
+    assert(fp_inv(to_Fp(0)) == to_Fp(0));
+    assert(fp_inv(to_Fp(1)) == to_Fp(1));
+    assert(fp_mul(fp_inv(to_Fp(5)), to_Fp(5)) == to_Fp(1));
+
+    FpExt x = to_fp_ext([1880084280, 1788985953, 1273325207, 277471107]);
+    FpExt c0 = to_fp_ext([1582815482, 2011839994, 589901, 698998108]);
+    FpExt c1 = to_fp_ext([1262573828, 1903841444, 1738307519, 100967278]);
+
+    assert(fp_ext_mul(x, c1) == to_fp_ext([876029217, 1948387849, 498773186, 1997003991]));
+    assert(fp_ext_add(c0, fp_ext_mul(x, c1)) == to_fp_ext([445578778, 1946961922, 499363087, 682736178]));
+}
