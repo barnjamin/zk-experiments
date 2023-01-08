@@ -129,7 +129,6 @@ def compute_poly(
 def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[Elem]]):
     fp_vars = []
     mix_vars = []
-
     # let mut fp_vars = Vec::with_capacity(self.block.len() - (self.ret + 1));
     # let mut mix_vars = Vec::with_capacity(self.ret + 1);
     # for op in self.block.iter() {
