@@ -3,20 +3,16 @@ from merkle import MerkleVerifier
 from method import Method
 from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2, PRIME
 from util import (
-    to_elem,
     ROU_REV,
     hash_raw_pod,
     wrapped_pow,
-    wrapped_mul,
-    wrapped_add,
-    encode_mont,
-    add,
     decode_mont,
+    encode_mont,
+    pow,
     mul,
-    swap32,
 )
-from taps import TAPSET, TapData
-import galois as gf  # type: ignore
+from fp import Elem, NBETA
+from taps import TAPSET, get_register_taps
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -30,8 +26,6 @@ ACCUM_TAP_SIZE = 36
 # Extended field element size
 EXT_SIZE = 4
 CHECK_SIZE = INV_RATE * EXT_SIZE
-
-NBETA = to_elem(PRIME - 11)
 
 
 def main():
@@ -92,8 +86,11 @@ def main():
     num_taps = len(TAPSET.taps)
 
     coeff_u = iop.read_field_ext_elem_slice((num_taps + CHECK_SIZE))
-    coeff_elems = [coeff_u[x * 4 : (x + 1) * 4] for x in range(int(len(coeff_u) / 4))]
     assert coeff_u[0] == 407240978
+
+    coeff_elems = [
+        [q for q in coeff_u[x * 4 : (x + 1) * 4]] for x in range(int(len(coeff_u) / 4))
+    ]
 
     hash_u = hash_raw_pod(coeff_u)
     assert (
@@ -107,38 +104,30 @@ def main():
     eval_u: list[list[int]] = []
 
     cur_pos = 0
-    for reg in register_taps():
-        print(reg)
+    for (idx, reg) in get_register_taps():
         for i in range(reg.skip):
-            ml = wrapped_pow(back_one, reg.back + i)
+            ml = pow(back_one, TAPSET.taps[idx + i].back)
             x = [mul(z[i], ml) for i in range(len(z))]
             coeffs = coeff_elems[cur_pos : cur_pos + reg.skip]
             fx = poly_eval(coeffs, x)
             eval_u.append(fx)
         cur_pos += reg.skip
 
+    assert eval_u[-1][0] == 557824063
+
     assert num_taps == len(eval_u), "???"
 
-
-def register_taps() -> list[TapData]:
-    cursor = 0
-    taps: list[TapData] = []
-    while cursor < len(TAPSET.taps):
-        t = TAPSET.taps[cursor]
-        taps.append(t)
-        cursor += t.skip
-    return taps
+    # compute_poly(eval_u, poly_mix, out, mix)
 
 
-class Elem:
-    def __init__(self, n: int):
-        self.n = n
+def compute_poly(
+    u: list[list[Elem]], poly_mix: list[Elem], out: list[Elem], mix: list[Elem]
+):
+    return poly_ext(poly_mix, u, (out, mix)).tot
 
-    def __mul__(self, other: "Elem") -> "Elem":
-        return Elem(mul(self.n, other.n))
 
-    def __add__(self, other: "Elem") -> "Elem":
-        return Elem(add(self.n, other.n))
+def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[Elem]]):
+    pass
 
 
 def mul_e(a: list[Elem], b: list[Elem]) -> list[Elem]:
@@ -153,7 +142,7 @@ def mul_e(a: list[Elem], b: list[Elem]) -> list[Elem]:
 def poly_eval(coeffs, x):
     mul_x = [Elem(q) for q in [1, 0, 0, 0]]
     tot = [Elem(q) for q in [0, 0, 0, 0]]
-    x = [Elem(q) for q in x]
+    x = [Elem(encode_mont(q)) for q in x]
 
     for i in range(len(coeffs)):
         cc = [Elem(q) for q in coeffs[i]]
@@ -161,6 +150,19 @@ def poly_eval(coeffs, x):
         tot = [tot[idx] + product[idx] for idx in range(4)]
         mul_x = mul_e(mul_x, x)
     return [q.n for q in tot]
+
+
+# def poly_eval(coeffs, x):
+#    mul_x = ExtElemOne
+#    tot = ExtElemZero
+#    x = ExtElem.from_ints(x)
+#
+#    for i in range(len(coeffs)):
+#        cc = ExtElem.from_ints(coeffs[i])
+#        product = cc * mul_x
+#        tot = ExtElem([tot.e[idx] + p for idx,p in enumerate(product.e)])
+#        mul_x = mul_x * x
+#    return [q.n for q in tot.e]
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:

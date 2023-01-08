@@ -28,6 +28,16 @@ class TapSet:
     tot_combo_backs: int
 
 
+def get_register_taps() -> list[tuple[int, TapData]]:
+    cursor = 0
+    taps: list[tuple[int, TapData]] = []
+    while cursor < len(TAPSET.taps):
+        t = TAPSET.taps[cursor]
+        taps.append((cursor, t))
+        cursor += t.skip
+    return taps
+
+
 TAPSET = TapSet(
     taps=[
         TapData(

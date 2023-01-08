@@ -86,7 +86,7 @@ def add(lhs: int, rhs: int) -> int:
 
 def sub(lhs: int, rhs: int) -> int:
     x = wrapped_sub(lhs, rhs, 32)
-    return x if x < PRIME else wrapped_add(x, PRIME, 32)
+    return x if x > PRIME else wrapped_add(x, PRIME, 32)
 
 
 def mul(lhs: int, rhs: int) -> int:
@@ -98,21 +98,16 @@ def mul(lhs: int, rhs: int) -> int:
     return (o64 >> 32) % PRIME
 
 
-# def elem_pow(base: int, exp: int)->int:
-#    n = exp
-#    tot = 1
-#    x = base
-#
-#    while n != 0:
-#        n = exp
-#        tot = 1
-#        x = base
-#        while n != 0:
-#            if n % 2 == 1:
-#                tot *= x
-#            n = int(n / 2)
-#            x *= x
-#    return tot
+def pow(base: int, exp: int) -> int:
+    n = exp
+    tot = 1
+    x = base
+    while n != 0:
+        if n % 2 == 1:
+            tot = mul(tot, x)
+        n = int(n / 2)
+        x = mul(x, x)
+    return tot
 
 
 def wrapped_mul(lhs: int, rhs: int, size: int) -> int:
