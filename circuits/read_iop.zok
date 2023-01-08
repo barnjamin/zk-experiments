@@ -3,7 +3,7 @@ from "utils/casts" import cast;
 from "./const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
                       sha_rng_start_state, ShaDigest, ReadIOP,          \
                       PRIME, Fp, FpExt;
-from "./utils" import endian_conv, to_Fp;
+from "./utils" import endian_conv, to_Fp, decode_mont;
 
 // SHA based RNG definitions
 
@@ -72,16 +72,9 @@ def sha_rng_sample_fps_raw<N>(ShaRngState mut state) -> (ShaRngState, Fp[N]) {
 
 // Read IOP facility definition
 
-// TODO still need the other out and montgomary encoding
-def read_iop<N>(u32 mut circuit_outputs, u32[N] mut seal) -> ReadIOP<N> {
-    return ReadIOP {
-        proof: seal,
-        rng_state: sha_rng_start_state(),
-        proof_start_from: 0
-    };
-}
+def read_iop_u32s<N, CO_LEN, LEN>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, u32[LEN]) {
 
-def read_iop_u32s<N, LEN>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u32[LEN]) {
     u32[LEN] mut u32_seg = iop.proof[iop.proof_start_from..iop.proof_start_from + LEN];
     for u32 i in 0..LEN {
         u32_seg[i] = endian_conv(u32_seg[i]);
@@ -90,29 +83,57 @@ def read_iop_u32s<N, LEN>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u32[LEN]) {
     return (iop, u32_seg);
 }
 
-def read_iop_pod_slice<N, P_LEN>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u32[P_LEN]) {
+def read_iop<N, CO_LEN>(u32[N] mut seal) -> ReadIOP<N, CO_LEN> {
+    ReadIOP<N, CO_LEN> mut curr = ReadIOP {
+        proof: seal,
+        out: [0; CO_LEN],
+        rng_state: sha_rng_start_state(),
+        proof_start_from: CO_LEN,
+        po2: 0
+    };
+
+    (ReadIOP<N, CO_LEN>, u32[CO_LEN]) read_iop_and_out = read_iop_u32s(curr);
+    for u32 i in 0..CO_LEN {
+        u64 temp = cast(read_iop_and_out.1[i]);
+        curr.out[i] = decode_mont(temp);
+    }
+
+    (ReadIOP<N, CO_LEN>, u32[1]) read_iop_and_po2 = read_iop_u32s(curr);
+    curr.po2 = read_iop_and_po2.1[0];
+    return curr;
+}
+
+def read_iop_pod_slice<N, CO_LEN, P_LEN>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, u32[P_LEN]) {
+
     iop.proof_start_from = iop.proof_start_from + P_LEN;
     u32[P_LEN] pod = \
         iop.proof[iop.proof_start_from..iop.proof_start_from + P_LEN];
     return (iop, pod);
 }
 
-def read_iop_commit<N>(ReadIOP<N> mut iop, ShaDigest digest) -> ReadIOP<N> {
+def read_iop_commit<N, CO_LEN>( \
+    ReadIOP<N, CO_LEN> mut iop, ShaDigest digest) -> ReadIOP<N, CO_LEN> {
+
     iop.rng_state = sha_rng_mix(iop.rng_state, digest);
     return iop;
 }
 
-def read_iop_verify_complete<N>(ReadIOP<N> iop) -> bool {
+def read_iop_verify_complete<N, CO_LEN>(ReadIOP<N, CO_LEN> iop) -> bool {
     return iop.proof_start_from == N;
 }
 
-def read_iop_sample_fp_raw<N>(ReadIOP<N> mut iop) -> (ReadIOP<N>, Fp) {
+def read_iop_sample_fp_raw<N, CO_LEN>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, Fp) {
+
     (ShaRngState, Fp) state_and_u64 = sha_rng_sample_fp_raw(iop.rng_state);
     iop.rng_state = state_and_u64.0;
     return (iop, state_and_u64.1);
 }
 
-def read_iop_sample_fps<N, NFs>(ReadIOP<N> mut iop) -> (ReadIOP<N>, Fp[N]) {
+def read_iop_sample_fps<N, CO_LEN, NFs>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, Fp[N]) {
+
     (ShaRngState, Fp[NFs]) mut state_and_samples = \
         sha_rng_sample_fps_raw(iop.rng_state);
     iop.rng_state = state_and_samples.0;
