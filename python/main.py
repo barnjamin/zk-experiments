@@ -117,16 +117,36 @@ def main():
 
     assert num_taps == len(eval_u), "???"
 
-    # compute_poly(eval_u, poly_mix, out, mix)
+    compute_poly(eval_u, poly_mix, iop.out, mix)
 
 
 def compute_poly(
     u: list[list[Elem]], poly_mix: list[Elem], out: list[Elem], mix: list[Elem]
 ):
-    return poly_ext(poly_mix, u, (out, mix)).tot
+    return poly_ext(poly_mix, u, (out, mix))
 
 
 def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[Elem]]):
+    fp_vars = []
+    mix_vars = []
+
+    # let mut fp_vars = Vec::with_capacity(self.block.len() - (self.ret + 1));
+    # let mut mix_vars = Vec::with_capacity(self.ret + 1);
+    # for op in self.block.iter() {
+    #    op.step::<F>(&mut fp_vars, &mut mix_vars, mix, u, args);
+    # }
+    # assert_eq!(
+    #    fp_vars.len(),
+    #    self.block.len() - (self.ret + 1),
+    #    "Miscalculated capacity for fp_vars"
+    # );
+    # assert_eq!(
+    #    mix_vars.len(),
+    #    self.ret + 1,
+    #    "Miscalculated capacity for mix_vars"
+    # );
+    # mix_vars[self.ret]
+
     pass
 
 
@@ -134,7 +154,6 @@ def poly_eval(coeffs, x):
     mul_x = ExtElemOne
     tot = ExtElemZero
     x = ExtElem.from_ints([encode_mont(q) for q in x])
-
     for i in range(len(coeffs)):
         cc = ExtElem.from_ints(coeffs[i])
         product = cc * mul_x
