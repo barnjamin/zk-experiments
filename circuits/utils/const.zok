@@ -63,4 +63,4 @@ const u32 M_mont = 0x88000001;
 const u32 R_2 = 1172168163;
 
 // Prime field we're working in
-const u32 PRIME = 15 * (1 << 27) + 1;
+const u64 PRIME = 15 * (1 << 27) + 1;

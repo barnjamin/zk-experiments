@@ -1,7 +1,7 @@
 import "hashes/sha256/512bit" as hash;
 from "utils/casts" import cast;
 from "./utils/const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
-                            sha_rng_start_state, ShaDigest, ReadIOP;
+                            sha_rng_start_state, ShaDigest, ReadIOP, PRIME;
 
 def endian_conv(u32 mut v) -> u32 {
     return (v >> 24) | \
@@ -51,6 +51,19 @@ def sha_rng_mix(ShaRngState mut old_state, ShaDigest digest) -> ShaRngState {
     return sha_rng_step(old_state);
 }
 
+def sha_rng_sample_field(ShaRngState mut state) -> (ShaRngState, u64) {
+    u64 mut val = 0;
+    for u32 i in 0..6 {
+        val = val << 32;
+        (ShaRngState, u32) state_and_u32 = sha_rng_next_u32(state);
+        state = state_and_u32.0;
+        u64 cast_u32 = cast(state_and_u32.1);
+        val = val + cast_u32;
+        val = val % PRIME;
+    }
+    return (state, val);
+}
+
 // Read IOP facility definition
 
 // TODO still need the other out and montgomary encoding
@@ -85,4 +98,10 @@ def read_iop_commit<N>(ReadIOP<N> mut iop, ShaDigest digest) -> ReadIOP<N> {
 
 def read_iop_verify_complete<N>(ReadIOP<N> iop) -> bool {
     return iop.proof_start_from == N;
+}
+
+def read_iop_sample_field_elem<N>(ReadIOP<N> mut iop) -> (ReadIOP<N>, u64) {
+    (ShaRngState, u64) state_and_u64 = sha_rng_sample_field(iop.rng_state);
+    iop.rng_state = state_and_u64.0;
+    return (iop, state_and_u64.1);
 }
