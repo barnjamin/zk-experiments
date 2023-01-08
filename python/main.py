@@ -5,10 +5,12 @@ from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
 from util import (
     ROU_REV,
     hash_raw_pod,
+    encode_mont,
+    mul,
     pow,
 )
 
-from poly_ext_def import POLY_EXT_DEF
+from poly_ext_def import get_def
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
 
@@ -97,8 +99,6 @@ def main():
     )
     iop.commit(hash_u)
 
-    ####
-
     eval_u: list[list[int]] = []
 
     cur_pos = 0
@@ -112,10 +112,14 @@ def main():
         cur_pos += reg.skip
 
     assert eval_u[-1][0] == 557824063
-
     assert num_taps == len(eval_u), "???"
 
-    compute_poly(eval_u, poly_mix, iop.out, mix)
+    ###### TODO
+    poly_step_def = get_def()
+    print(len(poly_step_def.block))
+    print(poly_step_def.block[0])
+
+    # compute_poly(eval_u, poly_mix, iop.out, mix)
 
 
 def compute_poly(
@@ -129,7 +133,8 @@ def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[
     # let mut mix_vars = Vec::with_capacity(self.ret + 1);
     # fp_vars = []
     # mix_vars = []
-    for op in POLY_EXT_DEF.block:
+    poly_step_def = get_def()
+    for op in poly_step_def.block:
         op.step()  # op.step::<F>(&mut fp_vars, &mut mix_vars, mix, u, args);
         pass
 
