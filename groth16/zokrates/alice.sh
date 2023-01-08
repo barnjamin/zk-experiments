@@ -14,7 +14,7 @@ echo "build zk-SNARK verifier using CURVE=$CURVE ϵ {bls12_377, bls12_381, bn128
 
 # compile 
 # >--> abi.json, out, out.r1cs
-printf "\nzokrates compile -i %s -c %s\n" "$COMPILATION.zok" "$CURVE"
+printf "\n<STEP Alice::COMPILE +(proving.key, verification.key)>\nzokrates compile -i %s -c %s\n" "$COMPILATION.zok" "$CURVE"
 zokrates compile -i "$COMPILATION.zok" -c "$CURVE"
 
 # perform the setup phase
@@ -24,7 +24,7 @@ zokrates setup
 
 # create solidity verifier
 # verification.key --> verifier.sol
-printf "\nzokrates export-verifier\n"
+printf "\n<STEP Alice::SOLIDITY>\nzokrates export-verifier\n"
 zokrates export-verifier || echo "couldn't export solidity; CONTINUE"
 
 cp verification.key "${COMPILATION}_verification.key"

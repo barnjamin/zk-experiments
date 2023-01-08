@@ -1,0 +1,69 @@
+/*
+A_compile: circuit.zok -> abi.json, out, out.r1cs
+A_setup: out -> proving.key, verification.key
+A_export-verifier: verfication.key -> verifier.sol
+E_compute-witness: abi.json, out -> out.wtns, witness
+E_generate-proof: proving.key, out, witness -> proof.json
+A_verify: proof.json, verification.key -> YES/NO
+*/
+
+digraph {
+  rankdir=TB;
+  /* Set up node styles */
+  circuit [label="circuit.zok"]
+  node [shape=oval, style=filled, fillcolor=lightblue]
+  abi [label="abi.json"]
+  out [label="out"]
+  out_r1cs [label="out.r1cs"]
+  node [shape=oval, style=filled, fillcolor=lightgray]
+  pkey [label="proving.key"]
+  vkey [label="verification.key"]
+  node [shape=oval, style=filled, fillcolor=white]
+  vsol [label="verifier.sol"]
+  node [shape=oval, style=filled, fillcolor=pink]
+  out_w [label="out.wtns"]
+  witness [label="witness"]
+  node [shape=oval, style=filled, fillcolor=green]
+  proof [label="proof.json"]
+  node [shape=oval, style=filled, fillcolor=red]
+  final [label="YES/NO"]
+  node [shape=none, style=filled, fillcolor=white]
+  w [label="w_i"]
+
+  node [shape=rectangle, fillcolor=yellow]
+  subgraph cluster_A1 {
+    label="Alice: 1. set up proving and verifying keys";
+      circuit
+      A_compile [label="Alice: compile"]
+      abi
+      out
+      out_r1cs
+      A_setup [label="Alice: setup"]
+      pkey
+      vkey
+      A_export [label="Alice: export-verifier"]
+      vsol
+  }
+  subgraph cluster_E2 {
+      label="Eve: 2. construct proof";
+      w
+      E_cw [label="Eve: compute-witness"]
+      out_w
+      witness
+      E_prove [label="Eve: generate-proof"]
+      proof
+  }
+  subgraph cluster_A3 {
+    label="Alice: 3. verify proof";
+    A_verify [label="Alce: verify"]
+    final
+  }
+
+  /* Create edges between nodes */
+  circuit -> A_compile -> {abi, out, out_r1cs}
+  out -> A_setup -> {pkey, vkey}
+  vkey -> A_export -> vsol
+  {abi, out, w} -> E_cw -> {out_w, witness}
+  {pkey, out, witness} -> E_prove -> proof
+  {proof, vkey} -> A_verify -> final
+}

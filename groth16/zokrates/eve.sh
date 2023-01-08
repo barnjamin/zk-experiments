@@ -28,22 +28,23 @@ function report_proof_public_inputs {
 
 # # execute the program
 # abi.json, out --> out.wtns, witness
-printf "\nzokrates compute-witness -a %s\n" "$WITNESSES"
+printf "\n<EVE::WITNESSES>\nzokrates compute-witness -a %s\n" "$WITNESSES"
 # shellcheck disable=SC2086
 zokrates compute-witness -a $WITNESSES
 
 # # generate a proof of computation
 # out, proving.key, witness --> proof.json
-printf "\nzokrates generate-proof\n"
+printf "\n<EVE::PROVE>\nzokrates generate-proof\n"
 zokrates generate-proof 
 
 report_proof_public_inputs
 
 # # and verify natively
 # proof.json, ${PROOF_PREFIX}_verification.key -->> <NONE>
-printf "\nzokrates verify -v %s_verification.key --verbose" "$PROOF_PREFIX"
+printf "\n<ALICE::VERIFY>\nzokrates verify -v %s_verification.key --verbose" "$PROOF_PREFIX"
 zokrates verify -v "${PROOF_PREFIX}_verification.key" --verbose
 
+cp 
 cp proof.json "${PROOF_PREFIX}_proof.json"
 
 printf "\neve.sh: COMPLETE. Look out for the following artifacts: \n4A) out.wtns\n4B) witness\n5)  %s_proof.json\n\n\n" "$PROOF_PREFIX"
