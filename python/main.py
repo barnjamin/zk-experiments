@@ -129,6 +129,7 @@ def register_taps() -> list[TapData]:
         cursor += t.skip
     return taps
 
+
 class Elem:
     def __init__(self, n: int):
         self.n = n
