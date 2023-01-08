@@ -118,8 +118,7 @@ def main():
     poly_step_def = get_def()
     print(len(poly_step_def.block))
     print(poly_step_def.block[0])
-
-    # compute_poly(eval_u, poly_mix, iop.out, mix)
+    compute_poly(eval_u, poly_mix, iop.out, mix)
 
 
 def compute_poly(
@@ -129,23 +128,24 @@ def compute_poly(
 
 
 def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[Elem]]):
-    # let mut fp_vars = Vec::with_capacity(self.block.len() - (self.ret + 1));
-    # let mut mix_vars = Vec::with_capacity(self.ret + 1);
-    # fp_vars = []
-    # mix_vars = []
+    fp_vars: list[Elem] = []
+
+    # TODO: not Elem type
+    mix_vars: list[Elem] = []
+
+    # TODO
+    ret = 0
+
     poly_step_def = get_def()
     for op in poly_step_def.block:
-        op.step()  # op.step::<F>(&mut fp_vars, &mut mix_vars, mix, u, args);
+        # op.step(fp_vars, mix_vars, mix, u, args)
         pass
 
-    # assert (
-    #   fp_vars.len() == self.block.len() - (self.ret + 1),
-    #   "Miscalculated capacity for fp_vars"
-    # )
-    # assert mix_vars.len() == self.ret + 1,  "Miscalculated capacity for mix_vars"
-
-    # return mix_vars[self.ret]
-    pass
+    # assert len(fp_vars) == len(poly_step_def.block) - (
+    #    ret + 1
+    # ), "Miscalculated capacity for fp_vars"
+    # assert len(mix_vars) == ret + 1, "Miscalculated capacity for mix_vars"
+    return mix_vars[ret]
 
 
 def poly_eval(coeffs, x):
