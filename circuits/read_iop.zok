@@ -3,7 +3,7 @@ from "utils/casts" import cast;
 from "./const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
                       sha_rng_start_state, ShaDigest, ReadIOP,          \
                       PRIME, Fp, FpExt;
-from "./utils" import endian_conv;
+from "./utils" import endian_conv, to_Fp;
 
 // SHA based RNG definitions
 
@@ -117,8 +117,7 @@ def read_iop_sample_fps<N, NFs>(ReadIOP<N> mut iop) -> (ReadIOP<N>, Fp[N]) {
         sha_rng_sample_fps_raw(iop.rng_state);
     iop.rng_state = state_and_samples.0;
     for u32 i in 0..NFs {
-        // TODO to elem conversion
-        state_and_samples.1[i] = state_and_samples.1[i];
+        state_and_samples.1[i] = to_Fp(state_and_samples.1[i]);
     }
     return (iop, state_and_samples.1);
 }

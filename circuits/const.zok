@@ -58,8 +58,8 @@ const u32 MAX_CYCLES_PO2 = 24;
 const u32 MAX_CYCLES = 1 << MAX_CYCLES_PO2; // 16M
 
 // montgomery form constants
-const u32 M_mont = 0x88000001;
-const u32 R_2 = 1172168163;
+const u64 M_mont = 0x0000000088000001;
+const u64 R_2 = 1172168163;
 
 // Prime field we're working in
 const u64 PRIME = 15 * (1 << 27) + 1;

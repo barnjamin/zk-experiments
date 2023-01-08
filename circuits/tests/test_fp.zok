@@ -1,0 +1,12 @@
+from "../utils" import to_Fp, fp_add, fp_inv, fp_mul, fp_sub;
+from "../const" import Fp, PRIME;
+
+def main() {
+    assert(to_Fp(0) == to_Fp(0));
+    assert(to_Fp(PRIME) == to_Fp(0));
+    assert(to_Fp(1) == to_Fp(1));
+    assert(fp_add(to_Fp(1), to_Fp(PRIME - 1)) == to_Fp(0));
+    assert(fp_inv(to_Fp(0)) == to_Fp(0));
+    assert(fp_inv(to_Fp(1)) == to_Fp(1));
+    assert(fp_mul(fp_inv(to_Fp(5)), to_Fp(5)) == to_Fp(1));
+}
