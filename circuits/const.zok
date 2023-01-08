@@ -63,3 +63,6 @@ const u32 R_2 = 1172168163;
 
 // Prime field we're working in
 const u64 PRIME = 15 * (1 << 27) + 1;
+type FieldElem = u64;
+const u32 POLY_FIELD_DEG = 4;
+type PolyFieldExt = FieldElem[POLY_FIELD_DEG];
