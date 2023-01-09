@@ -99,6 +99,51 @@ def fp_ext_mul(FpExt a, FpExt b) -> FpExt {
     return [f0, f1, f2, f3];
 }
 
+def fp_ext_inv(FpExt a) -> FpExt {
+    Fp mut b0 = fp_add(                           \
+        fp_mul(a[0], a[0]),                       \
+        fp_mul(                                   \
+            BETA,                                 \
+            fp_sub(                               \
+                fp_mul(a[1], fp_add(a[3], a[3])), \
+                fp_mul(a[2], a[2])                \
+            )                                     \
+        )                                         \
+    );
+    Fp mut b2 = fp_add(                       \
+        fp_sub(                               \
+            fp_mul(a[0], fp_add(a[2], a[2])), \
+            fp_mul(a[1], a[1])                \
+        ),                                    \
+        fp_mul(BETA, fp_mul(a[3], a[3]))      \
+    );
+    Fp c = fp_add(                   \
+        fp_mul(b0, b0),              \
+        fp_mul(BETA, fp_mul(b2, b2)) \
+    );
+    Fp c_inv = fp_inv(c);
+    b0 = fp_mul(b0, c_inv);
+    b2 = fp_mul(b2, c_inv);
+
+    Fp i0 = fp_add(                    \
+        fp_mul(a[0], b0),              \
+        fp_mul(BETA, fp_mul(a[2], b2)) \
+    );
+    Fp i1 = fp_sub(                      \
+        fp_mul(NBETA, fp_mul(a[3], b2)), \
+        fp_mul(a[1], b0)                 \
+    );
+    Fp i2 = fp_sub(       \
+        fp_mul(a[2], b0), \
+        fp_mul(a[0], b2)  \
+    );
+    Fp i3 = fp_sub(       \
+        fp_mul(a[1], b2), \
+        fp_mul(a[3], b0)  \
+    );
+    return [i0, i1, i2, i3];
+}
+
 def fp_ext_add(FpExt a, FpExt b) -> FpExt {
     return [                \
         fp_add(a[0], b[0]), \
