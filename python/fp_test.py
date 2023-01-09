@@ -1,4 +1,4 @@
-from fp import Elem, ExtElem, ExtElemZero, ExtElemOne, ElemOne
+from fp import Elem, ExtElem, ExtElemOne
 
 
 def test_linear():

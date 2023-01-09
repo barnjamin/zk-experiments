@@ -192,8 +192,6 @@ def main():
         )
         check_row = check_merkle.verify(iop, idx)
         res = fri_eval_taps(mix, combo_u, check_row, back_one, x, z, rows)
-        print(res)
-        assert False
         return res
 
     fri_verify(iop, size, inner)

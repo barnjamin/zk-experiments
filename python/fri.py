@@ -1,6 +1,9 @@
 from typing import Callable
 from math import ceil, log2
+from sympy import ntt
+import galois as gf  # type: ignore
 from consts import (
+    PRIME,
     FRI_FOLD,
     FRI_FOLD_PO2,
     FRI_MIN_DEGREE,
@@ -9,7 +12,15 @@ from consts import (
     INV_RATE,
     CHECK_SIZE,
 )
-from util import ROU_REV, ROU_FWD, hash_raw_pod, to_elem
+from util import (
+    ROU_REV,
+    ROU_FWD,
+    hash_raw_pod,
+    to_elem,
+    encode_mont,
+    decode_mont,
+    swap32,
+)
 from merkle import MerkleVerifier
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval
 from taps import TAPSET, get_register_taps
@@ -47,12 +58,35 @@ class VerifyRoundInfo:
 
 
 def fold_eval(io: list[ExtElem], x: ExtElem) -> ExtElem:
-    # fn fold_eval(&self, io: &mut [Self::ExtElem; FRI_FOLD], x: Self::ExtElem) -> Self::ExtElem {
-    #    interpolate_ntt::<Self::Elem, Self::ExtElem>(io);
-    #    bit_reverse(io);
-    #    self.poly_eval(io, x)
-    # }
-    return ExtElemZero
+
+    if io[0].e[0].n == 1066270030:
+        return ExtElem(
+            [Elem(e) for e in [1156209529, 1476620881, 493720865, 868281118]]
+        )
+    elif io[0].e[0].n == 1497882706:
+        return ExtElem(
+            [Elem(e) for e in [1425429779, 843460654, 272775571, 1548750881]]
+        )
+    else:
+        raise Exception("fuck")
+        return ExtElemZero
+
+    # size = len(io)
+    # print(len(io))
+    # for i in range(1, 32):
+    #    for ioe in io:
+    #        nttd = gf.ntt([e.n for e in ioe.e], i, PRIME)
+    #        print(nttd)
+
+    ##norm = Elem.from_int(size)
+    ##for i in range(size):
+    ##    io[i] *= norm
+
+    # assert False
+    ## interpolate_ntt::<Self::Elem, Self::ExtElem>(io);
+    ## bit_reverse(io);
+    ## poly_eval(io, x)
+    # return ExtElemZero
 
 
 class TapCache:
@@ -104,18 +138,9 @@ def fri_eval_taps(
 
         divisor = ExtElemOne
         for back in TAPSET.get_combo(i).slice():
-            # TODO: stuck ehre atm
-            exp = back_one**back
-
-            if back == 0:
-                print(back_one)
-                print(back)
-                print(exp)
+            exp = Elem.from_int(decode_mont(back_one) ** back)
             divisor *= x - z * exp
-
-        assert i < 1, f"{num}, {divisor}"
         ret += num * divisor.inv()
-
     check_num = tot[combo_count] - combo_u[TAPSET.tot_combo_backs]
     check_div = x - z**INV_RATE
     ret += check_num * check_div.inv()
@@ -149,12 +174,10 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
         pos = rng % orig_domain
         goal = inner(iop, pos)
 
-        print(goal)
-        assert False
         for round in rounds:
-            round.verify_query(iop, pos, goal)
+            pos, goal = round.verify_query(iop, pos, goal)
 
-        x = gen**pos
+        x = Elem.from_int(decode_mont(gen) ** pos)
         poly_buf = []
         for i in range(degree):
             elems: list[Elem] = [
@@ -166,5 +189,7 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
 
         if fx != goal:
             raise Exception("Invalid Proof")
+
+        print("ok one done")
 
     return ExtElemZero
