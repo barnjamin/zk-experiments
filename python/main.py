@@ -12,14 +12,7 @@ from consts import (
     FRI_FOLD_PO2,
     FRI_MIN_DEGREE,
 )
-from util import (
-    ROU_REV,
-    ROU_FWD,
-    hash_raw_pod,
-    to_elem,
-    mul,
-    pow,
-)
+from util import ROU_REV, ROU_FWD, hash_raw_pod, to_elem, mul, pow, swap32
 
 from poly_ext import MixState, get_def
 from fri import fri_eval_taps, fri_verify
@@ -188,19 +181,20 @@ def main():
         [1630866757, 803032502, 1651092631, 1744796188]
     )
 
-    gen = Elem(ROU_FWD[int(log2(domain))])
+    gen = ROU_FWD[int(log2(domain))]
 
     def inner(iop: ReadIOP, idx: int) -> ExtElem:
-        x = gen**idx
+        x = Elem.from_int(pow(gen, idx))
         rows = (
             accum_merkle.verify(iop, idx),
             code_merkle.verify(iop, idx),
             data_merkle.verify(iop, idx),
         )
-        print(x)
-        print(rows[2])
         check_row = check_merkle.verify(iop, idx)
-        return fri_eval_taps(mix, combo_u, check_row, back_one, x, z, rows)
+        res = fri_eval_taps(mix, combo_u, check_row, back_one, x, z, rows)
+        print(res)
+        assert False
+        return res
 
     fri_verify(iop, size, inner)
 

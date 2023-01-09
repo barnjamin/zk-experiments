@@ -15,8 +15,6 @@ fn main() {
 fn check_receipt()->std::io::Result<()> {
     env_logger::init();
     
-    println!("{:?}", risc0_zkp::field::baby_bear::Elem::new(123));
-
     let mut jf = File::open("trivial.journal")?;
     let mut jbuf = Vec::new();
     jf.read_to_end(&mut jbuf)?;
@@ -29,11 +27,8 @@ fn check_receipt()->std::io::Result<()> {
     let jvec: &[u32] = bytemuck::cast_slice(jbuf.as_slice());
     let svec: &[u32] = bytemuck::cast_slice(sbuf.as_slice());
 
-    println!("{:?}", &svec[1..10]);
-
     let receipt = Receipt::new(jvec, svec);
 
-    println!("{:?}", methods::MULTIPLY_ID);
     receipt.verify(methods::MULTIPLY_ID).expect(
         "Code you have proven should successfully verify; did you specify the correct method ID?",
     );

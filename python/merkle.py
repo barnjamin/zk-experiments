@@ -43,7 +43,7 @@ class MerkleParams:
         self.top_size = 1 << self.top_layer
 
     def idx_to_top(self, i: int) -> int:
-        return (i * 2) - self.top_size
+        return i - self.top_size
 
     def idx_to_rest(self, i: int) -> int:
         return i - 1
@@ -67,7 +67,7 @@ class MerkleVerifier:
         for idx in range(
             self.params.top_size - 1, int(self.params.top_size / 2) - 1, -1
         ):
-            top_idx = self.params.idx_to_top(idx)
+            top_idx = self.params.idx_to_top(2 * idx)
             self.rest[self.params.idx_to_rest(idx)] = sha_compress_leaves(
                 self.top[top_idx], self.top[top_idx + 1]
             )
@@ -105,13 +105,12 @@ class MerkleVerifier:
             else:
                 cur = sha_compress_leaves(cur, other)
 
-        print("ASdfa", idx, cur)
         if idx >= self.params.top_size:
             present_hash = self.top[self.params.idx_to_top(idx)]
         else:
             present_hash = self.rest[self.params.idx_to_rest(idx)]
 
         if present_hash == cur:
-            return [Elem.from_int(e) for e in out]
+            return [Elem(e) for e in out]
         else:
             raise Exception("Invalid Proof")

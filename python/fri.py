@@ -9,7 +9,7 @@ from consts import (
     INV_RATE,
     CHECK_SIZE,
 )
-from util import ROU_REV, ROU_FWD, hash_raw_pod
+from util import ROU_REV, ROU_FWD, hash_raw_pod, to_elem
 from merkle import MerkleVerifier
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval
 from taps import TAPSET, get_register_taps
@@ -65,7 +65,7 @@ def fri_eval_taps(
     mix: ExtElem,
     combo_u: list[ExtElem],
     check_row: list[Elem],
-    back_one: Elem,
+    back_one: int,
     _x: Elem,
     z: ExtElem,
     rows: tuple[list[Elem], list[Elem], list[Elem]],
@@ -101,10 +101,19 @@ def fri_eval_taps(
         num = tot[i] - poly_eval(
             combo_u[TAPSET.combo_begin[i] : TAPSET.combo_begin[i + 1]], x
         )
-        divisor = ExtElemOne
 
+        divisor = ExtElemOne
         for back in TAPSET.get_combo(i).slice():
-            divisor *= x - z * back_one**back
+            # TODO: stuck ehre atm
+            exp = back_one**back
+
+            if back == 0:
+                print(back_one)
+                print(back)
+                print(exp)
+            divisor *= x - z * exp
+
+        assert i < 1, f"{num}, {divisor}"
         ret += num * divisor.inv()
 
     check_num = tot[combo_count] - combo_u[TAPSET.tot_combo_backs]
@@ -127,12 +136,10 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
         domain //= FRI_FOLD
         degree //= FRI_FOLD
 
-    print(rounds)
-    # assert len(rounds) == rounds_capacity
+    assert len(rounds) < rounds_capacity
 
     final_coeffs = iop.read_field_elem_slice(EXT_SIZE * degree)
     final_digest = hash_raw_pod(final_coeffs)
-
     iop.commit(final_digest)
 
     gen = ROU_FWD[ceil(log2(domain))]
@@ -142,6 +149,8 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
         pos = rng % orig_domain
         goal = inner(iop, pos)
 
+        print(goal)
+        assert False
         for round in rounds:
             round.verify_query(iop, pos, goal)
 
