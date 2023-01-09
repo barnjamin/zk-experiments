@@ -2,7 +2,16 @@ from math import log2
 from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
-from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
+from consts import (
+    QUERIES,
+    INV_RATE,
+    MIN_CYCLES_PO2,
+    CHECK_SIZE,
+    EXT_SIZE,
+    FRI_FOLD,
+    FRI_FOLD_PO2,
+    FRI_MIN_DEGREE,
+)
 from util import (
     ROU_REV,
     ROU_FWD,
@@ -13,8 +22,8 @@ from util import (
 )
 
 from poly_ext import MixState, get_def
-
-from fp import Elem, ExtElem, ElemOne, ElemZero, ExtElemOne, ExtElemZero
+from fri import fri_eval_taps, fri_verify
+from fp import poly_eval, Elem, ExtElem, ElemOne, ElemZero, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
 
 
@@ -24,11 +33,6 @@ CIRCUIT_MIX_SIZE = 36
 CODE_TAP_SIZE = 15
 DATA_TAP_SIZE = 212
 ACCUM_TAP_SIZE = 36
-
-
-# Extended field element size
-EXT_SIZE = 4
-CHECK_SIZE = INV_RATE * EXT_SIZE
 
 
 def main():
@@ -184,14 +188,19 @@ def main():
         [1630866757, 803032502, 1651092631, 1744796188]
     )
 
-    gen = ROU_FWD[int(log2(domain))]
+    gen = Elem(ROU_FWD[int(log2(domain))])
 
-    # TODO
-    # fri_verify(iop, size, )
+    def inner(iop: ReadIOP, idx: int) -> ExtElem:
+        x = gen**idx
+        rows = (
+            accum_merkle.verify(iop, idx),
+            code_merkle.verify(iop, idx),
+            data_merkle.verify(iop, idx),
+        )
+        check_row = check_merkle.verify(iop, idx)
+        return fri_eval_taps(mix, combo_u, check_row, back_one, x, z, rows)
 
-
-def fri_verify():
-    pass
+    fri_verify(iop, size, inner)
 
 
 def compute_poly(
@@ -199,15 +208,6 @@ def compute_poly(
 ) -> ExtElem:
     poly_step_def = get_def()
     return poly_step_def.step(poly_mix, u, (out, mix)).tot
-
-
-def poly_eval(coeffs: list[ExtElem], x: ExtElem) -> ExtElem:
-    mul_x = ExtElemOne
-    tot = ExtElemZero
-    for i in range(len(coeffs)):
-        tot += coeffs[i] * mul_x
-        mul_x = mul_x * x
-    return tot
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:

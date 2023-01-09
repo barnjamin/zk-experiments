@@ -1,7 +1,8 @@
 from hashlib import sha256
 from math import log2
 from read_iop import ReadIOP
-from util import sha_compress_leaves
+from fp import Elem
+from util import sha_compress_leaves, hash_raw_pod
 
 
 class MerkleParams:
@@ -81,3 +82,35 @@ class MerkleVerifier:
 
     def root(self):
         return self.rest[self.params.idx_to_rest(1)]
+
+    def verify(self, iop: ReadIOP, idx: int) -> list[Elem]:
+        if idx < self.params.row_size:
+            raise Exception("no")
+
+        out: list[int] = iop.read_field_elem_slice(self.params.col_size)
+        cur: bytes = hash_raw_pod(out)
+
+        idx += self.params.row_size
+
+        while idx >= (2 * self.params.top_size):
+            # low_bit determines whether hash cur at idx is the left (0) or right (1)
+            # child.
+            low_bit = idx % 2
+            # Retrieve the other parent from the IOP.
+            other = bytes(iop.read_pod_slice(32))
+
+            idx //= 2
+            if low_bit == 1:
+                cur = sha_compress_leaves(other, cur)
+            else:
+                cur = sha_compress_leaves(cur, other)
+
+        if idx >= self.params.top_size:
+            present_hash = self.top[self.params.idx_to_top(idx)]
+        else:
+            present_hash = self.rest[self.params.idx_to_rest(idx)]
+
+        if present_hash == cur:
+            return [Elem.from_int(e) for e in out]
+        else:
+            raise Exception("Invalid Proof")

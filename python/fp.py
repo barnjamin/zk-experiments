@@ -106,6 +106,15 @@ class ExtElem:
         return ExtElem([e, Elem(0), Elem(0), Elem(0)])
 
 
+def poly_eval(coeffs: list[ExtElem], x: ExtElem) -> ExtElem:
+    mul_x = ExtElemOne
+    tot = ExtElemZero
+    for i in range(len(coeffs)):
+        tot += coeffs[i] * mul_x
+        mul_x = mul_x * x
+    return tot
+
+
 ElemOne = Elem.from_int(1)
 ElemZero = Elem(0)
 
