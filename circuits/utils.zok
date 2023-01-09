@@ -1,4 +1,7 @@
-from "./const" import PRIME, M_mont, R_2, Fp, FpExt, BETA_COEFF, POLY_FIELD_DEG;
+from "./const" import PRIME, M_mont, R_2, Fp, FpExt, \
+                      BETA_COEFF, POLY_FIELD_DEG,    \
+                      QUERIES, ReadIOP, MTParams,    \
+                      ShaDigest;
 
 def endian_conv(u32 mut v) -> u32 {
     return (v >> 24) | \
@@ -128,4 +131,24 @@ def poly_eval<N>(FpExt[N] coeffs, FpExt x) -> FpExt {
         mul_x = fp_ext_mul(mul_x, x);
     }
     return total;
+}
+
+def floor_log2(u32 var) -> u32 {
+    u32 mut res = 0;
+    for u32 i in 0..32 {
+        u32 temp_mask = 1 << i;
+        u32 incr = if temp_mask <= var { 1 } else { 0 };
+        res = res + incr;
+    }
+    return res;
+}
+
+const u32 MT_TOP_LAYERS = floor_log2(QUERIES);
+const u32 MT_TOP_SIZE = 1 << MT_TOP_LAYERS;
+
+struct MTVerifier<PROOF_LEN, OUTPUT_LEN> {
+    ReadIOP<PROOF_LEN, OUTPUT_LEN> read_iop;
+    MTParams mt_params;
+    ShaDigest[MT_TOP_SIZE] top;
+    ShaDigest[MT_TOP_SIZE] rest;
 }

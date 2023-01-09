@@ -1,6 +1,7 @@
 import "hashes/sha256/sha256Padded" as sha_hash;
 
 const u32 INV_RATE = 4;
+const u32 INV_RATE_LOG2 = 2;
 
 // Definitions for SHA:
 // - digest word size 32 bits (4 bytes)
@@ -30,6 +31,15 @@ def sha_rng_start_state() -> ShaRngState {
     };
 }
 
+struct MTParams {
+    u32 row_size;
+    u32 col_size;
+    u32 queries;
+    u32 layers;
+    u32 top_layer;
+    u32 top_size;
+}
+
 // FRI related constants
 const u32 FRI_FOLD_PO2 = 4;
 const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;
@@ -44,6 +54,9 @@ const u32 MIN_CYCLES_PO2 = 10;
 const u32 MIN_CYCLES = 1 << MIN_CYCLES_PO2; // 1K
 const u32 MAX_CYCLES_PO2 = 24;
 const u32 MAX_CYCLES = 1 << MAX_CYCLES_PO2; // 16M
+
+// MT Related settings
+const u32 CODE_TAP_SIZE = 15;
 
 // montgomery form constants
 const u64 M_mont = 0x0000000088000001;
