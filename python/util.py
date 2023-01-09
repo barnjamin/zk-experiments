@@ -29,8 +29,9 @@ def hash_raw_pod(raw: list[int]) -> bytes:
         )
         state = swap_endian(state)
 
-    remainder = u8s[-(len(u8s) % chunk_size) :]
-    if len(remainder) > 0:
+    lookback = len(u8s) % chunk_size
+    if lookback > 0:
+        remainder = u8s[-lookback:]
         block = [0] * 64
         block[: len(remainder)] = remainder[:]
         state = u8_to_u32(
@@ -38,6 +39,9 @@ def hash_raw_pod(raw: list[int]) -> bytes:
                 generate_hash(bytearray(block), initial_state=state, compress_only=True)
             )
         )
+    else:
+        # otherwise swap it back
+        state = swap_endian(state)
 
     return bytes(u32_to_u8(state))
 
@@ -105,7 +109,7 @@ def pow(base: int, exp: int) -> int:
     while n != 0:
         if n % 2 == 1:
             tot = mul(tot, x)
-        n = int(n / 2)
+        n = n // 2
         x = mul(x, x)
     return tot
 

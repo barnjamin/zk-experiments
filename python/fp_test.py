@@ -1,4 +1,4 @@
-from fp import Elem, ExtElem, ExtElemZero, ExtElemOne
+from fp import Elem, ExtElem, ExtElemOne
 
 
 def test_linear():
@@ -28,5 +28,21 @@ def test_mul():
     a = ExtElem.from_ints([1, 0, 0, 0])
     b = ExtElem.from_encoded_ints([1756890006, 401896608, 614202924, 296483633])
     assert a * b == b
-
     assert ExtElemOne * b == b
+
+
+def test_pow():
+    a = ExtElem.from_encoded_ints([1298130879, 1237127185, 792820356, 669179997])
+    i = Elem.from_int(0)
+    assert a**i == ExtElem.from_ints([1, 0, 0, 0])
+
+
+def test_inv():
+    e = Elem(607474065)
+    assert e.inv() == Elem(1701327315)
+    assert e.inv() * e == Elem.from_int(1)
+
+    d = ExtElem.from_encoded_ints([1263613623, 776138736, 1220445565, 1344085924])
+    assert d.inv() == ExtElem.from_encoded_ints(
+        [206674255, 1748250245, 237184905, 423455910]
+    )
