@@ -20,6 +20,16 @@ class Elem:
     def __pow__(self, other: "Elem") -> "Elem":
         return Elem(pow(self.n, other.n))
 
+    def __str__(self) -> str:
+        return f"Elem({self.n})"
+
+    def __eq__(self, other) -> bool:
+        return self.n == other.n
+
+    @staticmethod
+    def from_int(n: int) -> "Elem":
+        return Elem(to_elem(n))
+
 
 class ExtElem:
     def __init__(self, e: list[Elem]):
@@ -53,8 +63,19 @@ class ExtElem:
     def __pow__(self, other: "ExtElem") -> "ExtElem":
         raise Exception("not implemented")
 
+    def __str__(self) -> str:
+        x = ",".join([str(e) for e in self.e])
+        return f"ExtElem([{x}])"
+
+    def __eq__(self, other) -> bool:
+        return all([self.e[idx] == other.e[idx] for idx in range(len(self.e))])
+
     @staticmethod
     def from_ints(e: list[int]) -> "ExtElem":
+        return ExtElem([Elem.from_int(x) for x in e])
+
+    @staticmethod
+    def from_encoded_ints(e: list[int]) -> "ExtElem":
         return ExtElem([Elem(x) for x in e])
 
     @staticmethod
@@ -62,5 +83,5 @@ class ExtElem:
         return ExtElem([e, Elem(0), Elem(0), Elem(0)])
 
 
-ExtElemOne = ExtElem.from_ints([1, 0, 0, 0])
-ExtElemZero = ExtElem.from_ints([0, 0, 0, 0])
+ExtElemOne = ExtElem.from_encoded_ints([1, 0, 0, 0])
+ExtElemZero = ExtElem.from_encoded_ints([0, 0, 0, 0])

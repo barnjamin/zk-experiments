@@ -3,7 +3,6 @@ from util import (
     u32_to_u8,
     u8_to_u32,
     sha_hash,
-    decode_mont,
     to_elem,
 )
 from fp import Elem
@@ -80,7 +79,7 @@ class ReadIOP:
     def verify_complete(self):
         assert len(self.proof) == 0
 
-    def sample_elements(self, n: int) -> list[Elem]:
+    def sample_elements(self, n: int) -> list[int]:
         return [to_elem(self.sample()) for _ in range(n)]
 
     def sample(self) -> int:

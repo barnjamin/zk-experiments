@@ -67,7 +67,7 @@ def u32_to_u8(u32s: list[int]) -> list[int]:
     return u8s
 
 
-def to_elem(raw: int):
+def to_elem(raw: int) -> int:
     return encode_mont(raw % PRIME)
 
 

@@ -6,6 +6,7 @@ from util import (
     ROU_REV,
     hash_raw_pod,
     encode_mont,
+    to_elem,
     mul,
     pow,
 )
@@ -60,8 +61,8 @@ def main():
         == "36a851ef72541689fd9537c5b3a01c75c66bccffef7871f9757ee664c0ef909d"
     )
 
-    mix = iop.sample_elements(CIRCUIT_MIX_SIZE)
-    assert mix[0] == 1374649985
+    mix = [Elem(e) for e in iop.sample_elements(CIRCUIT_MIX_SIZE)]
+    assert mix[0].n == 1374649985
 
     accum_merkle = MerkleVerifier(iop, domain, ACCUM_TAP_SIZE, QUERIES)
     assert (
@@ -90,8 +91,9 @@ def main():
     coeff_u = iop.read_field_ext_elem_slice((num_taps + CHECK_SIZE))
     assert coeff_u[0] == 407240978
 
-    coeff_elems = [
-        [q for q in coeff_u[x * 4 : (x + 1) * 4]] for x in range(int(len(coeff_u) / 4))
+    coeff_elems: list[ExtElem] = [
+        ExtElem.from_encoded_ints(coeff_u[x * 4 : (x + 1) * 4])
+        for x in range(int(len(coeff_u) / 4))
     ]
 
     hash_u = hash_raw_pod(coeff_u)
@@ -101,23 +103,25 @@ def main():
     )
     iop.commit(hash_u)
 
+    cur_pos: int = 0
     eval_u: list[ExtElem] = []
-
-    cur_pos = 0
     for (idx, reg) in get_register_taps():
         for i in range(reg.skip):
-            ml = pow(back_one, TAPSET.taps[idx + i].back)
-            x = [mul(z[i], ml) for i in range(len(z))]
-            fx = poly_eval(coeff_elems[cur_pos : cur_pos + reg.skip], x)
+            # Make sure its encoded properly
+            ml: int = to_elem(pow(back_one, TAPSET.taps[idx + i].back))
+            x: ExtElem = ExtElem.from_encoded_ints([mul(ze, ml) for ze in z])
+            fx: ExtElem = poly_eval(coeff_elems[cur_pos : cur_pos + reg.skip], x)
+
             eval_u.append(fx)
+
         cur_pos += reg.skip
 
     assert eval_u[-1].e[0].n == 557824063
     assert num_taps == len(eval_u), "???"
 
     ###### TODO #####
-    result = compute_poly(eval_u, poly_mix, iop.out, [Elem(m) for m in mix])
-    print(result)
+    result = compute_poly(eval_u, poly_mix, iop.out, mix)
+    print([e.n for e in result.tot.e])
 
 
 def compute_poly(
@@ -127,14 +131,11 @@ def compute_poly(
     return poly_step_def.step(poly_mix, u, (out, mix))
 
 
-def poly_eval(coeffs, x) -> ExtElem:
+def poly_eval(coeffs: list[ExtElem], x: ExtElem) -> ExtElem:
     mul_x = ExtElemOne
     tot = ExtElemZero
-    x = ExtElem.from_ints([encode_mont(q) for q in x])
     for i in range(len(coeffs)):
-        cc = ExtElem.from_ints(coeffs[i])
-        product = cc * mul_x
-        tot = ExtElem([tot.e[idx] + p for idx, p in enumerate(product.e)])
+        tot += coeffs[i] * mul_x
         mul_x = mul_x * x
     return tot
 

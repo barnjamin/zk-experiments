@@ -43,10 +43,9 @@ class PolyExtStepDef:
 
         for idx, op in enumerate(self.block):
             print(f"idx: {idx} fp_len: {len(fp_vars)} mix_len: {len(mix_vars)}")
-            print(f"Op: {op.op} Args: {[a for a in op._args]}")
             match op.op:
                 case "Const":
-                    elem = Elem(to_elem(op._args[0]))
+                    elem = Elem.from_int(op._args[0])
                     fp_vars.append(ExtElem.from_subfield(elem))
                 case "Get":
                     get_idx: int = op._args[0]
@@ -78,6 +77,7 @@ class PolyExtStepDef:
                 case "AndEqz":
                     xeq: MixState = mix_vars[op._args[0]]
                     val: ExtElem = fp_vars[op._args[1]]
+                    assert False, f"{xeq.tot + (xeq.mul * val)}"
                     mix_vars.append(
                         MixState(
                             tot=xeq.tot + xeq.mul * val,
