@@ -77,7 +77,6 @@ class PolyExtStepDef:
                 case "AndEqz":
                     xeq: MixState = mix_vars[op._args[0]]
                     val: ExtElem = fp_vars[op._args[1]]
-                    assert False, f"{xeq.tot + (xeq.mul * val)}"
                     mix_vars.append(
                         MixState(
                             tot=xeq.tot + xeq.mul * val,

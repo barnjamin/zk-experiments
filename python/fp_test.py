@@ -25,7 +25,8 @@ def test_linear():
 
 
 def test_mul():
-    # ExtElem([1, 0, 0, 0])
-    # ExtElem([1756890006, 401896608, 614202924, 296483633])
+    a = ExtElem.from_ints([1, 0, 0, 0])
+    b = ExtElem.from_encoded_ints([1756890006, 401896608, 614202924, 296483633])
+    assert a * b == b
 
-    ExtElemOne
+    assert ExtElemOne * b == b

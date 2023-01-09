@@ -83,5 +83,5 @@ class ExtElem:
         return ExtElem([e, Elem(0), Elem(0), Elem(0)])
 
 
-ExtElemOne = ExtElem.from_encoded_ints([1, 0, 0, 0])
+ExtElemOne = ExtElem.from_ints([1, 0, 0, 0])
 ExtElemZero = ExtElem.from_encoded_ints([0, 0, 0, 0])

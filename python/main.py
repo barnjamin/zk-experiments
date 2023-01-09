@@ -5,7 +5,7 @@ from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
 from util import (
     ROU_REV,
     hash_raw_pod,
-    encode_mont,
+    decode_mont,
     to_elem,
     mul,
     pow,
@@ -72,7 +72,7 @@ def main():
 
     _poly_mix = iop.sample_elements(EXT_SIZE)
     assert _poly_mix[0] == 143271204
-    poly_mix = ExtElem([Elem(e) for e in _poly_mix])
+    poly_mix = ExtElem.from_encoded_ints(_poly_mix)
 
     check_merkle = MerkleVerifier(iop, domain, CHECK_SIZE, QUERIES)
     assert (
@@ -115,8 +115,7 @@ def main():
             eval_u.append(fx)
 
         cur_pos += reg.skip
-
-    assert eval_u[-1].e[0].n == 557824063
+    assert eval_u[-1].e[0].n == 286370341
     assert num_taps == len(eval_u), "???"
 
     ###### TODO #####
