@@ -23,8 +23,8 @@ class PolyExtStep:
 
     def __init__(self, op: str, args: list[str]):
         self.op = op
-        # self.args = args
-        # self._args = [stoi(v) for v in args]
+        self.args = args
+        self._args = [stoi(v) for v in args]
 
     def as_dict(self):
         return {"op": self.op, "args": self.args}
@@ -39,7 +39,7 @@ class PolyExtStep:
         mix_vars: list[MixState],
         mix: ExtElem,
         u: list[ExtElem],
-        args: list[list[Elem]],
+        args: tuple[list[Elem], list[Elem]],
     ):
         match self.op:
             case "Const":

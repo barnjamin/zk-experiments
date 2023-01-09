@@ -1,10 +1,27 @@
-from poly_ext import PolyExtStep
+from poly_ext import PolyExtStep, MixState
+from fp import ExtElem, Elem
 
 
 class PolyExtStepDef:
     def __init__(self, block: list[PolyExtStep], ret: int):
         self.block = block
         self.ret = ret
+
+    def step(
+        self, mix: ExtElem, u: list[ExtElem], args: tuple[list[Elem], list[Elem]]
+    ) -> MixState:
+        fp_vars: list[ExtElem] = []
+        mix_vars: list[MixState] = []
+
+        for op in self.block:
+            op.step(fp_vars, mix_vars, mix, u, args)
+
+        assert len(fp_vars) == len(self.block) - (
+            self.ret + 1
+        ), "Miscalculated capacity for fp_vars"
+        assert len(mix_vars) == self.ret + 1, "Miscalculated capacity for mix_vars"
+
+        return mix_vars[self.ret]
 
 
 def get_def() -> PolyExtStepDef:

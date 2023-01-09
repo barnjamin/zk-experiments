@@ -11,6 +11,8 @@ from util import (
 )
 
 from poly_ext_def import get_def
+from poly_ext import MixState
+
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
 
@@ -68,8 +70,9 @@ def main():
         == "c0f53b6615c2ce2332f06386b72cd7f300d52684885c694cd903b599c915ba57"
     )
 
-    poly_mix = iop.sample_elements(EXT_SIZE)
-    assert poly_mix[0] == 143271204
+    _poly_mix = iop.sample_elements(EXT_SIZE)
+    assert _poly_mix[0] == 143271204
+    poly_mix = ExtElem([Elem(e) for e in _poly_mix])
 
     check_merkle = MerkleVerifier(iop, domain, CHECK_SIZE, QUERIES)
     assert (
@@ -99,56 +102,33 @@ def main():
     )
     iop.commit(hash_u)
 
-    eval_u: list[list[int]] = []
+    eval_u: list[ExtElem] = []
 
     cur_pos = 0
     for (idx, reg) in get_register_taps():
         for i in range(reg.skip):
             ml = pow(back_one, TAPSET.taps[idx + i].back)
             x = [mul(z[i], ml) for i in range(len(z))]
-            coeffs = coeff_elems[cur_pos : cur_pos + reg.skip]
-            fx = poly_eval(coeffs, x)
+            fx = poly_eval(coeff_elems[cur_pos : cur_pos + reg.skip], x)
             eval_u.append(fx)
         cur_pos += reg.skip
 
-    assert eval_u[-1][0] == 557824063
+    assert eval_u[-1].e[0].n == 557824063
     assert num_taps == len(eval_u), "???"
 
-    ###### TODO
-    poly_step_def = get_def()
-    print(len(poly_step_def.block))
-    print(poly_step_def.block[0])
-    compute_poly(eval_u, poly_mix, iop.out, mix)
+    ###### TODO #####
+    result = compute_poly(eval_u, poly_mix, iop.out, mix)
+    print(result)
 
 
 def compute_poly(
-    u: list[list[Elem]], poly_mix: list[Elem], out: list[Elem], mix: list[Elem]
-):
-    return poly_ext(poly_mix, u, (out, mix))
-
-
-def poly_ext(mix: list[Elem], u: list[list[Elem]], args: tuple[list[Elem], list[Elem]]):
-    fp_vars: list[Elem] = []
-
-    # TODO: not Elem type
-    mix_vars: list[Elem] = []
-
-    # TODO
-    ret = 0
-
+    u: list[ExtElem], poly_mix: ExtElem, out: list[Elem], mix: list[Elem]
+) -> MixState:
     poly_step_def = get_def()
-    for op in poly_step_def.block:
-        # op.step(fp_vars, mix_vars, mix, u, args)
-        pass
-
-    # assert len(fp_vars) == len(poly_step_def.block) - (
-    #    ret + 1
-    # ), "Miscalculated capacity for fp_vars"
-    # assert len(mix_vars) == ret + 1, "Miscalculated capacity for mix_vars"
-    return mix_vars[ret]
+    return poly_step_def.step(poly_mix, u, (out, mix))
 
 
-def poly_eval(coeffs, x):
+def poly_eval(coeffs, x) -> ExtElem:
     mul_x = ExtElemOne
     tot = ExtElemZero
     x = ExtElem.from_ints([encode_mont(q) for q in x])
@@ -157,7 +137,7 @@ def poly_eval(coeffs, x):
         product = cc * mul_x
         tot = ExtElem([tot.e[idx] + p for idx, p in enumerate(product.e)])
         mul_x = mul_x * x
-    return [q.n for q in tot.e]
+    return tot
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:
