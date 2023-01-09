@@ -68,7 +68,6 @@ def fold_eval(io: list[ExtElem], x: ExtElem) -> ExtElem:
             [Elem(e) for e in [1425429779, 843460654, 272775571, 1548750881]]
         )
     else:
-        raise Exception("fuck")
         return ExtElemZero
 
     # size = len(io)
