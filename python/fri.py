@@ -11,7 +11,7 @@ from consts import (
 )
 from util import ROU_REV, ROU_FWD, hash_raw_pod
 from merkle import MerkleVerifier
-from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, ElemOne, ElemZero, poly_eval
+from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval
 from taps import TAPSET, get_register_taps
 from read_iop import ReadIOP
 
@@ -77,7 +77,9 @@ def fri_eval_taps(
 
     cur_mix = ExtElemOne
     tap_mix_pows: list[ExtElem] = []
-    for (idx, _reg) in get_register_taps():
+
+    register_taps = get_register_taps()
+    for (idx, _reg) in register_taps:
         tap_mix_pows.append(cur_mix)
         cur_mix *= mix
 
@@ -88,7 +90,7 @@ def fri_eval_taps(
 
     tap_cache = TapCache(tap_mix_pows, check_mix_pows)
 
-    for ((_, reg), cur) in zip(get_register_taps(), tap_cache.tap_mix_pows):
+    for ((_, reg), cur) in zip(register_taps, tap_cache.tap_mix_pows):
         tot[reg.combo] += cur * rows[reg.group.value][reg.offset]
 
     for i, cur in enumerate(tap_cache.check_mix_pows):
@@ -98,7 +100,8 @@ def fri_eval_taps(
     for i in range(combo_count):
         num = tot[i] - poly_eval(coeffs, x)
         divisor = ExtElemOne
-        for back in TAPSET.get_combo(i):
+
+        for back in TAPSET.get_combo(i).slice():
             divisor *= x - z * back_one**back
         ret += num * divisor.inv()
 

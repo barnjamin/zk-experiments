@@ -1,9 +1,4 @@
-from util import to_elem
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
-
-
-def stoi(s) -> int:
-    return int(s)
 
 
 class MixState:
@@ -20,7 +15,7 @@ class PolyExtStep:
     def __init__(self, op: str, args: list[str]):
         self.op = op
         self.args = args
-        self._args = [stoi(v) for v in args]
+        self._args = [int(v) for v in args]
 
     def as_dict(self):
         return {"op": self.op, "args": self.args}

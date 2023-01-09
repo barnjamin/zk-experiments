@@ -1,8 +1,6 @@
 from util import add, mul, sub, to_elem, pow
 from consts import PRIME
 
-NBETA = to_elem(PRIME - 11)
-
 
 class Elem:
     def __init__(self, n: int):
@@ -26,11 +24,17 @@ class Elem:
             case _:
                 raise Exception("??")
 
+    def __neg__(self) -> "Elem":
+        return Elem(0) - self
+
     def __str__(self) -> str:
         return f"Elem({self.n})"
 
     def __eq__(self, other) -> bool:
         return self.n == other.n
+
+    def inv(self) -> "Elem":
+        return Elem(pow(self.n, PRIME - 2))
 
     @staticmethod
     def from_int(n: int) -> "Elem":
@@ -41,6 +45,47 @@ class ExtElem:
     def __init__(self, e: list[Elem]):
         assert len(e) == 4
         self.e = e
+
+    def inv(self) -> "ExtElem":
+        a = self.e
+        # Compute the multiplicative inverse by looking at `ExtElem` as a composite
+        # field and using the same basic methods used to invert complex
+        # numbers. We imagine that initially we have a numerator of `1`, and a
+        # denominator of `a`. `out = 1 / a`; We set `a'` to be a with the first
+        # and third components negated. We then multiply the numerator and the
+        # denominator by `a'`, producing `out = a' / (a * a')`. By construction
+        # `(a * a')` has `0`s in its first and third elements. We call this
+        # number, `b` and compute it as follows.
+
+        b0 = a[0] * a[0] + BETA * (a[1] * (a[3] + a[3]) - a[2] * a[2])
+        b2 = a[0] * (a[2] + a[2]) - a[1] * a[1] + BETA * (a[3] * a[3])
+
+        # Now, we make `b'` by inverting `b2`. When we muliply both sizes by `b'`, we
+        # get `out = (a' * b') / (b * b')`.  But by construction `b * b'` is in
+        # fact an element of `Elem`, call it `c`.
+
+        c = b0 * b0 + BETA * b2 * b2
+        # But we can now invert `C` direcly, and multiply by `a' * b'`:
+        # `out = a' * b' * inv(c)`
+        ic = c.inv()
+
+        # Note: if c == 0 (really should only happen if in == 0), our
+        # 'safe' version of inverse results in ic == 0, and thus out
+        # = 0, so we have the same 'safe' behavior for ExtElem.  Oh,
+        # and since we want to multiply everything by ic, it's
+        # slightly faster to pre-multiply the two parts of b by ic (2
+        # multiplies instead of 4).
+
+        b0 *= ic
+        b2 *= ic
+        return ExtElem(
+            [
+                a[0] * b0 + BETA * a[2] * b2,
+                -a[1] * b0 + NBETA * a[3] * b2,
+                -a[0] * b2 + a[2] * b0,
+                a[1] * b2 - a[3] * b0,
+            ]
+        )
 
     def __add__(self, other: "ExtElem") -> "ExtElem":
         return ExtElem([self.e[idx] + other.e[idx] for idx in range(len(self.e))])
@@ -53,9 +98,9 @@ class ExtElem:
         b = other.e
         return ExtElem(
             [
-                a[0] * b[0] + Elem(NBETA) * (a[1] * b[3] + a[2] * b[2] + a[3] * b[1]),
-                a[0] * b[1] + a[1] * b[0] + Elem(NBETA) * (a[2] * b[3] + a[3] * b[2]),
-                a[0] * b[2] + a[1] * b[1] + a[2] * b[0] + Elem(NBETA) * (a[3] * b[3]),
+                a[0] * b[0] + NBETA * (a[1] * b[3] + a[2] * b[2] + a[3] * b[1]),
+                a[0] * b[1] + a[1] * b[0] + NBETA * (a[2] * b[3] + a[3] * b[2]),
+                a[0] * b[2] + a[1] * b[1] + a[2] * b[0] + NBETA * (a[3] * b[3]),
                 a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0],
             ]
         )
@@ -120,3 +165,6 @@ ElemZero = Elem(0)
 
 ExtElemOne = ExtElem.from_ints([1, 0, 0, 0])
 ExtElemZero = ExtElem.from_encoded_ints([0, 0, 0, 0])
+
+NBETA = Elem.from_int(PRIME - 11)
+BETA = Elem.from_int(11)
