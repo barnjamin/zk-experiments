@@ -53,6 +53,10 @@ def fp_pow(Fp base, u64 exp) -> Fp {
     return total;
 }
 
+def fp_pow_fp(Fp base, Fp exp) -> Fp {
+    return fp_pow(base, decode_mont(exp));
+}
+
 def fp_inv(Fp fp) -> Fp {
     return fp_pow(fp, PRIME - 2);
 }
@@ -97,6 +101,26 @@ def fp_ext_mul(FpExt a, FpExt b) -> FpExt {
         fp_mul(a[3], b[0])                                  \
     );
     return [f0, f1, f2, f3];
+}
+
+def to_FpExt(u64[POLY_FIELD_DEG] val) -> FpExt {
+    return [to_Fp(val[0]), to_Fp(val[1]), to_Fp(val[2]), to_Fp(val[3])];
+}
+
+def fp_ext_pow(FpExt base, u64 exp) -> FpExt {
+    FpExt mut total = to_FpExt([1, 0, 0, 0]);
+    FpExt mut x = base;
+    u64 mut mask = 1;
+    for u32 i in 0..64 {
+        total = if (mask & exp) > 0 { fp_ext_mul(total, x) } else { total };
+        mask = mask << 1;
+        x = fp_ext_mul(x, x);
+    }
+    return total;
+}
+
+def fp_ext_pow_fp(FpExt base, Fp exp) -> FpExt {
+    return fp_ext_pow(base, decode_mont(exp));
 }
 
 def fp_ext_inv(FpExt a) -> FpExt {
@@ -162,13 +186,9 @@ def fp_ext_sub(FpExt a, FpExt b) -> FpExt {
     ];
 }
 
-def to_fp_ext(u64[POLY_FIELD_DEG] val) -> FpExt {
-    return [to_Fp(val[0]), to_Fp(val[1]), to_Fp(val[2]), to_Fp(val[3])];
-}
-
 def poly_eval<N>(FpExt[N] coeffs, FpExt x) -> FpExt {
-    FpExt mut mul_x = to_fp_ext([1, 0, 0, 0]);
-    FpExt mut total = to_fp_ext([0, 0, 0, 0]);
+    FpExt mut mul_x = to_FpExt([1, 0, 0, 0]);
+    FpExt mut total = to_FpExt([0, 0, 0, 0]);
 
     for u32 i in 0..N {
         FpExt prod = fp_ext_mul(coeffs[i], mul_x);
