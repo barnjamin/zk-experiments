@@ -22,6 +22,7 @@ class MerkleParams:
         self.layers: int = int(log2(row_size))
         assert 1 << self.layers == row_size
 
+        # From risc0:
         # The "top" layer is a layer above which we verify all Merkle data only once at
         # the beginning.
         #
@@ -80,65 +81,3 @@ class MerkleVerifier:
 
     def root(self):
         return self.rest[self.params.idx_to_rest(1)]
-
-    # def commit_(leafs):
-    #    assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
-    #    if len(leafs) == 1:
-    #        return leafs[0]
-    #    else:
-    #        return MerkleVerifier.H(
-    #            MerkleVerifier.commit_(leafs[: len(leafs) // 2])
-    #            + MerkleVerifier.commit_(leafs[len(leafs) // 2 :])
-    #        ).digest()
-
-    # def commit(data_array):
-    #    return MerkleVerifier.commit_(
-    #        [MerkleVerifier.H(bytes(da)).digest() for da in data_array]
-    #    )
-
-    # def open_(index, leafs):
-    #    assert len(leafs) & (len(leafs) - 1) == 0, "length must be power of two"
-    #    assert 0 <= index and index < len(leafs), "cannot open invalid index"
-    #    if len(leafs) == 2:
-    #        return [leafs[1 - index]]
-    #    elif index < (len(leafs) / 2):
-    #        return MerkleVerifier.open_(index, leafs[: len(leafs) // 2]) + [
-    #            MerkleVerifier.commit_(leafs[len(leafs) // 2 :])
-    #        ]
-    #    else:
-    #        return MerkleVerifier.open_(
-    #            index - len(leafs) // 2, leafs[len(leafs) // 2 :]
-    #        ) + [MerkleVerifier.commit_(leafs[: len(leafs) // 2])]
-
-    # def open(index, data_array):
-    #    return MerkleVerifier.open_(
-    #        index, [MerkleVerifier.H(bytes(da)).digest() for da in data_array]
-    #    )
-
-    # def verify_(root, index, path, leaf):
-    #    assert 0 <= index and index < (1 << len(path)), "cannot verify invalid index"
-    #    if len(path) == 1:
-    #        if index == 0:
-    #            return root == MerkleVerifier.H(leaf + path[0]).digest()
-    #        else:
-    #            return root == MerkleVerifier.H(path[0] + leaf).digest()
-    #    else:
-    #        if index % 2 == 0:
-    #            return MerkleVerifier.verify_(
-    #                root,
-    #                index >> 1,
-    #                path[1:],
-    #                MerkleVerifier.H(leaf + path[0]).digest(),
-    #            )
-    #        else:
-    #            return MerkleVerifier.verify_(
-    #                root,
-    #                index >> 1,
-    #                path[1:],
-    #                MerkleVerifier.H(path[0] + leaf).digest(),
-    #            )
-
-    # def verify(root, index, path, data_element):
-    #    return MerkleVerifier.verify_(
-    #        root, index, path, MerkleVerifier.H(bytes(data_element)).digest()
-    #    )

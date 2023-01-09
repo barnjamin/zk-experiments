@@ -86,7 +86,7 @@ def add(lhs: int, rhs: int) -> int:
 
 def sub(lhs: int, rhs: int) -> int:
     x = wrapped_sub(lhs, rhs, 32)
-    return x if x > PRIME else wrapped_add(x, PRIME, 32)
+    return x if x < PRIME else wrapped_add(x, PRIME, 32)
 
 
 def mul(lhs: int, rhs: int) -> int:

@@ -1,4 +1,4 @@
-from util import add, mul, sub, to_elem, encode_mont
+from util import add, mul, sub, to_elem
 from consts import PRIME
 
 NBETA = to_elem(PRIME - 11)
