@@ -93,7 +93,11 @@ class ExtElem:
     def __sub__(self, other: "ExtElem") -> "ExtElem":
         return ExtElem([self.e[idx] - other.e[idx] for idx in range(len(self.e))])
 
-    def __mul__(self, other: "ExtElem") -> "ExtElem":
+    def __mul__(self, other: "ExtElem | Elem") -> "ExtElem":
+
+        if isinstance(other, Elem):
+            return ExtElem([e * other for e in self.e])
+
         a = self.e
         b = other.e
         return ExtElem(

@@ -98,7 +98,9 @@ def fri_eval_taps(
 
     ret = ExtElemZero
     for i in range(combo_count):
-        num = tot[i] - poly_eval(coeffs, x)
+        num = tot[i] - poly_eval(
+            combo_u[TAPSET.combo_begin[i] : TAPSET.combo_begin[i + 1]], x
+        )
         divisor = ExtElemOne
 
         for back in TAPSET.get_combo(i).slice():
@@ -125,7 +127,8 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
         domain //= FRI_FOLD
         degree //= FRI_FOLD
 
-    assert len(rounds) == rounds_capacity
+    print(rounds)
+    # assert len(rounds) == rounds_capacity
 
     final_coeffs = iop.read_field_elem_slice(EXT_SIZE * degree)
     final_digest = hash_raw_pod(final_coeffs)

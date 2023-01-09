@@ -37,7 +37,6 @@ class PolyExtStepDef:
         mix_vars: list[MixState] = []
 
         for idx, op in enumerate(self.block):
-            print(f"idx: {idx} fp_len: {len(fp_vars)} mix_len: {len(mix_vars)}")
             match op.op:
                 case "Const":
                     elem = Elem.from_int(op._args[0])
@@ -56,7 +55,6 @@ class PolyExtStepDef:
                 case "Sub":
                     sub_x1: int = op._args[0]
                     sub_x2: int = op._args[1]
-                    print(fp_vars[sub_x1].__dict__, fp_vars[sub_x2].__dict__)
                     fp_vars.append(fp_vars[sub_x1] - fp_vars[sub_x2])
                 case "Mul":
                     mul_x1: int = op._args[0]

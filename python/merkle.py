@@ -84,7 +84,7 @@ class MerkleVerifier:
         return self.rest[self.params.idx_to_rest(1)]
 
     def verify(self, iop: ReadIOP, idx: int) -> list[Elem]:
-        if idx < self.params.row_size:
+        if idx >= self.params.row_size:
             raise Exception("no")
 
         out: list[int] = iop.read_field_elem_slice(self.params.col_size)
@@ -105,6 +105,7 @@ class MerkleVerifier:
             else:
                 cur = sha_compress_leaves(cur, other)
 
+        print("ASdfa", idx, cur)
         if idx >= self.params.top_size:
             present_hash = self.top[self.params.idx_to_top(idx)]
         else:

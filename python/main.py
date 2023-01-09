@@ -197,6 +197,8 @@ def main():
             code_merkle.verify(iop, idx),
             data_merkle.verify(iop, idx),
         )
+        print(x)
+        print(rows[2])
         check_row = check_merkle.verify(iop, idx)
         return fri_eval_taps(mix, combo_u, check_row, back_one, x, z, rows)
 
