@@ -86,36 +86,26 @@ def fri_eval_taps(
         check_mix_pows.append(cur_mix)
         cur_mix *= mix
 
-    TapCache(tap_mix_pows, check_mix_pows)
+    tap_cache = TapCache(tap_mix_pows, check_mix_pows)
 
-    # for (reg, cur) in zip(taps.regs(), tap_cache.tap_mix_pows.iter()) {
-    #    tot[reg.combo_id()] += *cur * rows[reg.group() as usize][reg.offset()];
-    # }
+    for ((_, reg), cur) in zip(get_register_taps(), tap_cache.tap_mix_pows):
+        tot[reg.combo] += cur * rows[reg.group.value][reg.offset]
 
-    # for (i, cur) in zip(0..Self::CHECK_SIZE, tap_cache.check_mix_pows.iter()) {
-    #    tot[combo_count] += *cur * check_row[i];
-    # }
+    for i, cur in enumerate(tap_cache.check_mix_pows):
+        tot[combo_count] += cur * check_row[i]
 
-    # let mut ret = Self::ExtElem::ZERO;
-    # for i in 0..combo_count {
-    #    let num = tot[i]
-    #        - self.poly_eval(
-    #            &combo_u[taps.combo_begin[i] as usize..taps.combo_begin[i + 1] as usize],
-    #            x,
-    #        );
-    #    let mut divisor = Self::ExtElem::ONE;
-    #    for back in taps.get_combo(i).slice() {
-    #        divisor *= x - z * back_one.pow(*back as usize);
-    #    }
-    #    ret += num * divisor.inv();
-    # }
+    ret = ExtElemZero
+    for i in range(combo_count):
+        num = tot[i] - poly_eval(coeffs, x)
+        divisor = ExtElemOne
+        for back in TAPSET.get_combo(i):
+            divisor *= x - z * back_one**back
+        ret += num * divisor.inv()
 
-    # let check_num = tot[combo_count] - combo_u[taps.tot_combo_backs];
-    # let check_div = x - z.pow(INV_RATE);
-    # ret += check_num * check_div.inv();
-    # ret
-
-    return ExtElemZero
+    check_num = tot[combo_count] - combo_u[TAPSET.tot_combo_backs]
+    check_div = x - z**INV_RATE
+    ret += check_num * check_div.inv()
+    return ret
 
 
 def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtElem:
