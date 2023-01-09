@@ -1,9 +1,11 @@
+from math import log2
 from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
 from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
 from util import (
     ROU_REV,
+    ROU_FWD,
     hash_raw_pod,
     to_elem,
     mul,
@@ -144,7 +146,52 @@ def main():
     assert check == ExtElem.from_encoded_ints(
         [1690122582, 1137837276, 1083180978, 978403227]
     )
-    print(check)
+
+    three = Elem.from_int(3)
+    check *= (ExtElem.from_subfield(three) * z) ** size - ExtElemOne
+
+    assert check == result, "Invalid proof"
+
+    mix = ExtElem.from_encoded_ints(iop.sample_elements(4))
+    assert mix == ExtElem.from_encoded_ints(
+        [378850810, 584596398, 622635274, 362333855]
+    )
+
+    combo_u = [ExtElemZero] * (TAPSET.tot_combo_backs + 1)
+    cur_mix = ExtElemOne
+    cur_pos = 0
+    tap_mix_pows = []
+    for (idx, reg) in get_register_taps():
+        for i in range(reg.skip):
+            combo_u[TAPSET.combo_begin[reg.combo] + i] += (
+                cur_mix * coeff_elems[cur_pos + i]
+            )
+
+        tap_mix_pows.append(cur_mix)
+        cur_mix *= mix
+        cur_pos += reg.skip
+
+    assert len(tap_mix_pows) == TAPSET.reg_count
+
+    check_mix_pows = []
+    for _ in range(CHECK_SIZE):
+        combo_u[TAPSET.tot_combo_backs] += cur_mix * coeff_elems[cur_pos]
+        cur_pos += 1
+        check_mix_pows.append(cur_mix)
+        cur_mix *= mix
+
+    assert check_mix_pows[-1] == ExtElem.from_encoded_ints(
+        [1630866757, 803032502, 1651092631, 1744796188]
+    )
+
+    gen = ROU_FWD[int(log2(domain))]
+
+    # TODO
+    # fri_verify(iop, size, )
+
+
+def fri_verify():
+    pass
 
 
 def compute_poly(
