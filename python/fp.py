@@ -22,9 +22,6 @@ class Elem:
 
 
 class ExtElem:
-    tot: "ExtElem"
-    mul: "ExtElem"
-
     def __init__(self, e: list[Elem]):
         assert len(e) == 4
         self.e = e

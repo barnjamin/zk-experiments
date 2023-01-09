@@ -51,22 +51,18 @@ class PolyExtStep:
                 base: int = self._args[0]
                 offset: int = self._args[1]
                 fp_vars.append(ext_elem_from_sub_field(args[base][offset]))
-                pass
             case "Add":
                 x1: int = self._args[0]
                 x2: int = self._args[1]
                 fp_vars.append(fp_vars[x1] + fp_vars[x2])
-                pass
             case "Sub":
                 sub_x1: int = self._args[0]
                 sub_x2: int = self._args[1]
                 fp_vars.append(fp_vars[sub_x1] - fp_vars[sub_x2])
-                pass
             case "Mul":
                 mul_x1: int = self._args[0]
                 mul_x2: int = self._args[1]
                 fp_vars.append(fp_vars[mul_x1] * fp_vars[mul_x2])
-                pass
             case "TRUE":
                 mix_vars.append(
                     MixState(
@@ -83,7 +79,6 @@ class PolyExtStep:
                         mul=xeq.mul * mix,
                     )
                 )
-                pass
             case "AndCond":
                 xcond: MixState = mix_vars[self._args[0]]
                 cond: ExtElem = fp_vars[self._args[1]]
@@ -94,6 +89,38 @@ class PolyExtStep:
                         mul=xcond.mul * inner.mul,
                     )
                 )
-                pass
             case _:
                 raise Exception("???")
+
+
+class PolyExtStepDef:
+    def __init__(self, block: list[PolyExtStep], ret: int):
+        self.block = block
+        self.ret = ret
+
+    def step(
+        self, mix: ExtElem, u: list[ExtElem], args: tuple[list[Elem], list[Elem]]
+    ) -> MixState:
+        fp_vars: list[ExtElem] = []
+        mix_vars: list[MixState] = []
+
+        for op in self.block:
+            op.step(fp_vars, mix_vars, mix, u, args)
+
+        assert len(fp_vars) == len(self.block) - (
+            self.ret + 1
+        ), "Miscalculated capacity for fp_vars"
+        assert len(mix_vars) == self.ret + 1, "Miscalculated capacity for mix_vars"
+
+        return mix_vars[self.ret]
+
+
+def get_def() -> PolyExtStepDef:
+    import json
+
+    with open("steps.json") as f:
+        step_def = json.loads(f.read())
+
+    steps: list[PolyExtStep] = [PolyExtStep.from_dict(x) for x in step_def]
+    # TODO: hardcoded `ret`
+    return PolyExtStepDef(block=steps, ret=2688)

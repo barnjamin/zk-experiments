@@ -10,8 +10,7 @@ from util import (
     pow,
 )
 
-from poly_ext_def import get_def
-from poly_ext import MixState
+from poly_ext import MixState, get_def
 
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
