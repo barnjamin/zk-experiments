@@ -116,7 +116,7 @@ def main():
     assert num_taps == len(eval_u), "???"
 
     ###### TODO #####
-    result = compute_poly(eval_u, poly_mix, iop.out, mix)
+    result = compute_poly(eval_u, poly_mix, iop.out, [Elem(m) for m in mix])
     print(result)
 
 

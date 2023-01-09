@@ -6,10 +6,6 @@ def stoi(s) -> int:
     return int(s)
 
 
-def ext_elem_from_sub_field(e: Elem) -> ExtElem:
-    return ExtElem([e, Elem(0), Elem(0), Elem(0)])
-
-
 class MixState:
     def __init__(self, tot: ExtElem, mul: ExtElem):
         self.tot = tot
@@ -33,65 +29,6 @@ class PolyExtStep:
     def from_dict(d: dict[str, str | list[str]]) -> "PolyExtStep":
         return PolyExtStep(op=d["op"], args=d["args"])  # type: ignore
 
-    def step(
-        self,
-        fp_vars: list[ExtElem],
-        mix_vars: list[MixState],
-        mix: ExtElem,
-        u: list[ExtElem],
-        args: tuple[list[Elem], list[Elem]],
-    ):
-        match self.op:
-            case "Const":
-                elem = Elem(to_elem(self._args[0]))
-                fp_vars.append(ext_elem_from_sub_field(elem))
-            case "Get":
-                fp_vars.append(u[self._args[0]])
-            case "GetGlobal":
-                base: int = self._args[0]
-                offset: int = self._args[1]
-                fp_vars.append(ext_elem_from_sub_field(args[base][offset]))
-            case "Add":
-                x1: int = self._args[0]
-                x2: int = self._args[1]
-                fp_vars.append(fp_vars[x1] + fp_vars[x2])
-            case "Sub":
-                sub_x1: int = self._args[0]
-                sub_x2: int = self._args[1]
-                fp_vars.append(fp_vars[sub_x1] - fp_vars[sub_x2])
-            case "Mul":
-                mul_x1: int = self._args[0]
-                mul_x2: int = self._args[1]
-                fp_vars.append(fp_vars[mul_x1] * fp_vars[mul_x2])
-            case "TRUE":
-                mix_vars.append(
-                    MixState(
-                        tot=ExtElemZero,
-                        mul=ExtElemOne,
-                    )
-                )
-            case "AndEqz":
-                xeq: MixState = mix_vars[self._args[0]]
-                val: ExtElem = fp_vars[self._args[1]]
-                mix_vars.append(
-                    MixState(
-                        tot=xeq.tot + xeq.mul * val,
-                        mul=xeq.mul * mix,
-                    )
-                )
-            case "AndCond":
-                xcond: MixState = mix_vars[self._args[0]]
-                cond: ExtElem = fp_vars[self._args[1]]
-                inner = mix_vars[self._args[2]]
-                mix_vars.append(
-                    MixState(
-                        tot=xcond.tot + cond * inner.tot * xcond.mul,
-                        mul=xcond.mul * inner.mul,
-                    )
-                )
-            case _:
-                raise Exception("???")
-
 
 class PolyExtStepDef:
     def __init__(self, block: list[PolyExtStep], ret: int):
@@ -104,8 +41,61 @@ class PolyExtStepDef:
         fp_vars: list[ExtElem] = []
         mix_vars: list[MixState] = []
 
-        for op in self.block:
-            op.step(fp_vars, mix_vars, mix, u, args)
+        for idx, op in enumerate(self.block):
+            print(f"idx: {idx} fp_len: {len(fp_vars)} mix_len: {len(mix_vars)}")
+            print(f"Op: {op.op} Args: {[a for a in op._args]}")
+            match op.op:
+                case "Const":
+                    elem = Elem(to_elem(op._args[0]))
+                    fp_vars.append(ExtElem.from_subfield(elem))
+                case "Get":
+                    get_idx: int = op._args[0]
+                    fp_vars.append(u[get_idx])
+                case "GetGlobal":
+                    base: int = op._args[0]
+                    offset: int = op._args[1]
+                    fp_vars.append(ExtElem.from_subfield(args[base][offset]))
+                case "Add":
+                    x1: int = op._args[0]
+                    x2: int = op._args[1]
+                    fp_vars.append(fp_vars[x1] + fp_vars[x2])
+                case "Sub":
+                    sub_x1: int = op._args[0]
+                    sub_x2: int = op._args[1]
+                    print(fp_vars[sub_x1].__dict__, fp_vars[sub_x2].__dict__)
+                    fp_vars.append(fp_vars[sub_x1] - fp_vars[sub_x2])
+                case "Mul":
+                    mul_x1: int = op._args[0]
+                    mul_x2: int = op._args[1]
+                    fp_vars.append(fp_vars[mul_x1] * fp_vars[mul_x2])
+                case "TRUE":
+                    mix_vars.append(
+                        MixState(
+                            tot=ExtElemZero,
+                            mul=ExtElemOne,
+                        )
+                    )
+                case "AndEqz":
+                    xeq: MixState = mix_vars[op._args[0]]
+                    val: ExtElem = fp_vars[op._args[1]]
+                    mix_vars.append(
+                        MixState(
+                            tot=xeq.tot + xeq.mul * val,
+                            mul=xeq.mul * mix,
+                        )
+                    )
+                case "AndCond":
+                    xcond: MixState = mix_vars[op._args[0]]
+                    cond: ExtElem = fp_vars[op._args[1]]
+                    inner = mix_vars[op._args[2]]
+                    mix_vars.append(
+                        MixState(
+                            tot=xcond.tot + cond * inner.tot * xcond.mul,
+                            mul=xcond.mul * inner.mul,
+                        )
+                    )
+                case _:
+                    raise Exception("???")
 
         assert len(fp_vars) == len(self.block) - (
             self.ret + 1

@@ -17,8 +17,8 @@ class Elem:
     def __sub__(self, other: "Elem") -> "Elem":
         return Elem(sub(self.n, other.n))
 
-    # def __pow__(self, other: "Elem") -> "Elem":
-    #    return Elem(pow(self.n, other.n))
+    def __pow__(self, other: "Elem") -> "Elem":
+        return Elem(pow(self.n, other.n))
 
 
 class ExtElem:
@@ -27,7 +27,10 @@ class ExtElem:
         self.e = e
 
     def __add__(self, other: "ExtElem") -> "ExtElem":
-        pass
+        return ExtElem([self.e[idx] + other.e[idx] for idx in range(len(self.e))])
+
+    def __sub__(self, other: "ExtElem") -> "ExtElem":
+        return ExtElem([self.e[idx] - other.e[idx] for idx in range(len(self.e))])
 
     def __mul__(self, other: "ExtElem") -> "ExtElem":
         a = self.e
@@ -41,15 +44,22 @@ class ExtElem:
             ]
         )
 
-    def __sub__(self, other: "ExtElem") -> "ExtElem":
-        pass
+    def __div__(self, other: "ExtElem") -> "ExtElem":
+        raise Exception("not implemented")
 
-    # def __pow__(self, other: "ExtElem")->"ExtElem":
-    #    pass
+    def __truediv__(self, other: "ExtElem") -> "ExtElem":
+        raise Exception("not implemented")
+
+    def __pow__(self, other: "ExtElem") -> "ExtElem":
+        raise Exception("not implemented")
 
     @staticmethod
     def from_ints(e: list[int]) -> "ExtElem":
         return ExtElem([Elem(x) for x in e])
+
+    @staticmethod
+    def from_subfield(e: Elem) -> "ExtElem":
+        return ExtElem([e, Elem(0), Elem(0), Elem(0)])
 
 
 ExtElemOne = ExtElem.from_ints([1, 0, 0, 0])
