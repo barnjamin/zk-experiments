@@ -1,4 +1,4 @@
-from util import add, mul, sub, to_elem, encode_mont
+from util import add, mul, sub, to_elem
 from consts import PRIME
 
 NBETA = to_elem(PRIME - 11)
@@ -22,6 +22,9 @@ class Elem:
 
 
 class ExtElem:
+    tot: "ExtElem"
+    mul: "ExtElem"
+
     def __init__(self, e: list[Elem]):
         assert len(e) == 4
         self.e = e

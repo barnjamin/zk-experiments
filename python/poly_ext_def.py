@@ -1,4 +1,4 @@
-from poly_ext import *
+from poly_ext import PolyExtStep
 
 
 class PolyExtStepDef:
@@ -7,11 +7,16 @@ class PolyExtStepDef:
         self.ret = ret
 
 
-def get_def():
+def get_def() -> PolyExtStepDef:
     import json
 
-    with open("poly_ext_step_def.json") as f:
+    with open("steps.json") as f:
         step_def = json.loads(f.read())
 
-    steps: list[PolyExtStep] = [eval(x) for x in step_def["steps"]]
-    return PolyExtStepDef(block=steps, ret=step_def["ret"])
+    steps: list[PolyExtStep] = [PolyExtStep.from_dict(x) for x in step_def]
+    # TODO: hardcoded ret
+    return PolyExtStepDef(block=steps, ret=2688)
+
+
+if __name__ == "__main__":
+    print(get_def())

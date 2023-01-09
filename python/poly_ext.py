@@ -1,99 +1,99 @@
+from util import to_elem
+from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
+
+
+def stoi(s) -> int:
+    return int(s)
+
+
+def ext_elem_from_sub_field(e: Elem) -> ExtElem:
+    return ExtElem([e, Elem(0), Elem(0), Elem(0)])
+
+
+class MixState:
+    def __init__(self, tot: ExtElem, mul: ExtElem):
+        self.tot = tot
+        self.mul = mul
+
+
 class PolyExtStep:
-    def step(self):
-        match self:
-            case PolyExtStepConst():
-                # let elem = F::Elem::from_u64(*value as u64);
-                # fp_vars.push(F::ExtElem::from_subfield(&elem));
+    op: str
+    args: list[str]
+    _args: list[int]
+
+    def __init__(self, op: str, args: list[str]):
+        self.op = op
+        # self.args = args
+        # self._args = [stoi(v) for v in args]
+
+    def as_dict(self):
+        return {"op": self.op, "args": self.args}
+
+    @staticmethod
+    def from_dict(d: dict[str, str | list[str]]) -> "PolyExtStep":
+        return PolyExtStep(op=d["op"], args=d["args"])  # type: ignore
+
+    def step(
+        self,
+        fp_vars: list[ExtElem],
+        mix_vars: list[MixState],
+        mix: ExtElem,
+        u: list[ExtElem],
+        args: list[list[Elem]],
+    ):
+        match self.op:
+            case "Const":
+                elem = Elem(to_elem(self._args[0]))
+                fp_vars.append(ext_elem_from_sub_field(elem))
+            case "Get":
+                fp_vars.append(u[self._args[0]])
+            case "GetGlobal":
+                base: int = self._args[0]
+                offset: int = self._args[1]
+                fp_vars.append(ext_elem_from_sub_field(args[base][offset]))
                 pass
-            case PolyExtStepGet():
-                # fp_vars.push(u[*tap]);
+            case "Add":
+                x1: int = self._args[0]
+                x2: int = self._args[1]
+                fp_vars.append(fp_vars[x1] + fp_vars[x2])
                 pass
-            case PolyExtStepGetGlobal():
-                # fp_vars.push(F::ExtElem::from_subfield(&args[*base][*offset]));
+            case "Sub":
+                sub_x1: int = self._args[0]
+                sub_x2: int = self._args[1]
+                fp_vars.append(fp_vars[sub_x1] - fp_vars[sub_x2])
                 pass
-            case PolyExtStepAdd():
-                # fp_vars.push(fp_vars[*x1] + fp_vars[*x2]);
+            case "Mul":
+                mul_x1: int = self._args[0]
+                mul_x2: int = self._args[1]
+                fp_vars.append(fp_vars[mul_x1] * fp_vars[mul_x2])
                 pass
-            case PolyExtStepSub():
-                # fp_vars.push(fp_vars[*x1] - fp_vars[*x2]);
+            case "TRUE":
+                mix_vars.append(
+                    MixState(
+                        tot=ExtElemZero,
+                        mul=ExtElemOne,
+                    )
+                )
+            case "AndEqz":
+                xeq: MixState = mix_vars[self._args[0]]
+                val: ExtElem = fp_vars[self._args[1]]
+                mix_vars.append(
+                    MixState(
+                        tot=xeq.tot + xeq.mul * val,
+                        mul=xeq.mul * mix,
+                    )
+                )
                 pass
-            case PolyExtStepMul():
-                # fp_vars.push(fp_vars[*x1] * fp_vars[*x2]);
-                pass
-            case PolyExtStepTRUE():
-                # mix_vars.push(MixState {
-                #     tot: F::ExtElem::ZERO,
-                #     mul: F::ExtElem::ONE,
-                # });
-                pass
-            case PolyExtStepAndEqz():
-                # let x = mix_vars[*x];
-                # let val = fp_vars[*val];
-                # mix_vars.push(MixState {
-                #     tot: x.tot + x.mul * val,
-                #     mul: x.mul * *mix,
-                # });
-                pass
-            case PolyExtStepAndCond():
-                # let x = mix_vars[*x];
-                # let cond = fp_vars[*cond];
-                # let inner = mix_vars[*inner];
-                # mix_vars.push(MixState {
-                #     tot: x.tot + cond * inner.tot * x.mul,
-                #     mul: x.mul * inner.mul,
-                # });
+            case "AndCond":
+                xcond: MixState = mix_vars[self._args[0]]
+                cond: ExtElem = fp_vars[self._args[1]]
+                inner = mix_vars[self._args[2]]
+                mix_vars.append(
+                    MixState(
+                        tot=xcond.tot + cond * inner.tot * xcond.mul,
+                        mul=xcond.mul * inner.mul,
+                    )
+                )
                 pass
             case _:
                 raise Exception("???")
-
-
-class PolyExtStepTRUE(PolyExtStep):
-    def __init__(self):
-        pass
-
-
-class PolyExtStepConst(PolyExtStep):
-    def __init__(self, v: int):
-        self.value = v
-
-
-class PolyExtStepGet(PolyExtStep):
-    def __init__(self, tap: int):
-        self.tap = tap
-
-
-class PolyExtStepGetGlobal(PolyExtStep):
-    def __init__(self, base: int, offset: int):
-        self.base = base
-        self.offset = offset
-
-
-class PolyExtStepAdd(PolyExtStep):
-    def __init__(self, x1: int, x2: int):
-        self.x1 = x1
-        self.x2 = x2
-
-
-class PolyExtStepSub(PolyExtStep):
-    def __init__(self, x1: int, x2: int):
-        self.x1 = x1
-        self.x2 = x2
-
-
-class PolyExtStepMul(PolyExtStep):
-    def __init__(self, x1: int, x2: int):
-        self.x1 = x1
-        self.x2 = x2
-
-
-class PolyExtStepAndEqz(PolyExtStep):
-    def __init__(self, x: int, val: int):
-        self.x = x
-        self.val = val
-
-
-class PolyExtStepAndCond(PolyExtStep):
-    def __init__(self, x: int, cond: int, iter: int):
-        self.x = x
-        self.cond = cond
-        self.iter = iter
