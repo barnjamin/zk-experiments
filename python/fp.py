@@ -1,4 +1,4 @@
-from util import add, mul, sub, to_elem
+from util import add, mul, sub, to_elem, pow
 from consts import PRIME
 
 NBETA = to_elem(PRIME - 11)
@@ -17,8 +17,14 @@ class Elem:
     def __sub__(self, other: "Elem") -> "Elem":
         return Elem(sub(self.n, other.n))
 
-    def __pow__(self, other: "Elem") -> "Elem":
-        return Elem(pow(self.n, other.n))
+    def __pow__(self, other: "Elem | int") -> "Elem":
+        match other:
+            case int():
+                return Elem(pow(self.n, other))
+            case Elem():
+                return Elem(pow(self.n, other.n))
+            case _:
+                raise Exception("??")
 
     def __str__(self) -> str:
         return f"Elem({self.n})"
@@ -60,8 +66,25 @@ class ExtElem:
     def __truediv__(self, other: "ExtElem") -> "ExtElem":
         raise Exception("not implemented")
 
-    def __pow__(self, other: "ExtElem") -> "ExtElem":
-        raise Exception("not implemented")
+    def __pow__(self, other: Elem | int) -> "ExtElem":
+
+        n: int
+        match other:
+            case int():
+                n = other
+            case Elem():
+                n = other.n
+            case _:
+                raise Exception("??")
+
+        tot = ExtElemOne
+        x = self
+        while n != 0:
+            if n % 2 == 1:
+                tot *= x
+            n = int(n / 2)
+            x *= x
+        return tot
 
     def __str__(self) -> str:
         x = ",".join([str(e) for e in self.e])
@@ -82,6 +105,9 @@ class ExtElem:
     def from_subfield(e: Elem) -> "ExtElem":
         return ExtElem([e, Elem(0), Elem(0), Elem(0)])
 
+
+ElemOne = Elem.from_int(1)
+ElemZero = Elem(0)
 
 ExtElemOne = ExtElem.from_ints([1, 0, 0, 0])
 ExtElemZero = ExtElem.from_encoded_ints([0, 0, 0, 0])

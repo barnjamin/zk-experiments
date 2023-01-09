@@ -5,7 +5,6 @@ from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
 from util import (
     ROU_REV,
     hash_raw_pod,
-    decode_mont,
     to_elem,
     mul,
     pow,
@@ -13,7 +12,7 @@ from util import (
 
 from poly_ext import MixState, get_def
 
-from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
+from fp import Elem, ExtElem, ElemOne, ElemZero, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
 
 
@@ -80,8 +79,9 @@ def main():
         == "b5b6727b0e71ff6c699c59f0ceb258805dc427b839f10052229dcecf7ab78d45"
     )
 
-    z = iop.sample_elements(EXT_SIZE)
-    assert z[0] == 1298130879
+    _z = iop.sample_elements(EXT_SIZE)
+    assert _z[0] == 1298130879
+    z = ExtElem.from_encoded_ints(_z)
 
     back_one = ROU_REV[po2]
     assert back_one == 173369915
@@ -108,8 +108,8 @@ def main():
     for (idx, reg) in get_register_taps():
         for i in range(reg.skip):
             # Make sure its encoded properly
-            ml: int = to_elem(pow(back_one, TAPSET.taps[idx + i].back))
-            x: ExtElem = ExtElem.from_encoded_ints([mul(ze, ml) for ze in z])
+            ml: Elem = to_elem(pow(back_one, TAPSET.taps[idx + i].back))
+            x: ExtElem = ExtElem.from_encoded_ints([mul(ze, ml) for ze in _z])
             fx: ExtElem = poly_eval(coeff_elems[cur_pos : cur_pos + reg.skip], x)
 
             eval_u.append(fx)
@@ -118,16 +118,40 @@ def main():
     assert eval_u[-1].e[0].n == 286370341
     assert num_taps == len(eval_u), "???"
 
-    ###### TODO #####
     result = compute_poly(eval_u, poly_mix, iop.out, mix)
-    print([e.n for e in result.tot.e])
+    assert result == ExtElem.from_encoded_ints(
+        [700805407, 1956845718, 1873169536, 192464046]
+    )
+
+    check = ExtElem.from_encoded_ints([0, 0, 0, 0])
+    remap = [0, 2, 1, 3]
+    fp0 = ElemZero
+    fp1 = ElemOne
+    for i, rmi in enumerate(remap):
+        check += (
+            coeff_elems[num_taps + rmi + 0] * z**i * ExtElem([fp1, fp0, fp0, fp0])
+        )
+        check += (
+            coeff_elems[num_taps + rmi + 4] * z**i * ExtElem([fp0, fp1, fp0, fp0])
+        )
+        check += (
+            coeff_elems[num_taps + rmi + 8] * z**i * ExtElem([fp0, fp0, fp1, fp0])
+        )
+        check += (
+            coeff_elems[num_taps + rmi + 12] * z**i * ExtElem([fp0, fp0, fp0, fp1])
+        )
+
+    assert check == ExtElem.from_encoded_ints(
+        [1690122582, 1137837276, 1083180978, 978403227]
+    )
+    print(check)
 
 
 def compute_poly(
     u: list[ExtElem], poly_mix: ExtElem, out: list[Elem], mix: list[Elem]
-) -> MixState:
+) -> ExtElem:
     poly_step_def = get_def()
-    return poly_step_def.step(poly_mix, u, (out, mix))
+    return poly_step_def.step(poly_mix, u, (out, mix)).tot
 
 
 def poly_eval(coeffs: list[ExtElem], x: ExtElem) -> ExtElem:
