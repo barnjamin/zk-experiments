@@ -1,22 +1,20 @@
 from read_iop import ReadIOP
 from merkle import MerkleVerifier
 from method import Method
-from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2, PRIME
+from consts import QUERIES, INV_RATE, MIN_CYCLES_PO2
 from util import (
-    to_elem,
     ROU_REV,
     hash_raw_pod,
-    wrapped_pow,
-    wrapped_mul,
-    wrapped_add,
-    encode_mont,
-    add,
     decode_mont,
+    to_elem,
     mul,
-    swap32,
+    pow,
 )
-from taps import TAPSET, TapData
-import galois as gf  # type: ignore
+
+from poly_ext import MixState, get_def
+
+from fp import Elem, ExtElem, ExtElemOne, ExtElemZero
+from taps import TAPSET, get_register_taps
 
 
 CIRCUIT_OUTPUT_SIZE = 18
@@ -30,8 +28,6 @@ ACCUM_TAP_SIZE = 36
 # Extended field element size
 EXT_SIZE = 4
 CHECK_SIZE = INV_RATE * EXT_SIZE
-
-NBETA = to_elem(PRIME - 11)
 
 
 def main():
@@ -65,8 +61,8 @@ def main():
         == "36a851ef72541689fd9537c5b3a01c75c66bccffef7871f9757ee664c0ef909d"
     )
 
-    mix = iop.sample_elements(CIRCUIT_MIX_SIZE)
-    assert mix[0] == 1374649985
+    mix = [Elem(e) for e in iop.sample_elements(CIRCUIT_MIX_SIZE)]
+    assert mix[0].n == 1374649985
 
     accum_merkle = MerkleVerifier(iop, domain, ACCUM_TAP_SIZE, QUERIES)
     assert (
@@ -74,8 +70,9 @@ def main():
         == "c0f53b6615c2ce2332f06386b72cd7f300d52684885c694cd903b599c915ba57"
     )
 
-    poly_mix = iop.sample_elements(EXT_SIZE)
-    assert poly_mix[0] == 143271204
+    _poly_mix = iop.sample_elements(EXT_SIZE)
+    assert _poly_mix[0] == 143271204
+    poly_mix = ExtElem.from_encoded_ints(_poly_mix)
 
     check_merkle = MerkleVerifier(iop, domain, CHECK_SIZE, QUERIES)
     assert (
@@ -92,8 +89,12 @@ def main():
     num_taps = len(TAPSET.taps)
 
     coeff_u = iop.read_field_ext_elem_slice((num_taps + CHECK_SIZE))
-    coeff_elems = [coeff_u[x * 4 : (x + 1) * 4] for x in range(int(len(coeff_u) / 4))]
     assert coeff_u[0] == 407240978
+
+    coeff_elems: list[ExtElem] = [
+        ExtElem.from_encoded_ints(coeff_u[x * 4 : (x + 1) * 4])
+        for x in range(int(len(coeff_u) / 4))
+    ]
 
     hash_u = hash_raw_pod(coeff_u)
     assert (
@@ -102,65 +103,40 @@ def main():
     )
     iop.commit(hash_u)
 
-    ####
-
-    eval_u: list[list[int]] = []
-
-    cur_pos = 0
-    for reg in register_taps():
-        print(reg)
+    cur_pos: int = 0
+    eval_u: list[ExtElem] = []
+    for (idx, reg) in get_register_taps():
         for i in range(reg.skip):
-            ml = wrapped_pow(back_one, reg.back + i)
-            x = [mul(z[i], ml) for i in range(len(z))]
-            coeffs = coeff_elems[cur_pos : cur_pos + reg.skip]
-            fx = poly_eval(coeffs, x)
-            eval_u.append(fx)
-        cur_pos += reg.skip
+            # Make sure its encoded properly
+            ml: int = to_elem(pow(back_one, TAPSET.taps[idx + i].back))
+            x: ExtElem = ExtElem.from_encoded_ints([mul(ze, ml) for ze in z])
+            fx: ExtElem = poly_eval(coeff_elems[cur_pos : cur_pos + reg.skip], x)
 
+            eval_u.append(fx)
+
+        cur_pos += reg.skip
+    assert eval_u[-1].e[0].n == 286370341
     assert num_taps == len(eval_u), "???"
 
-
-def register_taps() -> list[TapData]:
-    cursor = 0
-    taps: list[TapData] = []
-    while cursor < len(TAPSET.taps):
-        t = TAPSET.taps[cursor]
-        taps.append(t)
-        cursor += t.skip
-    return taps
+    ###### TODO #####
+    result = compute_poly(eval_u, poly_mix, iop.out, mix)
+    print([e.n for e in result.tot.e])
 
 
-class Elem:
-    def __init__(self, n: int):
-        self.n = n
-
-    def __mul__(self, other: "Elem") -> "Elem":
-        return Elem(mul(self.n, other.n))
-
-    def __add__(self, other: "Elem") -> "Elem":
-        return Elem(add(self.n, other.n))
+def compute_poly(
+    u: list[ExtElem], poly_mix: ExtElem, out: list[Elem], mix: list[Elem]
+) -> MixState:
+    poly_step_def = get_def()
+    return poly_step_def.step(poly_mix, u, (out, mix))
 
 
-def mul_e(a: list[Elem], b: list[Elem]) -> list[Elem]:
-    return [
-        a[0] * b[0] + Elem(NBETA) * (a[1] * b[3] + a[2] * b[2] + a[3] * b[1]),
-        a[0] * b[1] + a[1] * b[0] + Elem(NBETA) * (a[2] * b[3] + a[3] * b[2]),
-        a[0] * b[2] + a[1] * b[1] + a[2] * b[0] + Elem(NBETA) * (a[3] * b[3]),
-        a[0] * b[3] + a[1] * b[2] + a[2] * b[1] + a[3] * b[0],
-    ]
-
-
-def poly_eval(coeffs, x):
-    mul_x = [Elem(q) for q in [1, 0, 0, 0]]
-    tot = [Elem(q) for q in [0, 0, 0, 0]]
-    x = [Elem(q) for q in x]
-
+def poly_eval(coeffs: list[ExtElem], x: ExtElem) -> ExtElem:
+    mul_x = ExtElemOne
+    tot = ExtElemZero
     for i in range(len(coeffs)):
-        cc = [Elem(q) for q in coeffs[i]]
-        product = mul_e(cc, mul_x)
-        tot = [tot[idx] + product[idx] for idx in range(4)]
-        mul_x = mul_e(mul_x, x)
-    return [q.n for q in tot]
+        tot += coeffs[i] * mul_x
+        mul_x = mul_x * x
+    return tot
 
 
 def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:

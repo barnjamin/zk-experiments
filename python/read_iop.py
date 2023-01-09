@@ -3,9 +3,9 @@ from util import (
     u32_to_u8,
     u8_to_u32,
     sha_hash,
-    decode_mont,
     to_elem,
 )
+from fp import Elem
 from consts import DIGEST_WORDS, PRIME
 
 
@@ -53,7 +53,7 @@ class ReadIOP:
         self.proof = seal
         self.rng = ShaRng()
 
-        self.out = [decode_mont(x) for x in self.read_field_elem_slice(circuit_outputs)]
+        self.out = [Elem(x) for x in self.read_field_elem_slice(circuit_outputs)]
         self.po2 = self.read_u32s(1).pop()
 
     def read_u32s(self, size: int) -> list[int]:

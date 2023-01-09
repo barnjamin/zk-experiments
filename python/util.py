@@ -67,7 +67,7 @@ def u32_to_u8(u32s: list[int]) -> list[int]:
     return u8s
 
 
-def to_elem(raw: int):
+def to_elem(raw: int) -> int:
     return encode_mont(raw % PRIME)
 
 
@@ -98,21 +98,16 @@ def mul(lhs: int, rhs: int) -> int:
     return (o64 >> 32) % PRIME
 
 
-# def elem_pow(base: int, exp: int)->int:
-#    n = exp
-#    tot = 1
-#    x = base
-#
-#    while n != 0:
-#        n = exp
-#        tot = 1
-#        x = base
-#        while n != 0:
-#            if n % 2 == 1:
-#                tot *= x
-#            n = int(n / 2)
-#            x *= x
-#    return tot
+def pow(base: int, exp: int) -> int:
+    n = exp
+    tot = 1
+    x = base
+    while n != 0:
+        if n % 2 == 1:
+            tot = mul(tot, x)
+        n = int(n / 2)
+        x = mul(x, x)
+    return tot
 
 
 def wrapped_mul(lhs: int, rhs: int, size: int) -> int:
