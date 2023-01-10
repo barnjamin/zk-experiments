@@ -1,5 +1,27 @@
 from enum import Enum
+
 from dataclasses import dataclass
+
+
+class ComboData:
+    def __init__(self, taps: list[int], offsets: list[int]):
+        self.taps = taps
+        self.offsets = offsets
+
+
+class ComboRef:
+    def __init__(self, data: ComboData, id: int):
+        self.data = data
+        self.id = id
+
+    def slice(self) -> list[int]:
+        return self.data.taps[self.self_offset() : self.next_offset()]
+
+    def self_offset(self) -> int:
+        return self.data.offsets[self.id]
+
+    def next_offset(self) -> int:
+        return self.data.offsets[self.id + 1]
 
 
 class RegisterGroup(Enum):
@@ -26,6 +48,9 @@ class TapSet:
     combos_count: int
     reg_count: int
     tot_combo_backs: int
+
+    def get_combo(self, i: int) -> ComboRef:
+        return ComboRef(data=ComboData(self.combo_taps, self.combo_begin), id=i)
 
 
 def get_register_taps() -> list[tuple[int, TapData]]:

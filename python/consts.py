@@ -24,3 +24,7 @@ FRI_MIN_DEGREE = 256
 
 DIGEST_WORDS = 8
 DIGEST_WORD_SIZE = 32
+
+# Extended field element size
+EXT_SIZE = 4
+CHECK_SIZE = INV_RATE * EXT_SIZE
