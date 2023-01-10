@@ -1,3 +1,6 @@
+python-setup:
+	pip install -r groth16/contracts/requirements.txt 
+
 # ### RISC0 COMMANDS ### #
 
 rust-setup:
