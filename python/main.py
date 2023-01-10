@@ -8,13 +8,10 @@ from consts import (
     MIN_CYCLES_PO2,
     CHECK_SIZE,
     EXT_SIZE,
-    FRI_FOLD,
-    FRI_FOLD_PO2,
-    FRI_MIN_DEGREE,
 )
-from util import ROU_REV, ROU_FWD, hash_raw_pod, to_elem, mul, pow, swap32
+from util import ROU_REV, ROU_FWD, hash_raw_pod, to_elem, mul, pow
 
-from poly_ext import MixState, get_def
+from poly_ext import get_def
 from fri import fri_eval_taps, fri_verify
 from fp import poly_eval, Elem, ExtElem, ElemOne, ElemZero, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
