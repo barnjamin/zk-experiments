@@ -1,4 +1,7 @@
-from "./const" import PRIME, M_mont, R_2, Fp, FpExt, BETA_COEFF, POLY_FIELD_DEG;
+from "./const" import PRIME, M_mont, R_2, Fp, FpExt, \
+                      BETA_COEFF, POLY_FIELD_DEG,    \
+                      QUERIES, ReadIOP, MTParams,    \
+                      ShaDigest;
 
 def endian_conv(u32 mut v) -> u32 {
     return (v >> 24) | \
@@ -50,6 +53,10 @@ def fp_pow(Fp base, u64 exp) -> Fp {
     return total;
 }
 
+def fp_pow_fp(Fp base, Fp exp) -> Fp {
+    return fp_pow(base, decode_mont(exp));
+}
+
 def fp_inv(Fp fp) -> Fp {
     return fp_pow(fp, PRIME - 2);
 }
@@ -96,6 +103,71 @@ def fp_ext_mul(FpExt a, FpExt b) -> FpExt {
     return [f0, f1, f2, f3];
 }
 
+def to_FpExt(u64[POLY_FIELD_DEG] val) -> FpExt {
+    return [to_Fp(val[0]), to_Fp(val[1]), to_Fp(val[2]), to_Fp(val[3])];
+}
+
+def fp_ext_pow(FpExt base, u64 exp) -> FpExt {
+    FpExt mut total = to_FpExt([1, 0, 0, 0]);
+    FpExt mut x = base;
+    u64 mut mask = 1;
+    for u32 i in 0..64 {
+        total = if (mask & exp) > 0 { fp_ext_mul(total, x) } else { total };
+        mask = mask << 1;
+        x = fp_ext_mul(x, x);
+    }
+    return total;
+}
+
+def fp_ext_pow_fp(FpExt base, Fp exp) -> FpExt {
+    return fp_ext_pow(base, decode_mont(exp));
+}
+
+def fp_ext_inv(FpExt a) -> FpExt {
+    Fp mut b0 = fp_add(                           \
+        fp_mul(a[0], a[0]),                       \
+        fp_mul(                                   \
+            BETA,                                 \
+            fp_sub(                               \
+                fp_mul(a[1], fp_add(a[3], a[3])), \
+                fp_mul(a[2], a[2])                \
+            )                                     \
+        )                                         \
+    );
+    Fp mut b2 = fp_add(                       \
+        fp_sub(                               \
+            fp_mul(a[0], fp_add(a[2], a[2])), \
+            fp_mul(a[1], a[1])                \
+        ),                                    \
+        fp_mul(BETA, fp_mul(a[3], a[3]))      \
+    );
+    Fp c = fp_add(                   \
+        fp_mul(b0, b0),              \
+        fp_mul(BETA, fp_mul(b2, b2)) \
+    );
+    Fp c_inv = fp_inv(c);
+    b0 = fp_mul(b0, c_inv);
+    b2 = fp_mul(b2, c_inv);
+
+    Fp i0 = fp_add(                    \
+        fp_mul(a[0], b0),              \
+        fp_mul(BETA, fp_mul(a[2], b2)) \
+    );
+    Fp i1 = fp_sub(                      \
+        fp_mul(NBETA, fp_mul(a[3], b2)), \
+        fp_mul(a[1], b0)                 \
+    );
+    Fp i2 = fp_sub(       \
+        fp_mul(a[2], b0), \
+        fp_mul(a[0], b2)  \
+    );
+    Fp i3 = fp_sub(       \
+        fp_mul(a[1], b2), \
+        fp_mul(a[3], b0)  \
+    );
+    return [i0, i1, i2, i3];
+}
+
 def fp_ext_add(FpExt a, FpExt b) -> FpExt {
     return [                \
         fp_add(a[0], b[0]), \
@@ -114,13 +186,9 @@ def fp_ext_sub(FpExt a, FpExt b) -> FpExt {
     ];
 }
 
-def to_fp_ext(u64[POLY_FIELD_DEG] val) -> FpExt {
-    return [to_Fp(val[0]), to_Fp(val[1]), to_Fp(val[2]), to_Fp(val[3])];
-}
-
 def poly_eval<N>(FpExt[N] coeffs, FpExt x) -> FpExt {
-    FpExt mut mul_x = to_fp_ext([1, 0, 0, 0]);
-    FpExt mut total = to_fp_ext([0, 0, 0, 0]);
+    FpExt mut mul_x = to_FpExt([1, 0, 0, 0]);
+    FpExt mut total = to_FpExt([0, 0, 0, 0]);
 
     for u32 i in 0..N {
         FpExt prod = fp_ext_mul(coeffs[i], mul_x);
@@ -128,4 +196,24 @@ def poly_eval<N>(FpExt[N] coeffs, FpExt x) -> FpExt {
         mul_x = fp_ext_mul(mul_x, x);
     }
     return total;
+}
+
+def floor_log2(u32 var) -> u32 {
+    u32 mut res = 0;
+    for u32 i in 0..32 {
+        u32 temp_mask = 1 << i;
+        u32 incr = if temp_mask <= var { 1 } else { 0 };
+        res = res + incr;
+    }
+    return res;
+}
+
+const u32 MT_TOP_LAYERS = floor_log2(QUERIES);
+const u32 MT_TOP_SIZE = 1 << MT_TOP_LAYERS;
+
+struct MTVerifier<PROOF_LEN, OUTPUT_LEN> {
+    ReadIOP<PROOF_LEN, OUTPUT_LEN> read_iop;
+    MTParams mt_params;
+    ShaDigest[MT_TOP_SIZE] top;
+    ShaDigest[MT_TOP_SIZE] rest;
 }
