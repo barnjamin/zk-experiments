@@ -151,11 +151,11 @@ def get_mt_verifier<N, CO_LEN>(      \
 
     MTParams mt_params = get_merkle_params(PO2, COL_LEN);
 
-    ShaDigest[MT_TOP_SIZE] mt_top = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
-    ShaDigest[MT_TOP_SIZE] mt_rest = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
+    ShaDigest[MT_TOP_SIZE] mut mt_top = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
+    ShaDigest[MT_TOP_SIZE] mut mt_rest = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
 
     for u32 i in 0..MT_TOP_SIZE {
-        (ShaRngState, ShaDigest) read_iop_and_slice = read_iop_pod_slice(read_iop);
+        (ReadIOP<N, CO_LEN>, ShaDigest) read_iop_and_slice = read_iop_pod_slice(read_iop);
         read_iop = read_iop_and_slice.0;
         mt_top[i] = read_iop_and_slice.1;
     }
