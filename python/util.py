@@ -16,7 +16,7 @@ def sha_hash(a: bytes) -> bytes:
     return sha256(a).digest()
 
 
-def hash_raw_pod(raw: list[int]) -> bytes:
+def hash_raw_data(raw: list[int]) -> bytes:
     u8s = u32_to_u8(raw)
     chunk_size = 64  # 64 byte chunks
     state: list[int] = IV
