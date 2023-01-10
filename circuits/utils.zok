@@ -61,6 +61,9 @@ def fp_inv(Fp fp) -> Fp {
     return fp_pow(fp, PRIME - 2);
 }
 
+const Fp FpZERO = to_Fp(0);
+const Fp FpONE = to_Fp(1);
+
 // field extension (Z_p[x] / (x^4 + 11)) definitions
 const Fp BETA = to_Fp(BETA_COEFF);
 const Fp NBETA = to_Fp(PRIME - BETA_COEFF);
@@ -107,8 +110,11 @@ def to_FpExt(u64[POLY_FIELD_DEG] val) -> FpExt {
     return [to_Fp(val[0]), to_Fp(val[1]), to_Fp(val[2]), to_Fp(val[3])];
 }
 
+const FpExt FpExtZERO = to_FpExt([0, 0, 0, 0]);
+const FpExt FpExtONE = to_FpExt([1, 0, 0, 0]);
+
 def fp_ext_pow(FpExt base, u64 exp) -> FpExt {
-    FpExt mut total = to_FpExt([1, 0, 0, 0]);
+    FpExt mut total = FpExtONE;
     FpExt mut x = base;
     u64 mut mask = 1;
     for u32 i in 0..64 {
@@ -187,8 +193,8 @@ def fp_ext_sub(FpExt a, FpExt b) -> FpExt {
 }
 
 def poly_eval<N>(FpExt[N] coeffs, FpExt x) -> FpExt {
-    FpExt mut mul_x = to_FpExt([1, 0, 0, 0]);
-    FpExt mut total = to_FpExt([0, 0, 0, 0]);
+    FpExt mut mul_x = FpExtONE;
+    FpExt mut total = FpExtZERO;
 
     for u32 i in 0..N {
         FpExt prod = fp_ext_mul(coeffs[i], mul_x);
