@@ -18,7 +18,7 @@ from util import (
 )
 from merkle import MerkleVerifier
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval, ElemOne
-from taps import TAPSET, get_register_taps
+from taps import TAPSET, get_register_taps, TapCache
 from read_iop import ReadIOP
 
 
@@ -102,12 +102,6 @@ def fold_eval(io: list[ExtElem], x: ExtElem) -> ExtElem:
     newio = bitreverse(newio)
     res = poly_eval(newio, x)
     return res
-
-
-class TapCache:
-    def __init__(self, tap_mix_pows: list[ExtElem], check_mix_pows: list[ExtElem]):
-        self.tap_mix_pows = tap_mix_pows
-        self.check_mix_pows = check_mix_pows
 
 
 def fri_eval_taps(

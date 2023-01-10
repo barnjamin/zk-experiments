@@ -1,5 +1,5 @@
 from enum import Enum
-
+from fp import ExtElem
 from dataclasses import dataclass
 
 
@@ -22,6 +22,12 @@ class ComboRef:
 
     def next_offset(self) -> int:
         return self.data.offsets[self.id + 1]
+
+
+class TapCache:
+    def __init__(self, tap_mix_pows: list[ExtElem], check_mix_pows: list[ExtElem]):
+        self.tap_mix_pows = tap_mix_pows
+        self.check_mix_pows = check_mix_pows
 
 
 class RegisterGroup(Enum):
