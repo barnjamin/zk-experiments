@@ -9,5 +9,3 @@ This is a python implementation of a verifier for the RISC-0 receipt.
 A lot of this code was ripped from the [Rust RISC-0 repo](https://github.com/risc0/risc0) 
 
 
-
-

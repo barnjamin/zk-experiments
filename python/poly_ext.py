@@ -97,6 +97,13 @@ class PolyExtStepDef:
         return mix_vars[self.ret]
 
 
+def compute_poly(
+    u: list[ExtElem], poly_mix: ExtElem, out: list[Elem], mix: list[Elem]
+) -> ExtElem:
+    poly_step_def = get_def()
+    return poly_step_def.step(poly_mix, u, (out, mix)).tot
+
+
 def get_def() -> PolyExtStepDef:
     import json
 

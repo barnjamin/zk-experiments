@@ -1,17 +1,16 @@
 from math import log2
 from read_iop import ReadIOP
 from merkle import MerkleVerifier
-from method import Method
+from method import Method, check_code_merkle
 from consts import (
     QUERIES,
     INV_RATE,
-    MIN_CYCLES_PO2,
     CHECK_SIZE,
     EXT_SIZE,
 )
 from util import ROU_REV, ROU_FWD, hash_raw_data, to_elem, mul, pow
 
-from poly_ext import get_def
+from poly_ext import compute_poly
 from fri import fri_eval_taps, fri_verify
 from fp import poly_eval, Elem, ExtElem, ElemOne, ElemZero, ExtElemOne, ExtElemZero
 from taps import TAPSET, get_register_taps
@@ -25,7 +24,9 @@ DATA_TAP_SIZE = 212
 ACCUM_TAP_SIZE = 36
 
 
-def verify(seal: list[int], method: Method):
+def verify(raw_seal: bytes, method: Method):
+
+    seal = list(raw_seal)
 
     iop = ReadIOP(CIRCUIT_OUTPUT_SIZE, seal)
 
@@ -146,24 +147,9 @@ def verify(seal: list[int], method: Method):
     print("got here? valid proof!")
 
 
-def compute_poly(
-    u: list[ExtElem], poly_mix: ExtElem, out: list[Elem], mix: list[Elem]
-) -> ExtElem:
-    poly_step_def = get_def()
-    return poly_step_def.step(poly_mix, u, (out, mix)).tot
-
-
-def check_code_merkle(po2: int, method: Method, merkle_root: bytes) -> bool:
-    which = po2 - MIN_CYCLES_PO2
-    assert which < len(method.table), "Method cycle error"
-    assert method.table[which] == merkle_root, "Verify error"
-    return True
-
-
 if __name__ == "__main__":
-
     with open("../trivial.seal", "rb") as f:
-        seal = list(f.read())
+        seal = f.read()
 
     with open("../trivial.method", "rb") as f:
         method = Method.from_bytes(f.read())
