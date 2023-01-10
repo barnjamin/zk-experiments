@@ -26,6 +26,18 @@
             }
         },
         {
+            "name": "bootstrap_secret_factor2",
+            "args": [
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
             "name": "verify_root",
             "args": [
                 {
@@ -39,6 +51,26 @@
             ],
             "returns": {
                 "type": "bool"
+            }
+        },
+        {
+            "name": "deprecated_claim_bounty",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                },
+                {
+                    "type": "account",
+                    "name": "winner"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
             }
         },
         {
@@ -59,11 +91,26 @@
             ],
             "returns": {
                 "type": "uint64"
-            },
-            "desc": "Provide the proof containing the encrypted secret_factor.\nIf verification succeeds: 1. replace the \"secret_factor\" box value (formerly the verification key) with the encrypted secret_factor 2. return the encrypted secret_factor"
+            }
         },
         {
             "name": "deprecated_verify_secret_factor",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
+        },
+        {
+            "name": "verify_secret_factor2",
             "args": [
                 {
                     "type": "byte[32][1]",

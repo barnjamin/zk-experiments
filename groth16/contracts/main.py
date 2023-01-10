@@ -8,6 +8,8 @@ from verifier.application import Verifier  # type: ignore
 from vscode_hackery import hack_path
 from zokrates import parse_proof, parse_verification_key  # type: ignore
 
+
+INCLUDE_DEPRECATED = False
 EVE_TRIES_AGAIN = True
 
 
@@ -39,9 +41,17 @@ def demo(app_id: int = 0):
 
     # Bootstrap with vk
     alice_ac.call(snarky.bootstrap_root, vk=parse_verification_key("root"), boxes=boxes)
+
+    if INCLUDE_DEPRECATED:
+        alice_ac.call(
+            snarky.bootstrap_secret_factor,
+            vk=parse_verification_key("secret_factor"),
+            boxes=boxes,
+        )
+
     alice_ac.call(
-        snarky.bootstrap_secret_factor,
-        vk=parse_verification_key("secret_factor"),
+        snarky.bootstrap_secret_factor2,
+        vk=parse_verification_key("secret_factor2"),
         boxes=boxes,
     )
 
@@ -62,9 +72,27 @@ def demo(app_id: int = 0):
     )
     print(f"Contract verifies root? {r_result.return_value}")
 
-    sf_proof, sf_inputs = parse_proof("secret_factor")
+    if INCLUDE_DEPRECATED:
+        bounty_hunt(eve_ac, eve, snarky, boxes, deprecated=True)
+
+    bounty_hunt(eve_ac, eve, snarky, boxes, deprecated=False)
+
+
+def bounty_hunt(eve_ac, eve, verifier, boxes, deprecated=False):
+    if deprecated:
+        proof_prefix = "secret_factor"
+        vf_method = verifier.deprecated_verify_secret_factor
+        claim_method = verifier.deprecated_claim_bounty
+        SENTINEL = "___deprecated___"
+    else:
+        proof_prefix = "secret_factor2"
+        vf_method = verifier.verify_secret_factor2
+        claim_method = verifier.claim_bounty
+        SENTINEL = "THE __REAL__ __DEAL__ !!!"
+
+    sf_proof, sf_inputs = parse_proof(proof_prefix)
     sf_result = eve_ac.call(
-        snarky.deprecated_verify_secret_factor,
+        vf_method,
         inputs=sf_inputs,
         proof=sf_proof,
         boxes=boxes,
@@ -72,7 +100,7 @@ def demo(app_id: int = 0):
     print(f"Contract verifies secret_factor? {sf_result.return_value}")
 
     cb_result = eve_ac.call(
-        snarky.claim_bounty,
+        claim_method,
         inputs=sf_inputs,
         proof=sf_proof,
         winner=eve.address,
@@ -107,7 +135,7 @@ def demo(app_id: int = 0):
         print("Suppose Eve is evil and tries to claim the same bounty twice:")
         try:
             cb_result2 = eve_ac.call(
-                snarky.claim_bounty,
+                claim_method,
                 inputs=sf_inputs,
                 proof=sf_proof,
                 winner=eve.address,
@@ -122,7 +150,7 @@ def demo(app_id: int = 0):
     factor = (hidden_factor + 2**64 - secret_summand) % 2**64
     print(
         f"""
-FINAL EX-POST-FACTO VERIFICATION BY ALICE FOR {composite=:_}:
+{SENTINEL} EX-POST-FACTO VERIFICATION BY ALICE FOR {composite=:_}:
 DECRYPT {hidden_factor=:_} --> (x + 2**64 - ({secret_summand=:_}) % 2**64)
     = {factor:_}
 {(1 < factor < composite)=:_} (1 < {factor:_} < {composite:_})

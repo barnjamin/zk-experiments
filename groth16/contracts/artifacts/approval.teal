@@ -1,32 +1,96 @@
 #pragma version 9
-intcblock 0 1 17056 10 672 288 192
-bytecblock 0x7365637265745f666163746f725f766b 0x068101 0x151f7c75 0x 0x00 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
+intcblock 0 1 32 17056 672 288 192 1337000000
+bytecblock 0x068101 0x7365637265745f666163746f725f766b 0x7365637265745f666163746f72325f766b 0x151f7c75 0x 0x00 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab 0x726f6f745f766b 0x616263313233 0x53656e64696e67203133333720616c676f7320746f204576652077697468206164647265737320696e20746865206e657874206c6f673a
 txn NumAppArgs
 intc_0 // 0
 ==
-bnz main_l12
+bnz main_l18
 txna ApplicationArgs 0
 pushbytes 0x1a975234 // "bootstrap_root((byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2]))void"
 ==
-bnz main_l11
+bnz main_l17
 txna ApplicationArgs 0
 pushbytes 0x8b9e836c // "bootstrap_secret_factor((byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2]))void"
 ==
-bnz main_l10
+bnz main_l16
+txna ApplicationArgs 0
+pushbytes 0xe9555765 // "bootstrap_secret_factor2((byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2]))void"
+==
+bnz main_l15
 txna ApplicationArgs 0
 pushbytes 0x037778bd // "verify_root(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]))bool"
 ==
-bnz main_l9
+bnz main_l14
+txna ApplicationArgs 0
+pushbytes 0x62122929 // "deprecated_claim_bounty(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]),account)uint64"
+==
+bnz main_l13
 txna ApplicationArgs 0
 pushbytes 0x379cabf4 // "claim_bounty(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]),account)uint64"
 ==
-bnz main_l8
+bnz main_l12
 txna ApplicationArgs 0
 pushbytes 0x977e727c // "deprecated_verify_secret_factor(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]))bool"
 ==
-bnz main_l7
+bnz main_l11
+txna ApplicationArgs 0
+pushbytes 0x0c69a2f4 // "verify_secret_factor2(byte[32][1],(byte[48][2],byte[48][2][2],byte[48][2]))bool"
+==
+bnz main_l10
 err
-main_l7:
+main_l10:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+txna ApplicationArgs 1
+store 14
+txna ApplicationArgs 2
+store 15
+load 14
+load 15
+callsub verifysecretfactor2_18
+store 16
+bytec_3 // 0x151f7c75
+bytec 5 // 0x00
+intc_0 // 0
+load 16
+setbit
+concat
+log
+intc_1 // 1
+return
+main_l11:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+txna ApplicationArgs 1
+store 11
+txna ApplicationArgs 2
+store 12
+load 11
+load 12
+callsub deprecatedverifysecretfactor_17
+store 13
+bytec_3 // 0x151f7c75
+bytec 5 // 0x00
+intc_0 // 0
+load 13
+setbit
+concat
+log
+intc_1 // 1
+return
+main_l12:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -39,20 +103,23 @@ txna ApplicationArgs 1
 store 7
 txna ApplicationArgs 2
 store 8
+txna ApplicationArgs 3
+intc_0 // 0
+getbyte
+store 9
 load 7
 load 8
-callsub deprecatedverifysecretfactor_14
-store 9
-bytec_2 // 0x151f7c75
-bytec 4 // 0x00
-intc_0 // 0
 load 9
-setbit
+callsub claimbounty_16
+store 10
+bytec_3 // 0x151f7c75
+load 10
+itob
 concat
 log
 intc_1 // 1
 return
-main_l8:
+main_l13:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -72,16 +139,16 @@ store 5
 load 3
 load 4
 load 5
-callsub claimbounty_13
+callsub deprecatedclaimbounty_15
 store 6
-bytec_2 // 0x151f7c75
+bytec_3 // 0x151f7c75
 load 6
 itob
 concat
 log
 intc_1 // 1
 return
-main_l9:
+main_l14:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -96,10 +163,10 @@ txna ApplicationArgs 2
 store 1
 load 0
 load 1
-callsub verifyroot_12
+callsub verifyroot_14
 store 2
-bytec_2 // 0x151f7c75
-bytec 4 // 0x00
+bytec_3 // 0x151f7c75
+bytec 5 // 0x00
 intc_0 // 0
 load 2
 setbit
@@ -107,7 +174,7 @@ concat
 log
 intc_1 // 1
 return
-main_l10:
+main_l15:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -117,10 +184,10 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-callsub bootstrapsecretfactor_11
+callsub bootstrapsecretfactor2_13
 intc_1 // 1
 return
-main_l11:
+main_l16:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -130,20 +197,33 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-callsub bootstraproot_10
+callsub bootstrapsecretfactor_12
 intc_1 // 1
 return
-main_l12:
+main_l17:
 txn OnCompletion
 intc_0 // NoOp
 ==
-bnz main_l16
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+txna ApplicationArgs 1
+callsub bootstraproot_11
+intc_1 // 1
+return
+main_l18:
+txn OnCompletion
+intc_0 // NoOp
+==
+bnz main_l22
 txn OnCompletion
 pushint 4 // UpdateApplication
 ==
-bnz main_l15
+bnz main_l21
 err
-main_l15:
+main_l21:
 txn ApplicationID
 intc_0 // 0
 !=
@@ -151,7 +231,7 @@ assert
 callsub update_7
 intc_1 // 1
 return
-main_l16:
+main_l22:
 txn ApplicationID
 intc_0 // 0
 ==
@@ -192,11 +272,11 @@ proto 3 1
 frame_dig -3
 extract 0 96
 extract 0 48
-bytec 5 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
+bytec 6 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
 frame_dig -3
 extract 0 96
 extract 48 0
-bytec 5 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
+bytec 6 // 0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab
 b%
 b-
 concat
@@ -287,65 +367,85 @@ global CreatorAddress
 ==
 retsub
 
+// auth_only
+authonly_10:
+proto 1 1
+frame_dig -1
+global CreatorAddress
+==
+retsub
+
 // bootstrap_root
-bootstraproot_10:
+bootstraproot_11:
 proto 1 0
 txn Sender
 callsub authonly_8
 // unauthorized
 assert
-pushbytes 0x726f6f745f766b // "root_vk"
+bytec 7 // "root_vk"
 frame_dig -1
 box_put
 retsub
 
 // bootstrap_secret_factor
-bootstrapsecretfactor_11:
+bootstrapsecretfactor_12:
 proto 1 0
 txn Sender
 callsub authonly_9
 // unauthorized
 assert
-bytec_0 // "secret_factor_vk"
+bytec_1 // "secret_factor_vk"
+frame_dig -1
+box_put
+retsub
+
+// bootstrap_secret_factor2
+bootstrapsecretfactor2_13:
+proto 1 0
+txn Sender
+callsub authonly_10
+// unauthorized
+assert
+bytec_2 // "secret_factor2_vk"
 frame_dig -1
 box_put
 retsub
 
 // verify_root
-verifyroot_12:
+verifyroot_14:
 proto 2 1
 intc_0 // 0
-bytec_3 // ""
+bytec 4 // ""
 dup
-intc_2 // 17056
-intc_3 // 10
+intc_3 // 17056
+pushint 10 // 10
 +
-store 10
-verifyroot_12_l1:
-load 10
+store 17
+verifyroot_14_l1:
+load 17
 global OpcodeBudget
 >
-bz verifyroot_12_l3
+bz verifyroot_14_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_1 // 0x068101
+bytec_0 // 0x068101
 itxn_field ApprovalProgram
-bytec_1 // 0x068101
+bytec_0 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b verifyroot_12_l1
-verifyroot_12_l3:
-bytec_0 // "secret_factor_vk"
+b verifyroot_14_l1
+verifyroot_14_l3:
+bytec 7 // "root_vk"
 box_get
-store 12
-store 11
-load 12
+store 19
+store 18
+load 19
 // Verification Key not set
 assert
-load 11
+load 18
 frame_bury 1
 frame_dig 1
 frame_dig -2
@@ -360,55 +460,55 @@ callsub validpairing_2
 frame_bury 0
 retsub
 
-// claim_bounty
-claimbounty_13:
+// deprecated_claim_bounty
+deprecatedclaimbounty_15:
 proto 3 1
 intc_0 // 0
 dup
-bytec_3 // ""
+bytec 4 // ""
 dupn 2
-bytec_0 // "secret_factor_vk"
+bytec_1 // "secret_factor_vk"
 box_get
-store 14
-store 13
-load 14
+store 21
+store 20
+load 21
 // box <(utf8 bytes: "secret_factor_vk")> doesn't exist
 assert
-load 13
+load 20
 len
-pushint 32 // 32
+intc_2 // 32
 >
 // box <(utf8 bytes: "secret_factor_vk")> is too short to be a verification key. Previously verified?
 assert
-intc_2 // 17056
-intc_3 // 10
+intc_3 // 17056
+pushint 10 // 10
 +
-store 15
-claimbounty_13_l1:
-load 15
+store 22
+deprecatedclaimbounty_15_l1:
+load 22
 global OpcodeBudget
 >
-bz claimbounty_13_l3
+bz deprecatedclaimbounty_15_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_1 // 0x068101
+bytec_0 // 0x068101
 itxn_field ApprovalProgram
-bytec_1 // 0x068101
+bytec_0 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b claimbounty_13_l1
-claimbounty_13_l3:
-bytec_0 // "secret_factor_vk"
+b deprecatedclaimbounty_15_l1
+deprecatedclaimbounty_15_l3:
+bytec_1 // "secret_factor_vk"
 box_get
-store 17
-store 16
-load 17
+store 24
+store 23
+load 24
 // Verification Key not set
 assert
-load 16
+load 23
 frame_bury 3
 frame_dig 3
 frame_dig -3
@@ -424,25 +524,25 @@ frame_bury 1
 frame_dig 1
 // verification failed!!! (bounty reward refused)
 assert
-bytec_0 // "secret_factor_vk"
+bytec_1 // "secret_factor_vk"
 box_del
 // DELETING secret_factor verification box <secret_factor_vk> failed
 assert
-bytec_0 // "secret_factor_vk"
+bytec_1 // "secret_factor_vk"
 frame_dig -3
 box_put
-bytec_0 // "secret_factor_vk"
+bytec_1 // "secret_factor_vk"
 box_get
-store 19
-store 18
-load 19
+store 26
+store 25
+load 26
 // secret_factor box was supposed to have the secret_factor but doesn't exist
 assert
-load 18
+load 25
 frame_bury 2
-pushbytes 0x616263313233 // "abc123"
+bytec 8 // "abc123"
 log
-pushbytes 0x53656e64696e67203133333720616c676f7320746f204576652077697468206164647265737320696e20746865206e657874206c6f673a // "Sending 1337 algos to Eve with address in the next log:"
+bytec 9 // "Sending 1337 algos to Eve with address in the next log:"
 log
 frame_dig -1
 txnas Accounts
@@ -450,17 +550,124 @@ log
 itxn_begin
 intc_1 // pay
 itxn_field TypeEnum
-pushint 1337000000 // 1337000000
+intc 7 // 1337000000
 itxn_field Amount
 frame_dig -1
 txnas Accounts
 itxn_field Receiver
 itxn_submit
 frame_dig 2
-pushint 32 // 32
+intc_2 // 32
 intc_0 // 0
 *
-pushint 32 // 32
+intc_2 // 32
+extract3
+extract 24 0
+btoi
+frame_bury 0
+retsub
+
+// claim_bounty
+claimbounty_16:
+proto 3 1
+intc_0 // 0
+dup
+bytec 4 // ""
+dupn 2
+bytec_2 // "secret_factor2_vk"
+box_get
+store 28
+store 27
+load 28
+// box <(utf8 bytes: "secret_factor2_vk")> doesn't exist
+assert
+load 27
+len
+intc_2 // 32
+>
+// box <(utf8 bytes: "secret_factor2_vk")> is too short to be a verification key. Previously verified?
+assert
+intc_3 // 17056
+pushint 10 // 10
++
+store 29
+claimbounty_16_l1:
+load 29
+global OpcodeBudget
+>
+bz claimbounty_16_l3
+itxn_begin
+pushint 6 // appl
+itxn_field TypeEnum
+pushint 5 // DeleteApplication
+itxn_field OnCompletion
+bytec_0 // 0x068101
+itxn_field ApprovalProgram
+bytec_0 // 0x068101
+itxn_field ClearStateProgram
+itxn_submit
+b claimbounty_16_l1
+claimbounty_16_l3:
+bytec_2 // "secret_factor2_vk"
+box_get
+store 31
+store 30
+load 31
+// Verification Key not set
+assert
+load 30
+frame_bury 3
+frame_dig 3
+frame_dig -3
+callsub computelinearcombination_1
+frame_bury 4
+frame_dig -2
+frame_dig 3
+frame_dig 4
+callsub validpairing_2
+!
+!
+frame_bury 1
+frame_dig 1
+// verification failed!!! (bounty reward refused)
+assert
+bytec_2 // "secret_factor2_vk"
+box_del
+// DELETING secret_factor2 verification box <secret_factor2_vk> failed
+assert
+bytec_2 // "secret_factor2_vk"
+frame_dig -3
+box_put
+bytec_2 // "secret_factor2_vk"
+box_get
+store 33
+store 32
+load 33
+// secret_factor2 box was supposed to have the secret_factor2 but doesn't exist
+assert
+load 32
+frame_bury 2
+bytec 8 // "abc123"
+log
+bytec 9 // "Sending 1337 algos to Eve with address in the next log:"
+log
+frame_dig -1
+txnas Accounts
+log
+itxn_begin
+intc_1 // pay
+itxn_field TypeEnum
+intc 7 // 1337000000
+itxn_field Amount
+frame_dig -1
+txnas Accounts
+itxn_field Receiver
+itxn_submit
+frame_dig 2
+intc_2 // 32
+intc_0 // 0
+*
+intc_2 // 32
 extract3
 extract 24 0
 btoi
@@ -468,40 +675,89 @@ frame_bury 0
 retsub
 
 // deprecated_verify_secret_factor
-deprecatedverifysecretfactor_14:
+deprecatedverifysecretfactor_17:
 proto 2 1
 intc_0 // 0
-bytec_3 // ""
+bytec 4 // ""
 dup
-intc_2 // 17056
-intc_3 // 10
+intc_3 // 17056
+pushint 10 // 10
 +
-store 20
-deprecatedverifysecretfactor_14_l1:
-load 20
+store 34
+deprecatedverifysecretfactor_17_l1:
+load 34
 global OpcodeBudget
 >
-bz deprecatedverifysecretfactor_14_l3
+bz deprecatedverifysecretfactor_17_l3
 itxn_begin
 pushint 6 // appl
 itxn_field TypeEnum
 pushint 5 // DeleteApplication
 itxn_field OnCompletion
-bytec_1 // 0x068101
+bytec_0 // 0x068101
 itxn_field ApprovalProgram
-bytec_1 // 0x068101
+bytec_0 // 0x068101
 itxn_field ClearStateProgram
 itxn_submit
-b deprecatedverifysecretfactor_14_l1
-deprecatedverifysecretfactor_14_l3:
-bytec_0 // "secret_factor_vk"
+b deprecatedverifysecretfactor_17_l1
+deprecatedverifysecretfactor_17_l3:
+bytec_1 // "secret_factor_vk"
 box_get
-store 22
-store 21
-load 22
+store 36
+store 35
+load 36
 // Verification Key not set
 assert
-load 21
+load 35
+frame_bury 1
+frame_dig 1
+frame_dig -2
+callsub computelinearcombination_1
+frame_bury 2
+frame_dig -1
+frame_dig 1
+frame_dig 2
+callsub validpairing_2
+!
+!
+frame_bury 0
+retsub
+
+// verify_secret_factor2
+verifysecretfactor2_18:
+proto 2 1
+intc_0 // 0
+bytec 4 // ""
+dup
+intc_3 // 17056
+pushint 10 // 10
++
+store 37
+verifysecretfactor2_18_l1:
+load 37
+global OpcodeBudget
+>
+bz verifysecretfactor2_18_l3
+itxn_begin
+pushint 6 // appl
+itxn_field TypeEnum
+pushint 5 // DeleteApplication
+itxn_field OnCompletion
+bytec_0 // 0x068101
+itxn_field ApprovalProgram
+bytec_0 // 0x068101
+itxn_field ClearStateProgram
+itxn_submit
+b verifysecretfactor2_18_l1
+verifysecretfactor2_18_l3:
+bytec_2 // "secret_factor2_vk"
+box_get
+store 39
+store 38
+load 39
+// Verification Key not set
+assert
+load 38
 frame_bury 1
 frame_dig 1
 frame_dig -2
