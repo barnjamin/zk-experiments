@@ -16,9 +16,9 @@ def demo(app_id: int = 0):
     eve = sandbox.get_accounts().pop()
     algod_client = sandbox.get_algod_client()
 
-    v = Verifier(version=9)
+    snarky = Verifier(version=9)
     alice_ac = client.ApplicationClient(
-        algod_client, v, app_id=app_id, signer=alice.signer
+        algod_client, snarky, app_id=app_id, signer=alice.signer
     )
 
     print("# ---- --------------------- ---- #")
@@ -35,12 +35,12 @@ def demo(app_id: int = 0):
         alice_ac.build()
         alice_ac.update()
 
-    boxes = [(0, name.encode()) for name in v.boxes_names.values()]
+    boxes = [(0, name.encode()) for name in snarky.boxes_names.values()]
 
     # Bootstrap with vk
-    alice_ac.call(v.bootstrap_root, vk=parse_verification_key("root"), boxes=boxes)
+    alice_ac.call(snarky.bootstrap_root, vk=parse_verification_key("root"), boxes=boxes)
     alice_ac.call(
-        v.bootstrap_secret_factor,
+        snarky.bootstrap_secret_factor,
         vk=parse_verification_key("secret_factor"),
         boxes=boxes,
     )
@@ -50,24 +50,29 @@ def demo(app_id: int = 0):
     print("# ---- ------------------------------- ---- #")
 
     eve_ac = client.ApplicationClient(
-        algod_client, v, app_id=alice_ac.app_id, signer=eve.signer
+        algod_client, snarky, app_id=alice_ac.app_id, signer=eve.signer
     )
     eve_ac.build()
     eve_ac.update()
 
     # Pass proof && inputs to be verified
     r_proof, r_inputs = parse_proof("root")
-    r_result = eve_ac.call(v.verify_root, inputs=r_inputs, proof=r_proof, boxes=boxes)
+    r_result = eve_ac.call(
+        snarky.verify_root, inputs=r_inputs, proof=r_proof, boxes=boxes
+    )
     print(f"Contract verifies root? {r_result.return_value}")
 
     sf_proof, sf_inputs = parse_proof("secret_factor")
     sf_result = eve_ac.call(
-        v.deprecated_verify_secret_factor, inputs=sf_inputs, proof=sf_proof, boxes=boxes
+        snarky.deprecated_verify_secret_factor,
+        inputs=sf_inputs,
+        proof=sf_proof,
+        boxes=boxes,
     )
     print(f"Contract verifies secret_factor? {sf_result.return_value}")
 
     cb_result = eve_ac.call(
-        v.claim_bounty,
+        snarky.claim_bounty,
         inputs=sf_inputs,
         proof=sf_proof,
         winner=eve.address,
@@ -102,7 +107,7 @@ def demo(app_id: int = 0):
         print("Suppose Eve is evil and tries to claim the same bounty twice:")
         try:
             cb_result2 = eve_ac.call(
-                v.claim_bounty,
+                snarky.claim_bounty,
                 inputs=sf_inputs,
                 proof=sf_proof,
                 winner=eve.address,

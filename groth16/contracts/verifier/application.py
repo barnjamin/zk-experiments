@@ -10,6 +10,8 @@ from .lib.bls12_381 import (
     valid_pairing,
 )
 
+BUDGET = 17_056
+
 
 class Verifier(bkr.Application):
     boxes_names = {
@@ -37,22 +39,13 @@ class Verifier(bkr.Application):
 
     @bkr.external
     def verify_root(self, inputs: Inputs, proof: Proof, *, output: pt.abi.Bool):
-        return pt.Seq(
-            # idk if this will need to change but its enough for now
-            self.opup.ensure_budget(pt.Int(13500)),
-            # Fetch the VK from box storage
-            self.root_vk_from_box(output=(vk := VerificationKey())),  # type: ignore
-            # Compute vk_x from sum of inputs
-            (vk_x := pt.abi.make(G1)).decode(compute_linear_combination(vk, inputs)),
-            # return result (normal programs should assert out if its invalid)
-            output.set(valid_pairing(proof, vk, vk_x)),
-        )
+        return self._verify_secret_factor(inputs, proof, output)
 
     def _verify_secret_factor(self, inputs, proof, output) -> pt.Expr:
         return pt.Seq(
             # idk if this will need to change but its enough for now
             # Z: yeah, looks like GTG for groth 16
-            self.opup.ensure_budget(pt.Int(13500)),
+            self.opup.ensure_budget(pt.Int(BUDGET)),
             # Fetch the VK from box storage
             self.secret_factor_vk_from_box(output=(vk := VerificationKey())),  # type: ignore
             # Compute vk_x from sum of inputs

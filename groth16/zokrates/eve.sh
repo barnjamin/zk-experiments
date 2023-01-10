@@ -1,7 +1,10 @@
 #!/bin/bash
 
-PROOF_PREFIX=$1
-WITNESSES=$(echo "$2" | tr ',' ' ')
+source helpers.sh
+
+ZOK=$1
+# WITNESSES=$(echo "$2" | tr ',' ' ')
+WITNESSES=$2
 
 echo ""
 echo ""
@@ -10,16 +13,17 @@ echo "################## HELLO FROM EVE!!!!!!! #######################"
 echo "################## HELLO FROM EVE!!!!!!! #######################"
 echo ""
 
-echo "\$2=$2"
-echo "build zk-SNARK proof for WITNESSES=$WITNESSES and PROOF_PREFIX=$PROOF_PREFIX"
+# echo "\$2=$2"
+
+echo "build zk-SNARK proof for WITNESSES=$WITNESSES and ZOK=$ZOK"
 
 # Define the parse_inputs function
-function report_proof_public_inputs {
+report_proof_public_inputs() {
   # Extract the inputs field from the JSON file
-  inputs=$(jq -r '.inputs[]' proof.json)
+  inputs=$(jq -r '.inputs[]' "$@")
 
   # Iterate over each input value
-  printf "\nproof.json PUBLIC inputs:"
+  printf "\nproof.json PUBLIC inputs:\n"
   for input in $inputs; do
     # Convert the hexadecimal string to a number and print it to the console
     python -c "print(int('$input', 16))"
@@ -28,23 +32,23 @@ function report_proof_public_inputs {
 
 # # execute the program
 # abi.json, out --> out.wtns, witness
-printf "\n<EVE::WITNESSES>\nzokrates compute-witness -a %s\n" "$WITNESSES"
-# shellcheck disable=SC2086
-zokrates compute-witness -a $WITNESSES
+ABI="${ZOK}_abi.json"
+OUT="${ZOK}_out"
+WIT="${ZOK}_witness"
+printf "\nSTEP (2.A) EVE::WITNESSES: (%s, %s, %s) --> (out.wtns, %s)\n" "$WITNESSES" "$ABI" "$OUT" "$WIT"
+# xc zokrates compute-witness -a $WITNESSES -s "ABI" -i "$OUT" --circom-witness out.wtns -o "$WIT"
+echo "echo $WITNESSES | zokrates compute-witness -i $OUT -s $ABI --circom-witness out.wtns -o $WIT --stdin --abi --verbose"
+echo "$WITNESSES" | zokrates compute-witness -i "$OUT" -s "$ABI" --circom-witness out.wtns -o "$WIT" --stdin --abi --verbose || echo "testing"
+
 
 # # generate a proof of computation
 # out, proving.key, witness --> proof.json
-printf "\n<EVE::PROVE>\nzokrates generate-proof\n"
-zokrates generate-proof 
+PROOFKEY="${ZOK}_proving.key"
+PROOF="${ZOK}_proof.json"
+printf "\nSTEP (2.B) EVE::PROVE: (%s, %s, %s) --> %s\n" "$OUT" "$PROOFKEY" "$WIT" "$PROOF"
+xc zokrates generate-proof -i "$OUT" -p "$PROOFKEY" -w "$WIT" -j "$PROOF"
 
-report_proof_public_inputs
+report_proof_public_inputs "$PROOF"
 
-# # and verify natively
-# proof.json, ${PROOF_PREFIX}_verification.key -->> <NONE>
-printf "\n<ALICE::VERIFY>\nzokrates verify -v %s_verification.key --verbose" "$PROOF_PREFIX"
-zokrates verify -v "${PROOF_PREFIX}_verification.key" --verbose
 
-cp 
-cp proof.json "${PROOF_PREFIX}_proof.json"
-
-printf "\neve.sh: COMPLETE. Look out for the following artifacts: \n4A) out.wtns\n4B) witness\n5)  %s_proof.json\n\n\n" "$PROOF_PREFIX"
+printf "\neve.sh: COMPLETE. Look out for the following artifacts: \n2.A.i)  out.wtns\n2.A.ii) %s\n2.B)    %s\n\n\n" "$WIT" "$PROOF"
