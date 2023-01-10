@@ -1,9 +1,6 @@
 from typing import Callable
 from math import ceil, log2
-import galois as gf  # type: ignore
-from sympy import intt
 from consts import (
-    PRIME,
     FRI_FOLD,
     FRI_FOLD_PO2,
     FRI_MIN_DEGREE,
@@ -17,9 +14,7 @@ from util import (
     ROU_FWD,
     hash_raw_pod,
     to_elem,
-    encode_mont,
     decode_mont,
-    swap32,
 )
 from merkle import MerkleVerifier
 from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval, ElemOne

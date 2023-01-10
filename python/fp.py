@@ -1,4 +1,4 @@
-from util import add, mul, sub, to_elem, pow, encode_mont
+from util import add, mul, sub, to_elem, pow
 from consts import PRIME
 
 
