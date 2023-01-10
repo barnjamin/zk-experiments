@@ -1,6 +1,30 @@
 import "hashes/sha256/512bit" as hash;
 import "hashes/utils/256bitsDirectionHelper" as multiplex;
-from "./const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512;
+from "./const" import DIGEST_WORD_NUM, ShaDigest, ShaDigest512, \
+                      MTParams, QUERIES, INV_RATE, INV_RATE_LOG2;
+from "./utils" import floor_log2, MT_TOP_LAYERS, MT_TOP_SIZE;
+
+def get_merkle_params(u32 PO2, u32 COL_LEN) -> MTParams {
+    u32 size = 1 << PO2;
+    u32 domain = INV_RATE * size;
+
+    return MTParams {
+        row_size: domain,
+        col_size: COL_LEN,
+        queries: QUERIES,
+        layers: PO2 + INV_RATE_LOG2,
+        top_layer: MT_TOP_LAYERS,
+        top_size: MT_TOP_SIZE
+    };
+}
+
+def mt_param_idx_to_top(u32 idx) -> u32 {
+    return (idx * 2 - MT_TOP_LAYERS);
+}
+
+def mt_param_idx_to_rest(u32 idx) -> u32 {
+    return idx - 1;
+}
 
 def merkle<MT_DEPTH>(           \
     ShaDigest root,             \

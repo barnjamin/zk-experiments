@@ -2,8 +2,10 @@ import "hashes/sha256/512bit" as hash;
 from "utils/casts" import cast;
 from "./const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
                       sha_rng_start_state, ShaDigest, ReadIOP,          \
-                      PRIME, Fp, FpExt;
-from "./utils" import endian_conv, to_Fp, decode_mont;
+                      PRIME, Fp, FpExt, MTParams;
+from "./utils" import endian_conv, to_Fp, decode_mont,                  \
+                      MT_TOP_SIZE, MT_TOP_LAYERS, MTVerifier;
+from "./merkle" import get_merkle_params, mt_param_idx_to_top, mt_param_idx_to_rest;
 
 // SHA based RNG definitions
 
@@ -141,4 +143,45 @@ def read_iop_sample_fps<N, CO_LEN, NFs>( \
         state_and_samples.1[i] = to_Fp(state_and_samples.1[i]);
     }
     return (iop, state_and_samples.1);
+}
+
+def get_mt_verifier<N, CO_LEN>(      \
+    ReadIOP<N, CO_LEN> mut read_iop, \
+    u32 PO2, u32 COL_LEN) -> MTVerifier<N, CO_LEN> {
+
+    MTParams mt_params = get_merkle_params(PO2, COL_LEN);
+
+    ShaDigest[MT_TOP_SIZE] mt_top = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
+    ShaDigest[MT_TOP_SIZE] mt_rest = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
+
+    for u32 i in 0..MT_TOP_SIZE {
+        (ShaRngState, ShaDigest) read_iop_and_slice = read_iop_pod_slice(read_iop);
+        read_iop = read_iop_and_slice.0;
+        mt_top[i] = read_iop_and_slice.1;
+    }
+
+    for u32 i in (MT_TOP_SIZE / 2)..MT_TOP_SIZE {
+        u32 top_idx = mt_param_idx_to_top(i);
+        mt_rest[mt_param_idx_to_rest(i)] = hash(mt_top[top_idx], mt_top[top_idx + 1]);
+    }
+
+    for u32 i in 1..(MT_TOP_SIZE / 2) {
+        u32 idx = (MT_TOP_SIZE / 2) - i;
+        u32 upper_rest_idx = mt_param_idx_to_rest(idx * 2);
+        mt_rest[mt_param_idx_to_rest(idx)] = \
+            hash(mt_rest[upper_rest_idx], mt_rest[upper_rest_idx + 1]);
+    }
+
+    read_iop = read_iop_commit(read_iop, mt_rest[0]);
+
+    return MTVerifier {
+        read_iop: read_iop,
+        mt_params: mt_params,
+        top: mt_top,
+        rest: mt_rest
+    };
+}
+
+def mt_verifier_root<N, CO_LEN>(MTVerifier<N, CO_LEN> verifier) -> ShaDigest {
+    return verifier.rest[mt_param_idx_to_rest(1)];
 }
