@@ -1,7 +1,7 @@
 from typing import Callable
 from math import ceil, log2
-from sympy import ntt
 import galois as gf  # type: ignore
+from sympy import intt
 from consts import (
     PRIME,
     FRI_FOLD,
@@ -22,7 +22,7 @@ from util import (
     swap32,
 )
 from merkle import MerkleVerifier
-from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval
+from fp import Elem, ExtElem, ExtElemOne, ExtElemZero, poly_eval, ElemOne
 from taps import TAPSET, get_register_taps
 from read_iop import ReadIOP
 
@@ -53,39 +53,60 @@ class VerifyRoundInfo:
             raise Exception("InvalidProof")
 
         root_po2 = ceil(log2(FRI_FOLD * self.domain))
-        inv_wk = ROU_REV[root_po2] ** group
+        inv_wk = to_elem(decode_mont(ROU_REV[root_po2]) ** group)
         return (group, fold_eval(data_ext, self.mix * inv_wk))
 
 
+def reverse_butterfly(io: list[ExtElem], n: int) -> list[ExtElem]:
+    half = 1 << (n - 1)
+
+    step = ROU_REV[n]
+    cur = ElemOne
+    for i in range(half):
+        a = io[i]
+        b = io[i + half]
+        io[i] = a + b
+        io[i + half] = (a - b) * cur
+        cur *= step
+
+    if n > 1:
+        io[half:] = reverse_butterfly(io[half:], n - 1)
+        io[:half] = reverse_butterfly(io[:half], n - 1)
+
+    return io
+
+
+def bit_rev_32(x: int) -> int:
+    x = ((x & 0xAAAAAAAA) >> 1) | ((x & 0x55555555) << 1)
+    x = ((x & 0xCCCCCCCC) >> 2) | ((x & 0x33333333) << 2)
+    x = ((x & 0xF0F0F0F0) >> 4) | ((x & 0x0F0F0F0F) << 4)
+    x = ((x & 0xFF00FF00) >> 8) | ((x & 0x00FF00FF) << 8)
+    return (x >> 16) | (x << 16)
+
+
+def bitreverse(io: list[ExtElem]) -> list[ExtElem]:
+    n = ceil(log2(len(io)))
+    for i in range(len(io)):
+        rev_idx = bit_rev_32(i) >> (32 - n)
+        if i < rev_idx:
+            io[rev_idx], io[i] = io[i], io[rev_idx]
+
+    return io
+
+
 def fold_eval(io: list[ExtElem], x: ExtElem) -> ExtElem:
+    size = len(io)
+    N = ceil(log2(len(io)))
 
-    if io[0].e[0].n == 1066270030:
-        return ExtElem(
-            [Elem(e) for e in [1156209529, 1476620881, 493720865, 868281118]]
-        )
-    elif io[0].e[0].n == 1497882706:
-        return ExtElem(
-            [Elem(e) for e in [1425429779, 843460654, 272775571, 1548750881]]
-        )
-    else:
-        return ExtElemZero
+    norm = Elem.from_int(size).inv()
+    newio = reverse_butterfly(io, N)
 
-    # size = len(io)
-    # print(len(io))
-    # for i in range(1, 32):
-    #    for ioe in io:
-    #        nttd = gf.ntt([e.n for e in ioe.e], i, PRIME)
-    #        print(nttd)
+    for idx in range(len(newio)):
+        newio[idx] = newio[idx] * norm
 
-    ##norm = Elem.from_int(size)
-    ##for i in range(size):
-    ##    io[i] *= norm
-
-    # assert False
-    ## interpolate_ntt::<Self::Elem, Self::ExtElem>(io);
-    ## bit_reverse(io);
-    ## poly_eval(io, x)
-    # return ExtElemZero
+    newio = bitreverse(newio)
+    res = poly_eval(newio, x)
+    return res
 
 
 class TapCache:
@@ -168,7 +189,7 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
 
     gen = ROU_FWD[ceil(log2(domain))]
 
-    for _ in range(QUERIES):
+    for query_idx in range(QUERIES):
         rng = iop.rng.next_u32()
         pos = rng % orig_domain
         goal = inner(iop, pos)
@@ -189,6 +210,6 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
         if fx != goal:
             raise Exception("Invalid Proof")
 
-        print("ok one done")
+        print(f"query {query_idx} passed")
 
     return ExtElemZero
