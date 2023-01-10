@@ -196,6 +196,8 @@ def main():
 
     fri_verify(iop, size, inner)
 
+    print("got here? valid proof!")
+
 
 def compute_poly(
     u: list[ExtElem], poly_mix: ExtElem, out: list[Elem], mix: list[Elem]
