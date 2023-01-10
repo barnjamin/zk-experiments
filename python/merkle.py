@@ -2,7 +2,7 @@ from hashlib import sha256
 from math import log2
 from read_iop import ReadIOP
 from fp import Elem
-from util import sha_compress_leaves, hash_raw_pod
+from util import sha_compress_leaves, hash_raw_data
 
 
 class MerkleParams:
@@ -88,7 +88,7 @@ class MerkleVerifier:
             raise Exception("no")
 
         out: list[int] = iop.read_field_elem_slice(self.params.col_size)
-        cur: bytes = hash_raw_pod(out)
+        cur: bytes = hash_raw_data(out)
 
         idx += self.params.row_size
 

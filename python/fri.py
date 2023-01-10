@@ -12,7 +12,7 @@ from consts import (
 from util import (
     ROU_REV,
     ROU_FWD,
-    hash_raw_pod,
+    hash_raw_data,
     to_elem,
     decode_mont,
 )
@@ -128,7 +128,7 @@ def fri_eval_taps(
     tap_mix_pows: list[ExtElem] = []
 
     register_taps = get_register_taps()
-    for (idx, _reg) in register_taps:
+    for _ in range(len(register_taps)):
         tap_mix_pows.append(cur_mix)
         cur_mix *= mix
 
@@ -156,6 +156,7 @@ def fri_eval_taps(
             exp = Elem.from_int(decode_mont(back_one) ** back)
             divisor *= x - z * exp
         ret += num * divisor.inv()
+
     check_num = tot[combo_count] - combo_u[TAPSET.tot_combo_backs]
     check_div = x - z**INV_RATE
     ret += check_num * check_div.inv()
@@ -179,7 +180,7 @@ def fri_verify(iop: ReadIOP, degree: int, inner: Callable[..., ExtElem]) -> ExtE
     assert len(rounds) < rounds_capacity
 
     final_coeffs = iop.read_field_elem_slice(EXT_SIZE * degree)
-    final_digest = hash_raw_pod(final_coeffs)
+    final_digest = hash_raw_data(final_coeffs)
     iop.commit(final_digest)
 
     gen = ROU_FWD[ceil(log2(domain))]

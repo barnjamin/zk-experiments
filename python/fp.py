@@ -118,12 +118,6 @@ class ExtElem:
             ]
         )
 
-    def __div__(self, other: "ExtElem") -> "ExtElem":
-        raise Exception("not implemented")
-
-    def __truediv__(self, other: "ExtElem") -> "ExtElem":
-        raise Exception("not implemented")
-
     def __pow__(self, other: Elem | int) -> "ExtElem":
 
         n: int
