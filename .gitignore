@@ -16,3 +16,5 @@ out
 witness
 proof.json
 abi.json
+
+/target

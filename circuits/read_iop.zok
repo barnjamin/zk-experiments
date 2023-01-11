@@ -1,0 +1,187 @@
+import "hashes/sha256/512bit" as hash;
+from "utils/casts" import cast;
+from "./const" import ShaRngState, SHA_RNG_ROUND_BACK, DIGEST_WORD_NUM, \
+                      sha_rng_start_state, ShaDigest, ReadIOP,          \
+                      PRIME, Fp, FpExt, MTParams;
+from "./utils" import endian_conv, to_Fp, decode_mont,                  \
+                      MT_TOP_SIZE, MT_TOP_LAYERS, MTVerifier;
+from "./merkle" import get_merkle_params, mt_param_idx_to_top, mt_param_idx_to_rest;
+
+// SHA based RNG definitions
+
+def sha_rng_step(ShaRngState mut old_state) -> ShaRngState {
+    old_state.pool0 = hash(old_state.pool0, old_state.pool1);
+    old_state.pool1 = hash(old_state.pool0, old_state.pool1);
+    old_state.cnt = 0;
+    return old_state;
+}
+
+def sha_rng_incr(ShaRngState mut old_state) -> ShaRngState {
+    old_state.cnt = old_state.cnt + 1;
+    return if old_state.cnt == SHA_RNG_ROUND_BACK {
+        sha_rng_step(old_state)
+    } else {
+        old_state
+    };
+}
+
+def sha_rng_next_u32(ShaRngState mut old_state) -> (ShaRngState, u32) {
+    u32 mut rand_u32 = old_state.pool0[old_state.cnt];
+    old_state = sha_rng_incr(old_state);
+    // cast to small endian
+    rand_u32 = endian_conv(rand_u32);
+    return (old_state, rand_u32);
+}
+
+def sha_rng_next_u64(ShaRngState mut old_state) -> (ShaRngState, u64) {
+    (ShaRngState, u32) mut temp = sha_rng_next_u32(old_state);
+    u32 higher_u32 = temp.1;
+    temp = sha_rng_next_u32(temp.0);
+    u32 lower_u32 = temp.1;
+    u64 rand_u32 = cast([higher_u32, lower_u32]);
+    return (temp.0, rand_u32);
+}
+
+def sha_rng_mix(ShaRngState mut old_state, ShaDigest digest) -> ShaRngState {
+    for u32 i in 0..DIGEST_WORD_NUM {
+        old_state.pool0[i] = old_state.pool0[i] ^ digest[i];
+    }
+    return sha_rng_step(old_state);
+}
+
+def sha_rng_sample_fp_raw(ShaRngState mut state) -> (ShaRngState, Fp) {
+    Fp mut val = 0;
+    for u32 i in 0..6 {
+        val = val << 32;
+        (ShaRngState, u32) state_and_u32 = sha_rng_next_u32(state);
+        state = state_and_u32.0;
+        Fp cast_u32 = cast(state_and_u32.1);
+        val = val + cast_u32;
+        val = val % PRIME;
+    }
+    return (state, val);
+}
+
+def sha_rng_sample_fps_raw<N>(ShaRngState mut state) -> (ShaRngState, Fp[N]) {
+    Fp[N] mut res = [0; N];
+    for u32 i in 0..N {
+        (ShaRngState, u64) intermediate = sha_rng_sample_fp_raw(state);
+        state = intermediate.0;
+        res[i] = intermediate.1;
+    }
+    return (state, res);
+}
+
+// Read IOP facility definition
+
+def read_iop_u32s<N, CO_LEN, LEN>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, u32[LEN]) {
+
+    u32[LEN] mut u32_seg = iop.proof[iop.proof_start_from..iop.proof_start_from + LEN];
+    for u32 i in 0..LEN {
+        u32_seg[i] = endian_conv(u32_seg[i]);
+    }
+    iop.proof_start_from = iop.proof_start_from + LEN;
+    return (iop, u32_seg);
+}
+
+def read_iop<N, CO_LEN>(u32[N] mut seal) -> ReadIOP<N, CO_LEN> {
+    ReadIOP<N, CO_LEN> mut curr = ReadIOP {
+        proof: seal,
+        out: [0; CO_LEN],
+        rng_state: sha_rng_start_state(),
+        proof_start_from: CO_LEN,
+        po2: 0
+    };
+
+    (ReadIOP<N, CO_LEN>, u32[CO_LEN]) read_iop_and_out = read_iop_u32s(curr);
+    for u32 i in 0..CO_LEN {
+        u64 temp = cast(read_iop_and_out.1[i]);
+        curr.out[i] = decode_mont(temp);
+    }
+
+    (ReadIOP<N, CO_LEN>, u32[1]) read_iop_and_po2 = read_iop_u32s(curr);
+    curr.po2 = read_iop_and_po2.1[0];
+    return curr;
+}
+
+def read_iop_pod_slice<N, CO_LEN, P_LEN>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, u32[P_LEN]) {
+
+    iop.proof_start_from = iop.proof_start_from + P_LEN;
+    u32[P_LEN] pod = \
+        iop.proof[iop.proof_start_from..iop.proof_start_from + P_LEN];
+    return (iop, pod);
+}
+
+def read_iop_commit<N, CO_LEN>( \
+    ReadIOP<N, CO_LEN> mut iop, ShaDigest digest) -> ReadIOP<N, CO_LEN> {
+
+    iop.rng_state = sha_rng_mix(iop.rng_state, digest);
+    return iop;
+}
+
+def read_iop_verify_complete<N, CO_LEN>(ReadIOP<N, CO_LEN> iop) -> bool {
+    return iop.proof_start_from == N;
+}
+
+def read_iop_sample_fp_raw<N, CO_LEN>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, Fp) {
+
+    (ShaRngState, Fp) state_and_u64 = sha_rng_sample_fp_raw(iop.rng_state);
+    iop.rng_state = state_and_u64.0;
+    return (iop, state_and_u64.1);
+}
+
+def read_iop_sample_fps<N, CO_LEN, NFs>( \
+    ReadIOP<N, CO_LEN> mut iop) -> (ReadIOP<N, CO_LEN>, Fp[N]) {
+
+    (ShaRngState, Fp[NFs]) mut state_and_samples = \
+        sha_rng_sample_fps_raw(iop.rng_state);
+    iop.rng_state = state_and_samples.0;
+    for u32 i in 0..NFs {
+        state_and_samples.1[i] = to_Fp(state_and_samples.1[i]);
+    }
+    return (iop, state_and_samples.1);
+}
+
+def get_mt_verifier<N, CO_LEN>(      \
+    ReadIOP<N, CO_LEN> mut read_iop, \
+    u32 PO2, u32 COL_LEN) -> MTVerifier<N, CO_LEN> {
+
+    MTParams mt_params = get_merkle_params(PO2, COL_LEN);
+
+    ShaDigest[MT_TOP_SIZE] mut mt_top = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
+    ShaDigest[MT_TOP_SIZE] mut mt_rest = [[0; DIGEST_WORD_NUM]; MT_TOP_SIZE];
+
+    for u32 i in 0..MT_TOP_SIZE {
+        (ReadIOP<N, CO_LEN>, ShaDigest) read_iop_and_slice = read_iop_pod_slice(read_iop);
+        read_iop = read_iop_and_slice.0;
+        mt_top[i] = read_iop_and_slice.1;
+    }
+
+    for u32 i in (MT_TOP_SIZE / 2)..MT_TOP_SIZE {
+        u32 top_idx = mt_param_idx_to_top(i);
+        mt_rest[mt_param_idx_to_rest(i)] = hash(mt_top[top_idx], mt_top[top_idx + 1]);
+    }
+
+    for u32 i in 1..(MT_TOP_SIZE / 2) {
+        u32 idx = (MT_TOP_SIZE / 2) - i;
+        u32 upper_rest_idx = mt_param_idx_to_rest(idx * 2);
+        mt_rest[mt_param_idx_to_rest(idx)] = \
+            hash(mt_rest[upper_rest_idx], mt_rest[upper_rest_idx + 1]);
+    }
+
+    read_iop = read_iop_commit(read_iop, mt_rest[0]);
+
+    return MTVerifier {
+        read_iop: read_iop,
+        mt_params: mt_params,
+        top: mt_top,
+        rest: mt_rest
+    };
+}
+
+def mt_verifier_root<N, CO_LEN>(MTVerifier<N, CO_LEN> verifier) -> ShaDigest {
+    return verifier.rest[mt_param_idx_to_rest(1)];
+}

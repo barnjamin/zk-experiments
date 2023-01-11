@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "sanitycheck",
+    "methods",
+    "host",
+]
+
+[patch.crates-io]
+risc0-build = {path = "../risc0/risc0/build"}
+risc0-zkvm = {path = "../risc0/risc0/zkvm"}
+risc0-zkp = {path = "../risc0/risc0/zkp"}
+risc0-circuit-rv32im = {path = "../risc0/risc0/circuit/rv32im"}

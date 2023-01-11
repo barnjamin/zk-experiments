@@ -1,0 +1,79 @@
+import "hashes/sha256/sha256Padded" as sha_hash;
+
+const u32 INV_RATE = 4;
+const u32 INV_RATE_LOG2 = 2;
+
+// Definitions for SHA:
+// - digest word size 32 bits (4 bytes)
+// - digest word in total 8 (8x32 = 256 bits)
+const u32 DIGEST_WORD_SIZE = 4;
+const u32 DIGEST_WORD_NUM = 8;
+const u32 DIGEST_WORD_512_NUM = 16;
+// 32x8 = 256
+type ShaDigest = u32[DIGEST_WORD_NUM];
+// 32x16 = 512
+type ShaDigest512 = u32[DIGEST_WORD_512_NUM];
+// SHA RNG state definition
+struct ShaRngState {
+    ShaDigest pool0;
+    ShaDigest pool1;
+    u32 cnt;
+}
+const u32 SHA_RNG_ROUND_BACK = 8;
+
+// self.pool0 = sha_hash(b"Hello")
+// self.pool1 = sha_hash(b"World")
+def sha_rng_start_state() -> ShaRngState {
+    return ShaRngState {
+        pool0: sha_hash([72, 101, 108, 108, 111]),
+        pool1: sha_hash([87, 111, 114, 108, 100]),
+        cnt: 0
+    };
+}
+
+struct MTParams {
+    u32 row_size;
+    u32 col_size;
+    u32 queries;
+    u32 layers;
+    u32 top_layer;
+    u32 top_size;
+}
+
+// FRI related constants
+const u32 FRI_FOLD_PO2 = 4;
+const u32 FRI_FOLD = 1 << FRI_FOLD_PO2;
+const u32 FRI_MIN_DEGREE = 256;
+
+// RISC0 related configs
+const u32 QUERIES = 50;
+const u32 ZK_CYCLES = QUERIES;
+// MIN_PO2 = core::log2_ceil(1 + ZK_CYCLES);
+const u32 MIN_PO2 = 6;
+const u32 MIN_CYCLES_PO2 = 10;
+const u32 MIN_CYCLES = 1 << MIN_CYCLES_PO2; // 1K
+const u32 MAX_CYCLES_PO2 = 24;
+const u32 MAX_CYCLES = 1 << MAX_CYCLES_PO2; // 16M
+
+// MT Related settings
+const u32 CODE_TAP_SIZE = 15;
+
+// montgomery form constants
+const u64 M_mont = 0x0000000088000001;
+const u64 R_2 = 1172168163;
+
+// Prime field we're working in
+const u64 PRIME = 15 * (1 << 27) + 1;
+type Fp = u64;
+const u32 POLY_FIELD_DEG = 4;
+type FpExt = Fp[POLY_FIELD_DEG];
+const u64 BETA_COEFF = 11;
+
+// ReadIOP class definition
+struct ReadIOP<PROOF_LEN, OUTPUT_LEN> {
+    u32[PROOF_LEN] proof;
+    Fp[OUTPUT_LEN] out;
+    ShaRngState rng_state;
+    u32 proof_start_from;
+    u32 po2;
+}

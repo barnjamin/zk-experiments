@@ -1,0 +1,27 @@
+import "hashes/sha256/sha256Padded" as sha_hash;
+from "../read_iop" import sha_rng_next_u32, sha_rng_mix, sha_rng_sample_fp_raw;
+from "../const" import ShaRngState, sha_rng_start_state;
+
+def main() {
+    ShaRngState mut state = sha_rng_start_state();
+
+    (ShaRngState, u32) mut state_and_u32 = (state, 0);
+
+    for u32 i in 0..10 {
+        state_and_u32 = sha_rng_next_u32(state_and_u32.0);
+    }
+    assert(785921476 == sha_rng_next_u32(state_and_u32.0).1);
+
+    state = sha_rng_mix(state_and_u32.0, sha_hash([102, 111, 111]));
+    state_and_u32 = sha_rng_next_u32(state);
+    assert(4167871101 == state_and_u32.1);
+
+    // test sample_field
+    state = sha_rng_start_state();
+
+    (ShaRngState, u64) mut state_and_u64 = (state, 0);
+    for u32 i in 0..10 {
+        state_and_u64 = sha_rng_sample_fp_raw(state_and_u64.0);
+    }
+    assert(1726317912 == sha_rng_sample_fp_raw(state_and_u64.0).1);
+}
