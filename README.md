@@ -1,7 +1,7 @@
 ZK Experimentation
 -------------------
 
-- circom - Holds circuit definitions
+- circuits - Holds circuit definitions
 
 - contracts - Holds Algorand app definition for verification of Groth16 snark
 

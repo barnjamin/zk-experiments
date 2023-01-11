@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # compile
-zokrates compile -i main.zok --curve bls12_381
+zokrates compile -i main.zok # --curve bls12_381
 # perform the setup phase
-zokrates setup --proving-scheme g16
+zokrates setup # --proving-scheme g16
 # execute the program
 zokrates compute-witness -a 337 113569
 # generate a proof of computation

@@ -1,11 +1,19 @@
 use std::{fs::File, io::Read};
 use risc0_zkvm::Receipt;
 
+// montgomery form constants
+const M: u32 = 0x88000001;
+const R2: u32 = 1172168163;
+const P: u32 = 15 * (1 << 27) + 1;
+const P_U64: u64 = P as u64;
+
+
 fn main() {
     check_receipt().expect("FAILzore");
 }
 
 fn check_receipt()->std::io::Result<()> {
+    env_logger::init();
     
     let mut jf = File::open("trivial.journal")?;
     let mut jbuf = Vec::new();
@@ -21,7 +29,6 @@ fn check_receipt()->std::io::Result<()> {
 
     let receipt = Receipt::new(jvec, svec);
 
-    println!("{:?}", methods::MULTIPLY_ID);
     receipt.verify(methods::MULTIPLY_ID).expect(
         "Code you have proven should successfully verify; did you specify the correct method ID?",
     );
@@ -31,3 +38,4 @@ fn check_receipt()->std::io::Result<()> {
 
     return Ok(());
 }
+
