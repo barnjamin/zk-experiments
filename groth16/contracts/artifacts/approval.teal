@@ -314,7 +314,7 @@ curveadd_3:
 proto 2 1
 frame_dig -2
 frame_dig -1
-ec_add BLS12_381_G1
+ec_add BLS12_381g1
 retsub
 
 // curve_multi_exp
@@ -322,7 +322,7 @@ curvemultiexp_4:
 proto 2 1
 frame_dig -2
 frame_dig -1
-ec_multi_exp BLS12_381_G1
+ec_multi_exp BLS12_381g1
 retsub
 
 // curve_pairing
@@ -330,7 +330,7 @@ curvepairing_5:
 proto 2 1
 frame_dig -2
 frame_dig -1
-ec_pairing_check BLS12_381_G1
+ec_pairing_check BLS12_381g1
 retsub
 
 // auth_only
