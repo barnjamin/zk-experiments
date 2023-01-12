@@ -1,11 +1,12 @@
 ZK Experimentation
 -------------------
 
-- circuits - Holds circuit definitions
+- circuits - Holds circuit definitions (except for those used by Groth16 dApp)
 
-- contracts - Holds Algorand app definition for verification of Groth16 snark
-
-- sanitycheck - For reading in and verifying output of RISC0 compute
+- groth16/ 
+  + contracts - Holds Algorand app definition for verification of Groth16 snarks
+  + gnark - experimental
+  + zokrates - circuits and scripts used in Zokrates-Algorand workflow (see figure below)
 
 - host - Definition for controller of RISC0 ZKVM 
 
@@ -13,7 +14,13 @@ ZK Experimentation
 
 - python - Implementation of some things with more familiar tooling to help understand the process
 
+- random - contains a Jupyter notebook with links that was used to generate some examples
 
+- sanitycheck - For reading in and verifying output of RISC0 compute
+
+## Zokrates-Algorand Workflow
+
+![Zokrates-Algorand](./random/Zokrates-Algorand.png "Zokrates-Algorand Workflow").
 
 ## Example Run-Log for Alice and Eve:
 
