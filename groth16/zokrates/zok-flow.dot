@@ -1,0 +1,63 @@
+digraph {
+  rankdir=TB;
+  /* Set up node styles */
+  circuit [label="circuit.zok"]
+  node [shape=oval, style=filled, fillcolor=lightblue]
+  abi [label="abi.json"]
+  out [label="out"]
+  out_r1cs [label="out.r1cs"]
+  node [shape=oval, style=filled, fillcolor=lightgray]
+  pkey [label="proving.key"]
+  vkey [label="verification.key"]
+  node [shape=oval, style=filled, fillcolor=white]
+  vsol [label="verifier.sol"]
+  node [shape=oval, style=filled, fillcolor=pink]
+  out_w [label="out.wtns"]
+  witness [label="witness"]
+  node [shape=oval, style=filled, fillcolor=green]
+  proof [label="proof.json"]
+  node [shape=diamond, style=filled, fillcolor=olive]
+  approve [label="APPROVE"]
+  node [shape=diamond, style=filled, fillcolor=red]
+  reject [label="REJECT"]
+  node [shape=none, style=filled, fillcolor=white]
+  w [label="w_i"]
+
+  node [shape=rectangle, fillcolor=yellow]
+  subgraph cluster_A1 {
+    label="(1) Alice: SETUP";
+      circuit
+      A_compile [label="Alice: compile"]
+      abi
+      out
+      out_r1cs
+      A_setup [label="Alice: setup"]
+      pkey
+      vkey
+      A_export [label="Alice: export-verifier"]
+      vsol
+  }
+  subgraph cluster_E2 {
+      label="(2) Eve: PROVE";
+      w
+      E_cw [label="Eve: compute-witness"]
+      out_w
+      witness
+      E_prove [label="Eve: generate-proof"]
+      proof
+  }
+  subgraph cluster_A3 {
+    label="(3) dApp: VERIFY";
+    D_verify [label="dApp"]
+    approve
+    reject
+  }
+
+  /* Create edges between nodes */
+  circuit -> A_compile -> {abi, out, out_r1cs}
+  out -> A_setup -> {pkey, vkey}
+  vkey -> A_export -> vsol
+  {abi, out, w} -> E_cw -> {out_w, witness}
+  {pkey, out, witness} -> E_prove -> proof
+  {proof, vkey} -> D_verify -> approve, reject
+}

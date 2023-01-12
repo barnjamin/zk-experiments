@@ -1,0 +1,130 @@
+{
+    "name": "Verifier",
+    "methods": [
+        {
+            "name": "bootstrap_root",
+            "args": [
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "bootstrap_secret_factor",
+            "args": [
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "bootstrap_secret_factor2",
+            "args": [
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2][2],byte[48][2][2],byte[48][2][2])",
+                    "name": "vk"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "verify_root",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
+        },
+        {
+            "name": "deprecated_claim_bounty",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                },
+                {
+                    "type": "account",
+                    "name": "winner"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
+            }
+        },
+        {
+            "name": "claim_bounty",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                },
+                {
+                    "type": "account",
+                    "name": "winner"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
+            }
+        },
+        {
+            "name": "deprecated_verify_secret_factor",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
+        },
+        {
+            "name": "verify_secret_factor2",
+            "args": [
+                {
+                    "type": "byte[32][1]",
+                    "name": "inputs"
+                },
+                {
+                    "type": "(byte[48][2],byte[48][2][2],byte[48][2])",
+                    "name": "proof"
+                }
+            ],
+            "returns": {
+                "type": "bool"
+            }
+        }
+    ],
+    "networks": {}
+}
