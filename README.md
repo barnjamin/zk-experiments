@@ -1,6 +1,8 @@
 ZK Experimentation
 -------------------
 
+[Hackathon Presentation](https://docs.google.com/presentation/d/1_gZZMHs9dv0kKQkxx7P8Q-E6YeuHt_ZJZTIYNs9c_04/edit?usp=sharing)
+
 - circuits - Holds circuit definitions (except for those used by Groth16 dApp)
 
 - groth16/ 
@@ -20,7 +22,19 @@ ZK Experimentation
 
 ## Zokrates-Algorand Workflow
 
-![Zokrates-Algorand](./random/Zokrates-Algorand.png "Zokrates-Algorand Workflow").
+![Zokrates-Algorand](./random/Zokrates-Algorand.png "Zokrates-Algorand Workflow")
+
+### Installing and Running the Zokrates Demo App
+
+#### Pre-requisites
+
+1. Run Sandbox off a branch that contains elliptic curve math op codes. At the time of this writing this branch works: https://github.com/jannotti/go-algorand/tree/ec-math
+2. Install Zokrates via: `curl -LSfs get.zokrat.es | sh`
+3. Clone this repo via `https://github.com/barnjamin/zk-experiments.git`
+4. `cd zk-experiments`
+5. Install python dependecies via `make python-setup`
+6. Run the demo with `make`
+
 
 ## Example Run-Log for Alice and Eve:
 
