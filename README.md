@@ -26,11 +26,9 @@ ZK Experimentation
 
 ### Installing and Running the Zokrates Demo App
 
-#### Pre-requisites
-
 1. Run Sandbox off a branch that contains elliptic curve math op codes. At the time of this writing this branch works: https://github.com/jannotti/go-algorand/tree/ec-math
 2. Install Zokrates via: `curl -LSfs get.zokrat.es | sh`
-3. Clone this repo via `https://github.com/barnjamin/zk-experiments.git`
+3. Clone this repo via `git clone https://github.com/barnjamin/zk-experiments.git`
 4. `cd zk-experiments`
 5. Install python dependecies via `make python-setup`
 6. Run the demo with `make`
