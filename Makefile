@@ -1,5 +1,5 @@
 python-setup:
-	pip install -r groth16/contracts/requirements.txt 
+	pip install -r requirements.txt 
 
 # ### RISC0 COMMANDS ### #
 
