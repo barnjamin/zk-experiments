@@ -120,7 +120,7 @@ def valid_pairing(proof: Proof, vk: VerificationKey, vk_x: G1):
         vk.gamma2.encode(),
         vk.delta2.encode(),
     )
-    return curve_pairing(g1_buff, g2_buff)
+    return pairing_check(g1_buff, g2_buff)
 
 
 ##
@@ -154,5 +154,5 @@ def curve_scalar_mul(a, b):
 
 
 @Subroutine(TealType.uint64)
-def curve_pairing(a, b):
+def pairing_check(a, b):
     return InlineAssembly(f"ec_pairing_check {curve_g1}", a, b, type=TealType.uint64)
